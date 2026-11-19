@@ -151,7 +151,7 @@ Set these in `.env` next to `compose.yaml` (see `.env.example`), or with `docker
 The image pins the weights to a fixed Hugging Face commit. Set `MODEL` in `.env` to change it
 (`https://huggingface.co/<org>/<repo>@<commit>`).
 
-[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/538f2d798b15f0117df484c91cd187d0ecc535fd/KNOBS.md) lists the
+[gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/ca7e8745bfed31d4417d263ff1bc14dd59919f9c/KNOBS.md) lists the
 advanced `gr8` options, which you can also set in `.env`.
 
 ## Pick what to prioritize

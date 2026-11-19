@@ -219,6 +219,62 @@ the loader's own for one rank:
 The copies pay only together with `GR8_LOAD_MERGE_KB=1`. The same 10 fixed greedy prompts gave the same token ids as
 the stock arm, 10 of 10. A warm boot (the release already in the page cache) was not measured with the copies.
 
+## Remote KV store
+
+Optional, and off by default. The prompt cache can keep its checkpoints on a KV node instead of the local disk: a box
+that locks some of its memory and serves it as KV blocks over RDMA (`./gr8 kv`, gr8's
+[engine/kvman-rs/REMOTE-TIER.md](https://github.com/kindlingai/gr8/blob/ca7e8745bfed31d4417d263ff1bc14dd59919f9c/engine/kvman-rs/REMOTE-TIER.md)).
+
+1. Start the node on the box that gives the memory. `--gb` is what it locks; keep room for that box's own work
+   (`--min-free-gb`):
+
+   ```bash
+   docker run -d --name sage-kv-node --network host --pid host --device /dev/infiniband \
+     --ulimit memlock=-1 --ulimit core=0 --cap-drop ALL --cap-add IPC_LOCK \
+     --security-opt no-new-privileges --read-only --tmpfs /tmp:size=256m,mode=1777 --init \
+     -v sage-kv-home:/var/lib/gr8/home --entrypoint /opt/gr8/gr8 \
+     ghcr.io/kindlingai/sage-s2.1-flash-exlr8-2x-spark:latest \
+     kv up --gb 4 --port 7350 --bind 0.0.0.0 --min-free-gb 6 --mentat none \
+       --work-dir /var/lib/gr8/home --bin /opt/gr8/bin/kvman-remote --foreground
+   docker exec sage-kv-node /opt/gr8/gr8 kv status --work-dir /var/lib/gr8/home --mentat none
+   ```
+
+2. Write a `kv-store.yaml` that names the node by a ConnectX address of its box, and mount it over the shipped one
+   (`-v $PWD/kv-store.yaml:/etc/gr8/kv-store.yaml:ro`) on both boxes of the recipe:
+
+   ```yaml
+   caches:
+     spare: {kind: spare_ram, floor: 2G}   # optional: a copy in this box's spare RAM, read first
+   tiers:
+     - cache: spare
+       store:
+         remote: {address: 10.0.0.2:7350, size_per_rank: 1G}
+   ```
+
+   With `MENTAT=1`, `address: auto` finds the node the mentat group announces.
+
+What to know:
+
+- **One store.** The prompt cache keeps its checkpoints in one store: `kv-store.yaml` names either the shipped disk
+  store or a remote one, not both. gr8 stops at boot with a file that names both.
+- **Not kept across restarts.** The node gives each engine boot new, empty leases and frees them when the engine
+  stops. The shipped disk store (`persist: true`) keeps the cache across restarts; a remote store does not.
+- **Size:** `size_per_rank` is per rank, so the node needs `2 x size_per_rank` for this recipe. A 44,633-token prompt
+  keeps a 40,960-row checkpoint of 282 MB a rank.
+
+Measured on 2026-11-18 (Pacific time) on two DGX Sparks at TP=2, this recipe on gr8 `ca7e874`, `TUNE=speed`. The node
+ran on the second box of the pair with `--gb 4`, and both ranks reached it over RDMA (no bytes over TCP). The same
+44,633-token prompt, 64 output tokens:
+
+| `kv-store.yaml` | first request | repeat | cached tokens on the repeat | checkpoint restore |
+|---|---|---|---|---|
+| remote only | 26.2 s | 3.7 s | 40,960 | 45 ms a rank |
+| remote with the `spare` RAM cache | 26.7 s | 3.7 s | 40,960 | 18 ms a rank |
+
+The repeat gave the same 64 tokens as the first request in both. After an engine restart with the node still up, the
+first request found nothing (`cached_tokens` 0) and the repeat hit again. With the remote-only store, `gr8 bench
+--quick` measured 48.8 / 67.8 / 79.5 tok/s at 1 / 2 / 4 streams, failed 0, the same as with the shipped store.
+
 ## Run another model
 
 A box runs one model at a time. To switch, stop and remove this recipe's container on both boxes:

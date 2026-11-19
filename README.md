@@ -171,6 +171,54 @@ quick ruler: 48.3 / 64.4 / 78.5 and 47.9 / 66.3 / 78.7 tok/s) against 44.5 / 60.
 `SESS=8`, aggregate concurrency reaches 94.1 tok/s at 8 streams (48.6 / 66.5 / 77.4 / 94.1 tok/s at 1 / 2 / 4 / 8
 streams).
 
+## Compact expert copies
+
+Optional, and off by default. `GR8_LOAD_COMPACT` and `GR8_LOAD_MERGE_KB=1` in `EXTRA_ENV` make the loader read dense
+per-rank copies of its expert ranges in place of the release's sparse files. The bytes it loads are the same, and a
+boot from a cold disk was faster in our runs.
+
+To turn it on, on both boxes: remove the `#` from the compact-copies `EXTRA_ENV` line in `.env` (`.env.example` has it
+commented out), write the copies once, then start or restart the recipe. Write the copies before the first boot or with
+the recipe stopped (`prepare` writes files and starts no engine). With compose:
+
+```bash
+docker compose run --rm gr8 prepare               # on both boxes
+docker compose run --rm gr8 prepare --rank 0      # with MENTAT=1 instead: the rank is only decided at boot, so name it
+                                                  # (rank 0 on the head, rank 1 on the other box)
+```
+
+`prepare` first fetches and checks the model as a boot does. It then writes this box's expert ranges to
+`/var/lib/gr8/cache/compact-tp2` (the cache volume), reads every copy back through the loader's map and checks it. A
+directory that already exists is checked and reused, never overwritten. A boot never writes or refreshes copies.
+
+- **Disk:** 72.8 GiB (78.2 GB) a box: 43 copy files and their 43 maps. `prepare` took 170 s a box. They sit beside the
+  release, which stays. Run `prepare` on a disk with room: copies written onto a nearly full disk can fragment and read
+  slower.
+- **`EXTRA_ENV` holds one line.** If you also set another engine variable there (such as `GR8_GLM53F_VISION=1`), put
+  both in the same line, on both boxes.
+- **A different `VARIANT`, TP size or release** needs its own directory: set `GR8_LOAD_COMPACT` to a new path in
+  `EXTRA_ENV` on both boxes and run `prepare` again.
+- **Both boxes** need the same `EXTRA_ENV`. With `docker run`, add
+  `-e EXTRA_ENV="GR8_LOAD_COMPACT=/var/lib/gr8/cache/compact-tp2 GR8_LOAD_MERGE_KB=1"` and the same volumes as the boot
+  command to a `docker run --rm ... prepare --rank <0 or 1>` command, and add it to the boot command in the Quickstart,
+  on both boxes: the copies are read only with it.
+- **To turn it off again,** comment out the line in `.env` on both boxes and restart. The copies stay in the volume. To
+  free the 72.8 GiB, delete the `compact-tp2` directory in the cache volume.
+
+Measured on 2026-11-18 (Pacific time) on two DGX Sparks at TP=2, this recipe on gr8 `ca7e874`, `TUNE=speed`. Before
+every boot the page cache was dropped on both boxes (`echo 3 > /proc/sys/vm/drop_caches`), so each boot read from disk.
+The order was stock, knob, knob, stock. The total is from `docker run` until `/health` reports ready; the read time is
+the loader's own for one rank:
+
+| Boot from a cold disk | Total (n=2) | A rank's read |
+|---|---|---|
+| Stock | 29.4 / 29.0 s | 21.9-22.3 s (4.1 GB/s) |
+| `GR8_LOAD_COMPACT` with `GR8_LOAD_MERGE_KB=1` | 18.6 / 18.5 s | 11.9-12.3 s (7.3-7.6 GB/s) |
+| `GR8_LOAD_MERGE_KB=1` alone, no copies (n=1) | 28.6 s | 22.1-22.3 s |
+
+The copies pay only together with `GR8_LOAD_MERGE_KB=1`. The same 10 fixed greedy prompts gave the same token ids as
+the stock arm, 10 of 10. A warm boot (the release already in the page cache) was not measured with the copies.
+
 ## Run another model
 
 A box runs one model at a time. To switch, stop and remove this recipe's container on both boxes:

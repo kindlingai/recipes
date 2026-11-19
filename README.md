@@ -141,7 +141,7 @@ Set these in `.env` next to `compose.yaml` (see `.env.example`), or with `docker
 | `MAX_MODEL_LEN` | `262144` | The longest single request, prompt and output together. At most `CAP` less the guard rows. |
 | `MTP` | `2` (`1` with `TUNE=quality`) | Speculative draft depth. `MTP=2` with `S2_SHARED_WATERFILL=1` is bit-exact to `MTP=1` on the pinned build. |
 | `DFLASH` | `0` | `0` uses MTP only and downloads no drafter. |
-| `FLASH_CACHE` | `aligned` | Prompt checkpoint cache on disk + spare RAM (`kv-store.yaml`, up to 64 GB per box). |
+| `FLASH_CACHE` | `aligned` | Prompt checkpoint cache on disk + spare RAM (`kv-store.yaml`, up to 64 GB per box). Checkpoints align to the 8,192-token prefill grid (`--prefill 4096 x 2 lanes`), so prompts of 8,192 tokens or fewer keep none (`gr8 bench`'s ~400-token short-prompt cache report returns 0/425 cached by design, while longer prompts > 8,192 tokens cache cleanly). |
 | `MENTAT` | `0` | `1` finds the other box and ConnectX addresses through the host's `mentat` daemon, and registers the API in group `GROUP` (`gr8-sage-2x`). |
 | `GR8_GLM53F_VISION` in `EXTRA_ENV` | unset (off) | Text-only by default. The HF release includes `dense/vision-bf16.safetensors` (1.13 GB), untested with this recipe; set `EXTRA_ENV="GR8_GLM53F_VISION=1"` on both boxes to opt in. |
 | `DEFAULT_MAX_TOKENS` | `32768` | `max_tokens` for a request that sends none, or the room the context leaves if that is less. |

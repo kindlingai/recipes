@@ -27,8 +27,8 @@ case "${TUNE:-speed}" in
     case " ${EXTRA_ENV:-} " in *" GR8_CP="*) ;; *) export EXTRA_ENV="${EXTRA_ENV:+$EXTRA_ENV }GR8_CP=1" ;; esac ;;
   quality)
     VARIANT=${VARIANT:-k4} SESS=${SESS:-8} CAP=${CAP:-262208} MAX_MODEL_LEN=${MAX_MODEL_LEN:-262144}
-    MTP=${MTP:-1}
-    export MTP ;;
+    MTP=${MTP:-1} S2_SHARED_WATERFILL=${S2_SHARED_WATERFILL:-0}
+    export MTP S2_SHARED_WATERFILL ;;
   *) echo "TUNE=$TUNE: want speed (the default), context or quality (README.md, \"Pick what to prioritize\")" >&2; exit 2 ;;
 esac
 # gr8 takes k2, k3 and k4 by name, and any other manifest of the release as a path. The boot fetches the release's

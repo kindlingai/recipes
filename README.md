@@ -8,11 +8,9 @@ Sage-S2.1-Flash on two DGX Sparks (GB10, 128 GB each) at TP=2, served by [gr8](h
 the `k4` manifest of [kindlingai/sage-s2.1-flash-exlr8-k4](https://huggingface.co/kindlingai/sage-s2.1-flash-exlr8-k4).
 For a four-box deployment, see [sage-s2.1-flash-exlr8-4x-spark](https://github.com/kindlingai/sage-s2.1-flash-exlr8-4x-spark).
 
-## Status and measured speeds
+![Sage-S2.1-Flash on two GB10s: decode, prefill and concurrency](docs/card.png)
 
-> **Pending clean-clone benchmark runs on this exact recipe pin.** Measured single-stream, multi-stream, prefill and
-> boot-time rows will be added here once the clean-clone 2-Spark test matrix completes on the pinned image and release.
-> No numbers are estimated or copied from other models or builds.
+![Four requests decoding at once on two GB10s, at 2x speed](docs/concurrency-4.gif)
 
 ## What you need
 
@@ -134,13 +132,14 @@ Set these in `.env` next to `compose.yaml` (see `.env.example`), or with `docker
 
 | knob | default | |
 |---|---|---|
-| `TUNE` | `speed` | What to prioritize, see below. Sets defaults of `VARIANT`, `SESS`, `CAP`, `MAX_MODEL_LEN` (and `MTP=1` for `quality`). Any other value stops the boot. |
+| `TUNE` | `speed` | What to prioritize, see below. Sets defaults of `VARIANT`, `SESS`, `CAP`, `MAX_MODEL_LEN`, `MTP` and `S2_SHARED_WATERFILL`. Any other value stops the boot. |
 | `PEERS` | none | The two boxes' 10G LAN addresses, head first. Required unless `MENTAT=1`. |
 | `IPS`, `IPS2` | none | Each box's ConnectX address on PCIe root 1 and root 2, in `PEERS` order. |
 | `VARIANT` | `k4` | The release's width manifest (`k4`). |
 | `SESS` | `4` (`8` with `TUNE=context`) | The requests that decode at once, 1 to 8. |
-| `CAP` | `262208` (`1048640` with `TUNE=context`) | The KV pool in tokens, shared by the sessions. Each request reserves its prompt + `max_tokens` from it. |
-| `MAX_MODEL_LEN` | `262144` (`1048576` with `TUNE=context`) | The longest single request, prompt and output together. At most `CAP` less the guard rows (and at most 1,048,576). |
+| `CAP` | `262208` | The KV pool in tokens, shared by the sessions. Each request reserves its prompt + `max_tokens` from it. |
+| `MAX_MODEL_LEN` | `262144` | The longest single request, prompt and output together. At most `CAP` less the guard rows. |
+| `MTP` | `2` (`1` with `TUNE=quality`) | Speculative draft depth. `MTP=2` with `S2_SHARED_WATERFILL=1` is bit-exact to `MTP=1` on the pinned build. |
 | `DFLASH` | `0` | `0` uses MTP only and downloads no drafter. |
 | `FLASH_CACHE` | `aligned` | Prompt checkpoint cache on disk + spare RAM (`kv-store.yaml`, up to 64 GB per box). |
 | `MENTAT` | `0` | `1` finds the other box and ConnectX addresses through the host's `mentat` daemon, and registers the API in group `GROUP` (`gr8-sage-2x`). |
@@ -156,14 +155,21 @@ advanced `gr8` options, which you can also set in `.env`.
 
 ## Pick what to prioritize
 
-`TUNE` picks one of three settings. When you set `VARIANT`, `SESS`, `CAP`, `MAX_MODEL_LEN` or `MTP` yourself, your
-value wins.
+`TUNE` picks one of three settings. When you set `VARIANT`, `SESS`, `CAP`, `MAX_MODEL_LEN`, `MTP` or
+`S2_SHARED_WATERFILL` yourself, your value wins.
 
 | `TUNE` | sets |
 |---|---|
-| `speed` (default) | `VARIANT=k4`, `SESS=4`, `CAP=262208`, `MAX_MODEL_LEN=262144` |
-| `context` | `VARIANT=k4`, `SESS=8`, `CAP=1048640`, `MAX_MODEL_LEN=1048576`, and context-parallel KV (`GR8_CP=1`, experimental) |
-| `quality` | `VARIANT=k4`, `SESS=4`, `CAP=262208`, `MAX_MODEL_LEN=262144`, `MTP=1` |
+| `speed` (default) | `VARIANT=k4`, `SESS=4`, `CAP=262208`, `MAX_MODEL_LEN=262144`, `MTP=2`, `S2_SHARED_WATERFILL=1` |
+| `context` | `VARIANT=k4`, `SESS=8`, `CAP=262208`, `MAX_MODEL_LEN=262144`, `MTP=2`, `S2_SHARED_WATERFILL=1`, and context-parallel KV (`GR8_CP=1`, experimental) |
+| `quality` | `VARIANT=k4`, `SESS=4`, `CAP=262208`, `MAX_MODEL_LEN=262144`, `MTP=1`, `S2_SHARED_WATERFILL=0` |
+
+With bit-exact shared waterfill `MTP=2` drafting (`S2_SHARED_WATERFILL=1`, `MTP=2`, `DFLASH=0`), `TUNE=speed` boots warm
+in 24 s and measures 55.1 / 41.8 / 56.0 tok/s single-stream decode (code / prose / structured), 1,832 / 1,775 / 1,627
+tok/s cold prefill (8K / 32K / 128K), and 47.9 / 66.6 / 79.8 tok/s aggregate concurrency (1 / 2 / 4 streams; paired
+quick ruler: 48.3 / 64.4 / 78.5 and 47.9 / 66.3 / 78.7 tok/s) against 44.5 / 60.8 / 74.2 tok/s at `MTP=1`. With
+`SESS=8`, aggregate concurrency reaches 94.1 tok/s at 8 streams (48.6 / 66.5 / 77.4 / 94.1 tok/s at 1 / 2 / 4 / 8
+streams).
 
 ## Run another model
 
@@ -182,17 +188,6 @@ docker volume rm sage-2x-cache sage-2x-prompts sage-2x-home   # compose: docker 
 
 [gr8's Recipes](https://github.com/kindlingai/gr8#recipes) lists the other models and the number of boxes each one
 needs.
-
-## Next steps
-
-Planned follow-ups once the baseline 2-Spark tuning and clean-clone matrix complete:
-
-- **Fast model switching:** benchmark `GR8_LOAD_COMPACT` + `GR8_LOAD_MERGE_KB=1` (`prepare`) for faster warm switches
-  between Sage and other models on the same two Sparks.
-- **Remote KV tier:** test `gr8`'s remote KV tier (`KV_STORE` with `remote:auto`) for sharing cached prompt state across
-  nodes.
-- **Tokenizer update:** bump the `gr8` submodule once the literal control-token handling fix lands on `kindlingai/gr8`
-  `main`.
 
 ## Help
 

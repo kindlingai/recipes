@@ -1,0 +1,106 @@
+{
+ "version": 1,
+ "id": "nemotron-3.5-bolt-rtx5090",
+ "status": "stable",
+ "title": "Nemotron 3.5 Bolt 74B-A9B",
+ "variant": "NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter",
+ "summary": "The model card's vLLM command for Nemotron 3.5 Bolt 74B-A9B (24GB) on one 32 GB RTX 5090, changed only where a 32 GB card needs it, with three profiles: fast, long and multi.",
+ "model": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+ "hardware": "RTX 5090 32 GB",
+ "stack": [
+  "vLLM",
+  "fp8 KV",
+  "DFlash"
+ ],
+ "default_config": "fast",
+ "configs": [
+  {
+   "id": "fast",
+   "label": "fast",
+   "nodes": 1,
+   "decode": {
+    "512 tokens": 218
+   },
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 6277
+    },
+    {
+     "context": 32768,
+     "tps": 6003
+    }
+   ],
+   "max_context": 262144,
+   "max_concurrent": 1,
+   "quality": [
+    {
+     "name": "Needle at 196K tokens",
+     "value": "passed"
+    },
+    {
+     "name": "Needle at 250K tokens",
+     "value": "passed"
+    }
+   ],
+   "notes": "DFlash LiLiCorr drafter, 5 tokens, GPU mem util 0.95. Power limit 408 W, stock clocks, fp8 KV, warm runs. Decode is about 218 tok/s: medians of 8 runs on 3 boots were 226, 213, 217."
+  },
+  {
+   "id": "long",
+   "label": "long",
+   "nodes": 1,
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 6675
+    },
+    {
+     "context": 32768,
+     "tps": 6263
+    }
+   ],
+   "max_context": 262144,
+   "max_concurrent": 1,
+   "quality": [
+    {
+     "name": "Needle at 196K tokens",
+     "value": "passed"
+    }
+   ],
+   "notes": "No drafter, GPU mem util 0.96. Power limit 408 W, stock clocks, fp8 KV, warm runs. 196K prefill 4,460-4,490 tok/s."
+  },
+  {
+   "id": "multi",
+   "label": "multi",
+   "nodes": 1,
+   "decode": {
+    "512 tokens": 172
+   },
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 6537
+    },
+    {
+     "context": 32768,
+     "tps": 6092
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 4,
+     "aggregate_tps": 463,
+     "per_stream_tps": 121
+    },
+    {
+     "streams": 8,
+     "aggregate_tps": 738,
+     "per_stream_tps": 95
+    }
+   ],
+   "max_context": 32768,
+   "max_concurrent": 8,
+   "notes": "No drafter, 8 sequences, GPU mem util 0.88 with VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0. Power limit 408 W, stock clocks, fp8 KV, warm runs, 512-token decode, all requests started at once. The 4-request figures were measured with 4 sequences; with 8 sequences 4 requests give 429-434 tok/s total."
+  }
+ ]
+}

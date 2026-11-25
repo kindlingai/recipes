@@ -4,6 +4,8 @@ Working vLLM recipes for [nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4](h
 on one DGX Spark (GB10), and tensor-parallel across two. The flags are the model card's DGX Spark recipe;
 the two-box version adds only vLLM's built-in multi-node options (no Ray).
 
+[kindling.json](kindling.json) has the results below in a form a program can read.
+
 ## Download (on every box)
 
 ```bash

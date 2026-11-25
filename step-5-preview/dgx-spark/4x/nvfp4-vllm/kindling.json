@@ -1,0 +1,143 @@
+{
+ "version": 1,
+ "id": "step5-tp4-gb10-recipe",
+ "status": "experimental",
+ "title": "Step-5 Preview",
+ "variant": "NVFP4, staged FP8 KV, MTP3, 576K context",
+ "summary": "A recipe skeleton for Step-5-Preview-NVFP4 with vLLM tensor parallelism across four DGX Sparks: weights split over three nodes' NVMe and shared read-only over NFS, dense attention, staged FP8 KV and MTP3.",
+ "model": "stepfun-ai/Step-5-Preview-NVFP4",
+ "weights_commit": "bc246cc2848e17b37f377eda8fd825c5b3018d1f",
+ "hardware": "DGX Spark (GB10)",
+ "stack": [
+  "vLLM",
+  "NVFP4",
+  "FP8 KV",
+  "MTP",
+  "NFS"
+ ],
+ "default_config": "b5-fp8",
+ "configs": [
+  {
+   "id": "b5-fp8",
+   "label": "TP=4, 576K FP8 KV",
+   "nodes": 4,
+   "decode": {
+    "code": 27.89,
+    "prose": 27.24,
+    "structured": 28.4
+   },
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 1317.13
+    },
+    {
+     "context": 32768,
+     "tps": 1232.33
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 4,
+     "aggregate_tps": 62.93,
+     "per_stream_tps": 16.28
+    }
+   ],
+   "max_context": 589824,
+   "kv_pool_tokens": 604080,
+   "max_concurrent": 8,
+   "lowest_mem_available_gib": 8.222,
+   "quality": [
+    {
+     "name": "Cold 575K-token needle",
+     "value": "PASS (1 try)"
+    }
+   ],
+   "notes": "Default profile. Run b5-fp8-20261016T002142Z, 2026-10-16. Four DGX Sparks, GPU clocks capped at 2000 MHz, MTP3, FP8 E4M3 KV (staged overlay), 40000 blocks, GMU 0.86, dense attention, dual-rail C2. 512-token decode; prefill is prompt tokens / client TTFT. Three-repeat medians."
+  },
+  {
+   "id": "b4-fp8",
+   "label": "TP=4, 442K FP8 KV",
+   "nodes": 4,
+   "decode": {
+    "code": 28.27,
+    "prose": 28.02,
+    "structured": 28.56
+   },
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 1321.13
+    },
+    {
+     "context": 32768,
+     "tps": 1232.78
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 4,
+     "aggregate_tps": 63.71,
+     "per_stream_tps": 16.86
+    }
+   ],
+   "max_context": 442368,
+   "kv_pool_tokens": 444739,
+   "max_concurrent": 8,
+   "lowest_mem_available_gib": 10.0592,
+   "quality": [
+    {
+     "name": "430K-token needle (prefix-cached retry)",
+     "value": "PASS"
+    },
+    {
+     "name": "Top-1 agreement vs BF16 KV, 8K / 32K prompt",
+     "value": "99.84% / 99.98%"
+    },
+    {
+     "name": "Mean NLL change vs BF16 KV (41,157 positions)",
+     "value": "-0.0001"
+    }
+   ],
+   "notes": "Safer FP8 profile. Run b4-fp8-20261015T232239Z, 2026-10-15. GPU clocks capped at 2000 MHz, MTP3, 30000 blocks, GMU 0.85, dual-rail C2. Three-repeat medians."
+  },
+  {
+   "id": "b4-bf16-192k",
+   "label": "TP=4, 192K BF16 KV",
+   "nodes": 4,
+   "decode": {
+    "code": 28.61,
+    "prose": 27.95,
+    "structured": 27.07
+   },
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 1324.84
+    },
+    {
+     "context": 32768,
+     "tps": 1236.88
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 4,
+     "aggregate_tps": 60.09,
+     "per_stream_tps": 16.06
+    }
+   ],
+   "max_context": 196608,
+   "kv_pool_tokens": 258523,
+   "max_concurrent": 8,
+   "lowest_mem_available_gib": 9.5595,
+   "quality": [
+    {
+     "name": "190K-token needle",
+     "value": "PASS (1 try)"
+    }
+   ],
+   "notes": "BF16 KV safe option. Run b4-20261015T223410Z, 2026-10-15. GPU clocks capped at 2000 MHz, MTP3, GMU 0.85, dense attention, dual-rail C2. Three-repeat medians."
+  }
+ ]
+}

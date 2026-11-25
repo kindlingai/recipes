@@ -1,0 +1,148 @@
+{
+ "version": 1,
+ "id": "nemotron-3.5-super-vl-dgx-spark",
+ "status": "stable",
+ "title": "Nemotron 3.5 Super VL 120B-A12B",
+ "variant": "NVFP4, DFlash LiLiCorr drafter",
+ "summary": "The model card's vLLM recipe for Nemotron 3.5 Super VL NVFP4 on one DGX Spark, and tensor-parallel across two with vLLM's built-in multi-node options, plus two tuned TP2 profiles.",
+ "model": "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4",
+ "hardware": "DGX Spark (GB10)",
+ "stack": [
+  "vLLM",
+  "NVFP4",
+  "DFlash"
+ ],
+ "default_config": "1spark",
+ "configs": [
+  {
+   "id": "1spark",
+   "label": "1 Spark, drafter",
+   "nodes": 1,
+   "decode": {
+    "tg128": 40.9
+   },
+   "prefill": [
+    {
+     "context": 2048,
+     "tps": 2156
+    },
+    {
+     "context": 8192,
+     "tps": 3058
+    },
+    {
+     "context": 32768,
+     "tps": 2870
+    }
+   ],
+   "notes": "Card recipe: DFlash LiLiCorr drafter, 7 tokens, 1 sequence, 1M context, stock clocks for the 8K/32K prefill (512-token bench: 25-26 tok/s single-stream decode). tg128 and the 2048 prefill are llama-benchy pp2048 + tg128 at depth 0, mean of 3 runs, GPU clock capped at 2000 MHz."
+  },
+  {
+   "id": "1spark-nospec",
+   "label": "1 Spark, no drafter",
+   "nodes": 1,
+   "decode": {
+    "512 tokens": 18.7
+   },
+   "concurrency": [
+    {
+     "streams": 4,
+     "aggregate_tps": 47,
+     "per_stream_tps": 11.9
+    }
+   ],
+   "max_concurrent": 4,
+   "quality": [
+    {
+     "name": "Needle at 60% depth, 250K-token prompt",
+     "value": "found (first token after 137 s)"
+    },
+    {
+     "name": "Needle, 900K-token prompt",
+     "value": "not found (1 try)"
+    }
+   ],
+   "notes": "--max-num-seqs 4, 1M context, stock clocks, 512-token decode, warm runs."
+  },
+  {
+   "id": "tp2-balanced",
+   "label": "TP=2, balanced",
+   "nodes": 2,
+   "decode": {
+    "tg128": 65.0
+   },
+   "prefill": [
+    {
+     "context": 2048,
+     "tps": 3357
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 1,
+     "aggregate_tps": 68
+    },
+    {
+     "streams": 4,
+     "aggregate_tps": 108
+    },
+    {
+     "streams": 8,
+     "aggregate_tps": 116
+    },
+    {
+     "streams": 10,
+     "aggregate_tps": 129,
+     "per_stream_tps": 19
+    }
+   ],
+   "quality": [
+    {
+     "name": "250K-token needle",
+     "value": "found (first token after 102 s)"
+    }
+   ],
+   "notes": "b12x MoE + linear, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 3,314-3,372 tok/s at 8K and 3,300-3,314 at 32K; single-stream decode 43-44 tok/s prose, 59-74 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 4.2 s)."
+  },
+  {
+   "id": "tp2-decode",
+   "label": "TP=2, decode",
+   "nodes": 2,
+   "decode": {
+    "tg128": 64.1
+   },
+   "prefill": [
+    {
+     "context": 2048,
+     "tps": 2584
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 1,
+     "aggregate_tps": 50
+    },
+    {
+     "streams": 4,
+     "aggregate_tps": 141
+    },
+    {
+     "streams": 8,
+     "aggregate_tps": 113
+    },
+    {
+     "streams": 10,
+     "aggregate_tps": 122,
+     "per_stream_tps": 20
+    }
+   ],
+   "quality": [
+    {
+     "name": "250K-token needle",
+     "value": "found (first token after 113 s)"
+    }
+   ],
+   "notes": "marlin MoE, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 2,798-3,014 tok/s at 8K and 2,892-2,900 at 32K; single-stream decode 44-46 tok/s prose, 71-79 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 5.4 s)."
+  }
+ ]
+}

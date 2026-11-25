@@ -3,6 +3,8 @@
 A working vLLM recipe for [nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB)
 on a single 32 GB RTX 5090. It starts from the model card's command and changes only what a 32 GB card needs.
 
+[kindling.json](kindling.json) has the results below in a form a program can read.
+
 ## Quick start
 
 ```bash

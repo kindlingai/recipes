@@ -30,6 +30,8 @@ Measured apples-to-apples over HTTP streaming (`/v1/chat/completions`, `temperat
 - **6/6 total-time wins** and **6/6 TTFT wins** across all 3 runs, fitting **6,853 hot experts** in VRAM (`+73%` more than Strata's 3,961) in **42 MiB less VRAM** (`22,872 MiB` vs `22,914 MiB`).
 - Bit-exact **32/32** greedy token parity verified between 100% GPU UVA mode and 100% AVX-512 CPU MoE mode (`MTP=0`).
 
+[kindling.json](kindling.json) has these numbers in a form a program can read.
+
 ## Requirements
 
 - **GPU:** 1× NVIDIA Blackwell GPU with ≥24–32 GB VRAM (`sm_120a`, e.g. RTX 5090 / RTX PRO 6000; `sm_121a` for GB10)

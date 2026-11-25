@@ -8,6 +8,8 @@ A recipe skeleton for `stepfun-ai/Step-5-Preview-NVFP4` with vLLM tensor paralle
 
 **Status:** The default 576K profile has smoke and S1/S4 benchmark results, plus exact recall on one cold 575,000-token needle. No b5 soak was run. Limited numerical diagnostics against BF16 were measured on the earlier 442368-token FP8 profile with the same overlay kernels. Historical results remain below. The generalized launch and NFS scripts are CPU-tested, not validated end to end on a live cluster.
 
+[kindling.json](kindling.json) has the measured results below in a form a program can read.
+
 ## Hardware and software
 
 - Four DGX Spark systems with GB10 GPUs, working GPU drivers, Docker, and NVIDIA Container Toolkit.

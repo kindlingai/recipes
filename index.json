@@ -4,7 +4,7 @@
   "hardware": {
     "dgx-spark": {
       "name": "DGX Spark (GB10)",
-      "unit": "box",
+      "unit": "Spark",
       "aliases": [
         "ASUS GX10",
         "GB10"

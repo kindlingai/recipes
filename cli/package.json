@@ -1,0 +1,31 @@
+{
+  "name": "@kindlingai/recipe",
+  "version": "0.1.0",
+  "description": "Fetch one Kindling serving recipe from kindlingai/recipes into its own folder, ready to run",
+  "keywords": ["kindling", "dgx-spark", "gb10", "gr8", "llm", "inference", "recipe"],
+  "homepage": "https://github.com/kindlingai/recipes#run-a-recipe",
+  "bugs": "https://github.com/kindlingai/recipes/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kindlingai/recipes.git",
+    "directory": "cli"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "kindling-recipe": "bin/recipe.js"
+  },
+  "files": [
+    "bin/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "smoke": "sh smoke.sh"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

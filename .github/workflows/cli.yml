@@ -1,0 +1,56 @@
+# @kindlingai/recipe (cli/): its smoke test (cli/smoke.sh: list, fetch, --history, an unknown id) against this
+# checkout on every change to cli/ or index.json, and on a tag cli/v<version> the same test, then npm publish with
+# provenance. Publishing needs the NPM_TOKEN secret (an npm automation token for the @kindlingai scope).
+name: CLI
+
+on:
+  pull_request:
+    paths: ['cli/**', 'index.json', '.github/workflows/cli.yml']
+  push:
+    branches: [main]
+    paths: ['cli/**', 'index.json', '.github/workflows/cli.yml']
+    tags: ['cli/v*']
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        node: ['18', '22']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          # --history filters the whole history
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+      - run: sh cli/smoke.sh
+
+  publish:
+    needs: smoke
+    if: startsWith(github.ref, 'refs/tags/cli/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '22'
+          registry-url: https://registry.npmjs.org
+      - name: The tag names package.json's version
+        working-directory: cli
+        run: |
+          want=${GITHUB_REF_NAME#cli/v}
+          have=$(node -p 'require("./package.json").version')
+          [ "$want" = "$have" ] || { echo "::error::tag says $want, cli/package.json says $have"; exit 1; }
+      - name: Publish
+        working-directory: cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

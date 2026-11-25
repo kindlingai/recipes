@@ -1,0 +1,162 @@
+# The recipe's image (Dockerfile: gr8's DeepSeek-V4.1-Flash engine at TP=4, the front end, the loader, the launcher and
+# Engram's token map), built on a GitHub-hosted arm64 runner. Pull requests build and smoke-test it; main and tags also push it to
+# ghcr.io/<this repo>: latest and main follow main's head, a tag gets its own name, every image gets sha-<commit>.
+name: Image
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: Image (linux/arm64)
+    runs-on: ubuntu-24.04-arm
+    # a cold build compiles the Rust front end (fat LTO) and one engine (one long nvcc), and writes Engram's token map
+    timeout-minutes: 120
+    concurrency:
+      group: image-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      PUSH: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          submodules: recursive
+      - name: Free disk space
+        # the CUDA devel image is about 10 GB unpacked
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        if: env.PUSH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Is this commit still main's head?
+        # a run that finishes after a newer commit's run pushes only its sha tag, so latest never moves back
+        id: head
+        run: |
+          head=false
+          if [ "$GITHUB_REF" = refs/heads/main ] && [ "$(git ls-remote origin refs/heads/main | cut -f1)" = "$GITHUB_SHA" ]; then head=true; fi
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302  # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable=${{ steps.head.outputs.head }}
+            type=ref,event=branch,enable=${{ steps.head.outputs.head }}
+            type=ref,event=tag
+            type=sha
+      - name: Build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6.19.2
+        with:
+          context: .
+          platforms: linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          load: true
+          cache-from: type=gha,scope=image
+          cache-to: ${{ github.event_name != 'pull_request' && 'type=gha,scope=image,mode=max' || '' }}
+      - name: Smoke test (no GPU)
+        # the binaries link, the token map is the one the engine checks, the launcher resolves the recipe's options with
+        # MENTAT 0 (PEERS) and 1, the knobs are refused when wrong, and the engine will not start without the release
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          img=$(echo "$TAGS" | head -1)
+          docker image ls "$img"
+          docker run --rm --entrypoint bash "$img" -c '
+            set -eu
+            for b in bin/g6m4_ds41 bin/g6front-rs bin/g6load; do
+              [ -x "$b" ] || { echo "$b: not in the image"; exit 1; }
+              if ldd "$b" | grep "not found"; then echo "$b: missing libraries"; exit 1; fi
+            done
+            bin/g6front-rs --help > /dev/null
+            want=$(grep -o "kCmapSha256 = \"[0-9a-f]*\"" engine/engram/hash_consts.h | cut -d\" -f2)
+            got=$(sha256sum /opt/ds41-4x/ds41.engram.cmap | cut -d" " -f1)
+            [ -n "$want" ] && [ "$got" = "$want" ] || { echo "token map sha256 $got, want $want"; exit 1; }
+            echo binaries OK'
+          peers=PEERS=10.9.0.1,10.9.0.2,10.9.0.3,10.9.0.4
+          docker run --rm -e "$peers" "$img" show-config --no-check | grep -E "^  (TP|PEERS|CAP|SESS|MODEL|EXTRA_ENV) "
+          no_dup_keys() {
+            dups=$(echo "$1" | sed -n 's/^  engine\.env=//p' | tr ' ' '\n' | cut -d= -f1 | sort | uniq -d)
+            [ -z "$dups" ] || { echo "$2: duplicate engine.env keys: $dups"; exit 1; }
+          }
+          want() { # TUNE, then patterns its show-config must hold
+            t=$1; shift; out=$(docker run --rm -e "$peers" -e TUNE="$t" "$img" show-config --no-check)
+            echo "$out" | grep -E "^  (CAP|SESS|EXACT|EXTRA_ENV) "
+            no_dup_keys "$out" "TUNE=$t"
+            for p in "$@"; do echo "$out" | grep -qE -- "$p" || { echo "TUNE=$t: show-config has no $p"; exit 1; }; done
+          }
+          want speed "^  CAP +327680 " "^  SESS +32 " "GR8_DS_ENGRAM=1" "GR8_DS_RELAXED_ACCEPT=" "GR8_DS_MOE_TOPK_DECODE=4" "GR8_DS41_HEAD_MX=1" "GR8_DS_ATTN_TC_MF=2" "GR8_DS_CACHE_MIB=1024" "GR8_DS_ENGRAM_CACHE_MIB=2048" "GR8_DS_PF_V2=1" "GR8_DS_PREFILL_W=12288" "GR8_DS_ATTN_PW=12288" "GR8_DS41_IDX_PW=12288" "GR8_DS_PF_V2_W16K=1" "GR8_DS_PF_V2_L20_TAIL=1" "GR8_DS_PF_V2_SEND_FFN_OPT=3" "GR8_DS_PF_V2_BF16_TC=7" "GR8_DS_PF_V2_ATTN_PIPE=1" "GR8_DS_ATTN_TC_TILE=2" "GR8_S2_ADMIT_HOLD=1" "GR8_S2_TAIL_FIRST=1" "GR8_DS_SESS_DRAFTS=1"
+          if docker run --rm -e "$peers" "$img" show-config --no-check | grep -qE "GR8_DS_PREFILL_W=8192|GR8_DS_MHC_ROW_SHARD=1|GR8_DS_ATTN_TC_TILE=1"; then
+            echo "TUNE=speed: unexpected 8192, row-shard, or tile-1 word is set"; exit 1
+          fi
+          want context "^  CAP +1048576 " "^  SESS +16 " "GR8_DS_RELAXED_ACCEPT=" "GR8_DS_CACHE_MIB=2048" "GR8_DS_MHC_ROW_SHARD=1" "GR8_DS_ATTN_TC_TILE=1" "GR8_DS_PREFILL_W=4096"
+          if docker run --rm -e "$peers" -e TUNE=context "$img" show-config --no-check | grep -qE "GR8_DS_PF_V2=1|GR8_DS_PF_V2_W16K=1|GR8_DS_PF_V2_BF16_TC=|GR8_DS_ENGRAM_CACHE_MIB="; then
+            echo "TUNE=context: v2 prefill or speed cache words leaked onto context"; exit 1
+          fi
+          want quality "^  CAP +262144 " "^  SESS +5 " "^  EXACT +1 " "GR8_DS_PREFILL_W=4096" "GR8_DS_PF_LANES=2"
+          if docker run --rm -e "$peers" -e TUNE=quality "$img" show-config --no-check | grep -qE "GR8_DS_RELAXED_ACCEPT|GR8_DS_PF_V2=1|GR8_DS_PF_V2_BF16_TC=|GR8_DS_SH_TC=1|GR8_DS_CACHE_MIB=|GR8_DS_ENGRAM_CACHE_MIB="; then
+            echo "TUNE=quality: fast mode, v2, or speed cache switches are on"; exit 1
+          fi
+          q10=$(docker run --rm -e "$peers" -e TUNE=quality -e SESS=10 "$img" show-config --no-check)
+          echo "$q10" | grep -E "^  (SESS|EXTRA_ENV) "
+          echo "$q10" | grep -q "GR8_DS_SESS_DRAFTS=1" || { echo "TUNE=quality SESS=10: missing GR8_DS_SESS_DRAFTS=1"; exit 1; }
+          w8k=$(docker run --rm -e "$peers" -e EXTRA_ENV=GR8_DS_PF_V2_W16K=0 "$img" show-config --no-check)
+          no_dup_keys "$w8k" "W16K=0"
+          echo "$w8k" | grep -q "GR8_DS_PREFILL_W=8192" && ! echo "$w8k" | grep -q "GR8_DS_PF_V2_W16K=1" || { echo "W16K=0 rollback failed"; exit 1; }
+          bf16tc0=$(docker run --rm -e "$peers" -e EXTRA_ENV=GR8_DS_PF_V2_BF16_TC=0 "$img" show-config --no-check)
+          no_dup_keys "$bf16tc0" "BF16_TC=0"
+          echo "$bf16tc0" | grep -q "GR8_DS_PF_V2_BF16_TC=0" && ! echo "$bf16tc0" | grep -q "GR8_DS_PF_V2_BF16_TC=7" || { echo "BF16_TC=0 rollback failed"; exit 1; }
+          topk6=$(docker run --rm -e "$peers" -e EXTRA_ENV=GR8_DS_MOE_TOPK_DECODE=6 "$img" show-config --no-check)
+          no_dup_keys "$topk6" "TOPK=6"
+          echo "$topk6" | grep -q "GR8_DS_MOE_TOPK_DECODE=6" && ! echo "$topk6" | grep -q "GR8_DS_MOE_TOPK_DECODE=4" || { echo "TOPK=6 override failed"; exit 1; }
+          cmib=$(docker run --rm -e "$peers" -e EXTRA_ENV="GR8_DS_CACHE_MIB=2048 GR8_DS_ENGRAM_CACHE_MIB=4096" "$img" show-config --no-check)
+          no_dup_keys "$cmib" "CACHE_MIB"
+          echo "$cmib" | grep -q "GR8_DS_CACHE_MIB=2048" && echo "$cmib" | grep -q "GR8_DS_ENGRAM_CACHE_MIB=4096" && ! echo "$cmib" | grep -qE "GR8_DS_CACHE_MIB=1024|GR8_DS_ENGRAM_CACHE_MIB=2048" || { echo "cache MiB override failed"; exit 1; }
+          lcmib=$(docker run --rm -e "$peers" -e EXTRA_ENV=G6_DS41_CACHE_MIB=2048 "$img" show-config --no-check)
+          no_dup_keys "$lcmib" "G6_DS41_CACHE_MIB"
+          echo "$lcmib" | grep -q "GR8_DS_CACHE_MIB=2048" && ! echo "$lcmib" | grep -qE "GR8_DS_CACHE_MIB=1024|DS41_CACHE_MIB=" || { echo "legacy G6_DS41_CACHE_MIB override failed"; exit 1; }
+          rc=0; err=$(docker run --rm "$img" show-config --no-check 2>&1) || rc=$?
+          [ "$rc" = 2 ] && echo "$err" | grep -q "want the four boxes" || { echo "no PEERS: exit $rc: $err"; exit 1; }
+          docker run --rm -e MENTAT=1 "$img" show-config --no-check | grep -E "^  (MENTAT|GROUP) "
+          rc=0; err=$(docker run --rm -e MENTAT=2 "$img" show-config --no-check 2>&1) || rc=$?
+          [ "$rc" = 2 ] && echo "$err" | grep -q "want 0" || { echo "MENTAT=2: exit $rc: $err"; exit 1; }
+          rc=0; err=$(docker run --rm -e "$peers" -e TUNE=fast "$img" show-config --no-check 2>&1) || rc=$?
+          [ "$rc" = 2 ] && echo "$err" | grep -q "want speed" || { echo "TUNE=fast: exit $rc: $err"; exit 1; }
+          rc=0; err=$(docker run --rm -e "$peers" -e EXACT=1 "$img" show-config --no-check 2>&1) || rc=$?
+          [ "$rc" = 2 ] && echo "$err" | grep -q "TUNE=quality" || { echo "EXACT=1: exit $rc: $err"; exit 1; }
+          rc=0; err=$(docker run --rm -e "$peers" -e EXACT=0 "$img" show-config --no-check 2>&1) || rc=$?
+          [ "$rc" = 2 ] && echo "$err" | grep -q "TUNE=speed" || { echo "EXACT=0: exit $rc: $err"; exit 1; }
+          rc=0; err=$(docker run --rm -e "$peers" "$img" 2>&1) || rc=$?
+          [ "$rc" = 2 ] && echo "$err" | grep -q "run the fetch first" || { echo "up without the release: exit $rc: $err"; exit 1; }
+          echo smoke OK
+      - name: Push
+        id: push
+        if: env.PUSH == 'true'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          for t in $TAGS; do docker push "$t"; done
+          echo "digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$(echo "$TAGS" | head -1)" | cut -d@ -f2)" >> "$GITHUB_OUTPUT"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+        if: env.PUSH == 'true'
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

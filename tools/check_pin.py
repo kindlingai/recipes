@@ -6,9 +6,9 @@
 
 engine.pin image:  compose.yaml's ${GR8_IMAGE:-...} default is engine.image@engine.image_digest. A pin may be pending
                    (commit and digest both empty) while its release is unpublished; --strict refuses that.
-engine.pin source: the Dockerfile builds the engine from engine.commit (tools/engine.sh checks it out); compose.yaml's
-                   ${IMAGE:-...} default is the recipe's own image; engine.image, when set, is the engine's image of
-                   that commit or ref.
+engine.pin source: the recipe builds the engine from engine.commit (its Dockerfile, with tools/engine.sh checking the
+                   source out, or its own script); with a Dockerfile, compose.yaml's ${IMAGE:-...} default is the
+                   recipe's own image; engine.image, when set, is the engine's image of that commit or ref.
 weights_commit:    when set and the Dockerfile pins MODEL=https://huggingface.co/<model>@<commit>, they agree.
 A recipe without an engine pin passes with a note.
 """
@@ -66,18 +66,19 @@ def check(d, strict):
     elif pin == 'source':
         if not commit:
             bad.append('engine.commit is missing: a source pin builds that commit')
-        if not dockerfile:
-            bad.append('a source pin needs a Dockerfile')
         img = e.get('image')
         if img and commit and not (img.endswith(':sha-' + commit[:7]) or img.endswith(':' + e.get('ref', ''))):
             bad.append(f'engine.image {img} is not the engine at {commit[:7]} or {e.get("ref")}')
-        m = re.search(r'image: \$\{IMAGE:-([^}:\s]+)(:[^}\s]*)?\}', compose)
-        if not k.get('image'):
-            bad.append('image is missing: a source pin builds the recipe\'s own image')
-        elif not m:
-            bad.append('compose.yaml has no ${IMAGE:-...} default image')
-        elif m.group(1) != k['image']:
-            bad.append(f'compose.yaml runs {m.group(1)}, kindling.json image is {k["image"]}')
+        # with a Dockerfile, the recipe's own image is what compose.yaml runs; without one, the recipe builds the
+        # engine its own way (a serve script) and only the commit is checked
+        if dockerfile:
+            m = re.search(r'image: \$\{IMAGE:-([^}:\s]+)(:[^}\s]*)?\}', compose)
+            if not k.get('image'):
+                bad.append('image is missing: the Dockerfile builds the recipe\'s own image')
+            elif not m:
+                bad.append('compose.yaml has no ${IMAGE:-...} default image')
+            elif m.group(1) != k['image']:
+                bad.append(f'compose.yaml runs {m.group(1)}, kindling.json image is {k["image"]}')
     elif pin:
         bad.append(f'engine.pin {pin} is not image or source')
 

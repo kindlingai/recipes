@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "title": "Qwen3.8-Flash-Next",
+  "variant": "exlr8, MTP=3, 139K",
+  "summary": "Qwen3.8-Flash-Next on one DGX Spark (GB10, 128 GB) at TP=1 with gr8 v1.2.0: exlr8 pmcgx K3 (bit300, 83.0 tok/s code, 61.5 prose, 155.2 at 8 streams) or K4 (bit400, 78.4 tok/s code, 55.1 prose, 140.6 at 8 streams, 0.0046 mean KL), Layer-48 MTP=3 speculative decoding, async O_DIRECT NVMe PLE rowstore with 4 GiB host LRU cache, opt-in BF16 vision tower, and 8 dedicated 139,200-token KV slots (1,114,112 total KV rows).",
+  "model": "kindlingai/Qwen3.8-Flash-Next-exlr8",
+  "weights_commit": "4943478fdd54d8a59f2f9824b2389799e79f564b",
+  "hardware": "DGX Spark (GB10)",
+  "stack": [
+    "gr8",
+    "exlr8",
+    "MTP=3",
+    "NVMe PLE",
+    "MXFP8"
+  ],
+  "engine": {
+    "repo": "kindlingai/gr8",
+    "ref": "v1.2.0",
+    "commit": "",
+    "pin": "image",
+    "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+    "image_digest": ""
+  },
+  "default_config": "tp1-k3",
+  "configs": [
+    {
+      "id": "tp1-k3",
+      "label": "TP=1 · K3 bit300",
+      "nodes": 1,
+      "decode": {
+        "code": 83.0,
+        "prose": 61.5,
+        "structured": 87.4,
+        "counting": 88.8
+      },
+      "decode_ci95": {
+        "code": [
+          79.9,
+          84.8
+        ],
+        "prose": [
+          60.8,
+          62.3
+        ],
+        "structured": [
+          87.1,
+          88.0
+        ],
+        "counting": [
+          88.2,
+          89.2
+        ]
+      },
+      "decode_prompt_tokens": [
+        78,
+        87
+      ],
+      "prefill": [
+        {
+          "context": 8192,
+          "tps": 2258
+        },
+        {
+          "context": 32768,
+          "tps": 2269
+        }
+      ],
+      "concurrency": [
+        {
+          "streams": 1,
+          "aggregate_tps": 72.6,
+          "per_stream_tps": 73.4,
+          "ttft_p50_s": 0.165
+        },
+        {
+          "streams": 2,
+          "aggregate_tps": 102.1,
+          "per_stream_tps": 56.8,
+          "ttft_p50_s": 0.627
+        },
+        {
+          "streams": 4,
+          "aggregate_tps": 121.7,
+          "per_stream_tps": 37.5,
+          "ttft_p50_s": 1.159
+        },
+        {
+          "streams": 8,
+          "aggregate_tps": 155.2,
+          "per_stream_tps": 27.8,
+          "ttft_p50_s": 2.507
+        }
+      ],
+      "concurrency_prompt_tokens": [
+        80,
+        87
+      ],
+      "max_context": 139200,
+      "kv_pool_tokens": 1114112,
+      "max_concurrent": 8,
+      "max_tokens_per_chat": [
+        {
+          "chats": 1,
+          "tokens": 139200,
+          "source": "measured"
+        },
+        {
+          "chats": 2,
+          "tokens": 139200,
+          "source": "computed"
+        },
+        {
+          "chats": 4,
+          "tokens": 139200,
+          "source": "computed"
+        },
+        {
+          "chats": 8,
+          "tokens": 139200,
+          "source": "computed"
+        }
+      ],
+      "max_tokens_per_chat_note": "8 dedicated 139,264-token slabs",
+      "quality": [
+        {
+          "name": "Smoke / count-200",
+          "value": "8/8 smoke · 3/3 count-200 clean · 0 suspect"
+        },
+        {
+          "name": "Needle recall",
+          "value": "found at 128K (131,572 tok)"
+        },
+        {
+          "name": "Quant KL vs BF16 (bit300)",
+          "value": "0.0124 mean / 0.00157 med · 96.34% top-1"
+        }
+      ],
+      "notes": "bit300 experts (K3, 3.00 bpw, 45.4 GB experts/box, v0.2 @ 4943478f), CAP=139,264 per slot (MAX_MODEL_LEN=139,200, SESS=8, 1,114,112 total KV rows), MTP=3 (3.72/2.69/3.97/3.97 tok/step on code/prose/structured/counting), GR8_QW38_PLE_CACHE_MIB=4096, 16 s boot from local NVMe. Measured 2026-11-23 on gr8 v1.2.0 candidate (perf/qw38 PR #599, bench/bench.py --runs 3, GPU clocks uncapped in timed stages). Optional MTP=4 reaches 89.5 code / 97.2 structured / 99.1 counting (57.7 prose, c1 73.1 / c2 103.3 / c4 117.9 / c8 154.8)."
+    },
+    {
+      "id": "tp1-k4",
+      "label": "TP=1 · K4 bit400",
+      "nodes": 1,
+      "decode": {
+        "code": 78.4,
+        "prose": 55.1,
+        "structured": 81.2,
+        "counting": 82.0
+      },
+      "decode_ci95": {
+        "code": [
+          77.2,
+          79.1
+        ],
+        "prose": [
+          53.7,
+          56.6
+        ],
+        "structured": [
+          80.9,
+          81.5
+        ],
+        "counting": [
+          81.9,
+          82.0
+        ]
+      },
+      "decode_prompt_tokens": [
+        78,
+        87
+      ],
+      "prefill": [
+        {
+          "context": 8192,
+          "tps": 2215
+        },
+        {
+          "context": 32768,
+          "tps": 2200
+        }
+      ],
+      "concurrency": [
+        {
+          "streams": 1,
+          "aggregate_tps": 65.5,
+          "per_stream_tps": 67.4,
+          "ttft_p50_s": 0.192
+        },
+        {
+          "streams": 2,
+          "aggregate_tps": 93.9,
+          "per_stream_tps": 53.1,
+          "ttft_p50_s": 0.696
+        },
+        {
+          "streams": 4,
+          "aggregate_tps": 106.7,
+          "per_stream_tps": 32.4,
+          "ttft_p50_s": 1.283
+        },
+        {
+          "streams": 8,
+          "aggregate_tps": 140.6,
+          "per_stream_tps": 24.1,
+          "ttft_p50_s": 2.795
+        }
+      ],
+      "concurrency_prompt_tokens": [
+        80,
+        87
+      ],
+      "max_context": 139200,
+      "kv_pool_tokens": 1114112,
+      "max_concurrent": 8,
+      "max_tokens_per_chat": [
+        {
+          "chats": 1,
+          "tokens": 139200,
+          "source": "measured"
+        },
+        {
+          "chats": 2,
+          "tokens": 139200,
+          "source": "computed"
+        },
+        {
+          "chats": 4,
+          "tokens": 139200,
+          "source": "computed"
+        },
+        {
+          "chats": 8,
+          "tokens": 139200,
+          "source": "computed"
+        }
+      ],
+      "max_tokens_per_chat_note": "8 dedicated 139,264-token slabs",
+      "quality": [
+        {
+          "name": "Smoke / sanity",
+          "value": "8/8 smoke · 0 suspect replies"
+        },
+        {
+          "name": "Quant KL vs BF16 (bit400)",
+          "value": "0.0046 mean / 0.00054 med · 97.70% top-1"
+        },
+        {
+          "name": "WikiText-2 PPL (bit400)",
+          "value": "3.723 vs 3.729 BF16 (-0.17%)"
+        }
+      ],
+      "notes": "bit400 experts (K4, 4.00 bpw, 60.5 GB experts/box, v0.2 @ 4943478f), CAP=139,264 per slot (MAX_MODEL_LEN=139,200, SESS=8, 1,114,112 total KV rows), MTP=3 (3.76/2.59/4.00/4.00 tok/step on code/prose/structured/counting), GR8_QW38_PLE_CACHE_MIB=4096, 18 s boot from local NVMe. Set VARIANT=bit400 in .env. Measured 2026-11-23 on gr8 v1.2.0 candidate (perf/qw38 PR #599, bench/bench.py --runs 3, GPU clocks uncapped in timed stages)."
+    }
+  ]
+}

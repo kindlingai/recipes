@@ -1,0 +1,79 @@
+# GLM-5.3 on four GB10 boxes (ASUS GX10 / DGX Spark) at K4: gr8, the exlr8 release's bit387 profile, int4 KV.
+# Run the SAME file with the SAME .env (.env.example) on all four boxes. The head (the first address in PEERS) serves
+# the OpenAI API on port 8100.
+#
+#   docker compose up -d                                  # pulls the image (CI publishes it), fetches this box's part
+#   docker compose up -d --build                          # or builds the image here from the gr8 submodule
+#   docker compose logs -f                                # this box's supervisor
+#   docker compose exec gr8 /opt/gr8/gr8 glm53 smoke      # on the head, once it serves
+#   docker compose exec gr8 /opt/gr8/gr8 glm53 down       # on the head: stops every rank
+name: glm53-k4-4x-spark
+services:
+  gr8:
+    build:
+      context: .
+    image: ${IMAGE:-ghcr.io/kindlingai/glm-5.3-exlr8-k4-4x-spark:latest}
+    container_name: glm53-k4-4x-spark
+    # Options from .env. Unset, the image's settings (Dockerfile) and gr8's launcher defaults apply.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # the container's own paths, so a line in .env cannot point the launcher outside the volumes
+      - GR8_WORK_DIR=/var/lib/gr8/home
+      - MODEL_CACHE=/var/lib/gr8/cache
+    # The RoCE fabric and the front end need the box's real interfaces. The fabric bootstrap, the supervisors' control
+    # port (7340), the S2 control port (7341) and the API (8100) are host ports.
+    network_mode: host
+    # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only in
+    # the host's process list.
+    pid: host
+    devices:
+      - /dev/infiniband:/dev/infiniband
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      # The fabric registers its pinned buffers with the NIC.
+      memlock: -1
+      # A crash must not dump core: a rank maps ~100 GB, and the dumping thread holds the NVIDIA driver's lock the whole
+      # time it writes, which can leave the box unreachable until a power cycle.
+      core: 0
+    cap_drop: [ALL]
+    cap_add: [IPC_LOCK]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    # Under memory pressure the kernel ends the engine before sshd or the rest of the box.
+    oom_score_adj: 1000
+    # tini as PID 1: it forwards docker's SIGTERM to the launcher and reaps the engine and the shims.
+    init: true
+    stop_grace_period: 30s
+    volumes:
+      # This box's part of the model: the K4 release at TP=4, fetched from Hugging Face on the first boot. Set
+      # MODEL_CACHE_DIR to a host directory owned by uid 1000 to keep it outside docker.
+      - ${MODEL_CACHE_DIR:-cache}:/var/lib/gr8/cache
+      # Logs and state: out/supervisor.log, g6m4.r<N>.err, shim.log, front.log, gr8.state.
+      - ${GR8_HOME_DIR:-home}:/var/lib/gr8/home
+      # Kindling OS's dispramd socket (DISPRAM=1, Dockerfile). On a box without it the directory is empty and the engine
+      # allocates as usual.
+      - /run/dispram:/run/dispram
+    healthcheck:
+      # healthy once this box's supervisor reports the cluster serving (on the head, once its API's /health answers too)
+      test: ["CMD", "/opt/gr8/gr8", "glm53", "health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60m
+    # `gr8 glm53 down` exits 0 on every box, and the cluster stays down. Any other exit restarts the container: a failed
+    # rank rejoins, and a refused handshake or bad options retry, with docker's delay doubling up to a minute.
+    restart: on-failure
+
+volumes:
+  cache:
+  home:

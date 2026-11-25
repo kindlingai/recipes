@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "title": "GLM-5.3",
+  "variant": "exlr8 bit387 (K4), int4 KV, pure quality",
+  "summary": "Quality-first GLM-5.3 on four GB10 boxes with gr8 v1.1.1: every routed expert at K4 except layers 3-12 at K3, int4 KV, eight bit-exact v1.1.0 kernels ON with MOE_UNION_CAP=0 (100% uncapped routing), DFlash2 + MTP drafts, eight sessions sharing a 442,368-token KV pool.",
+  "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+  "hardware": "ASUS GX10 / DGX Spark (GB10)",
+  "stack": [
+    "gr8",
+    "exlr8",
+    "DFlash2",
+    "MTP",
+    "int4 KV"
+  ],
+  "engine": {
+    "repo": "kindlingai/gr8",
+    "ref": "v1.1.1",
+    "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+    "pin": "submodule",
+    "image": "ghcr.io/kindlingai/gr8:v1.1.1",
+    "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+  },
+  "weights_commit": "9e25c28a2e8808d8b2599d780521fd6af24e7558",
+  "default_config": "tp4",
+  "configs": [
+    {
+      "id": "tp4",
+      "label": "TP=4",
+      "nodes": 4,
+      "decode": {
+        "code": 60.8,
+        "prose": 36.2,
+        "structured": 72.9,
+        "counting": 76.5
+      },
+      "decode_ci95": {
+        "code": [
+          57.5,
+          64.3
+        ],
+        "prose": [
+          34.9,
+          37.2
+        ],
+        "structured": [
+          69.9,
+          75.8
+        ],
+        "counting": [
+          76.1,
+          76.9
+        ]
+      },
+      "decode_prompt_tokens": [
+        46,
+        54
+      ],
+      "prefill": [
+        {
+          "context": 8192,
+          "tps": 1530
+        },
+        {
+          "context": 32768,
+          "tps": 1570
+        },
+        {
+          "context": 131072,
+          "tps": 1434
+        }
+      ],
+      "concurrency": [
+        {
+          "streams": 1,
+          "aggregate_tps": 44.2,
+          "per_stream_tps": 47.1,
+          "ttft_p50_s": 0.41
+        },
+        {
+          "streams": 2,
+          "aggregate_tps": 57.1,
+          "per_stream_tps": 31.1,
+          "ttft_p50_s": 0.79
+        },
+        {
+          "streams": 4,
+          "aggregate_tps": 62.3,
+          "per_stream_tps": 20.4,
+          "ttft_p50_s": 1.72
+        },
+        {
+          "streams": 8,
+          "aggregate_tps": 82.0,
+          "per_stream_tps": 13.0,
+          "ttft_p50_s": 3.37
+        }
+      ],
+      "concurrency_prompt_tokens": [
+        48,
+        55
+      ],
+      "max_context": 442354,
+      "kv_pool_tokens": 442368,
+      "max_concurrent": 8,
+      "quality": [
+        {
+          "name": "MoE routing",
+          "value": "MOE_UNION_CAP=0 (uncapped, KL=0.00000)"
+        },
+        {
+          "name": "Needle recall",
+          "value": "found at 128K"
+        }
+      ],
+      "lowest_mem_available_gib": 3.78,
+      "notes": "bit387 experts (v0.7 @ 9e25c28a), int4 KV, DFlash2 + MTP drafting, gr8 v1.1.0 (8 bit-exact kernels ON, MOE_UNION_CAP=0 uncapped pure quality), DEC_BK=2048 DEC_BK_MAX=2048, S2_ADAPT=0, CAP=442368, SHARE_LIMIT=16384. bench/bench.py default level on 2026-11-20, one fresh boot on a 200G switch, GPU clocks uncapped in timed stages."
+    }
+  ]
+}

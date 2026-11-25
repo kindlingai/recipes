@@ -4,8 +4,10 @@
 #                 never carry the generated files, so two recipe PRs never conflict on them.
 #   push to main  validate, regenerate, and commit the generated files when they changed.
 #   schedule      also refresh external recipes' kindling.json from their own repos first (tools/sync_external.py).
-# The commit is made with GITHUB_TOKEN, which does not trigger workflows, so it cannot loop. The main branch ruleset
-# must let github-actions[bot] push (a bypass entry).
+# The commit is pushed as kindling-release-bot (a GitHub App token from the RELEASE_PLEASE_APP_ID and
+# RELEASE_PLEASE_APP_PRIVATE_KEY secrets, as gr8's release workflow uses): the main ruleset requires pull requests,
+# GitHub Actions' own token cannot be a ruleset bypass actor, and the app is one. A push by the app runs this workflow
+# again; that run finds the index current and commits nothing, so it does not loop.
 name: Index
 
 on:
@@ -44,12 +46,25 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
     steps:
+      - id: app-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc  # v3.4.0
+        with:
+          client-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+      - id: bot
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          echo "name=$SLUG[bot]" >> "$GITHUB_OUTPUT"
+          echo "email=$(gh api "/users/$SLUG%5Bbot%5D" --jq .id)+$SLUG[bot]@users.noreply.github.com" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with:
           # build_index.py dates each recipe by the last commit touching it
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.12'
@@ -62,8 +77,8 @@ jobs:
           python3 tools/sync_external.py
           git add -A -- '*/*/*/*/kindling.json'
           # its own commit, before the index: each recipe's updated_at is the date of the last commit touching it
-          git diff --cached --quiet || git -c user.name='github-actions[bot]' \
-            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+          git diff --cached --quiet || git -c user.name='${{ steps.bot.outputs.name }}' \
+            -c user.email='${{ steps.bot.outputs.email }}' \
             commit -q -m "Refresh external recipes from their repos" -m "tools/sync_external.py"
       - name: Regenerate
         run: python3 tools/build_index.py --summary "$GITHUB_STEP_SUMMARY"
@@ -71,8 +86,8 @@ jobs:
         run: |
           # the index commit touches no recipe folder, so it changes no recipe's updated_at
           git add index.json README.md
-          git diff --cached --quiet || git -c user.name='github-actions[bot]' \
-            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+          git diff --cached --quiet || git -c user.name='${{ steps.bot.outputs.name }}' \
+            -c user.email='${{ steps.bot.outputs.email }}' \
             commit -q -m "Update the recipe index" -m "tools/build_index.py after ${GITHUB_SHA:0:7}."
           if [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]; then echo "index unchanged"; exit 0; fi
           git push origin HEAD:main

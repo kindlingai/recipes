@@ -189,11 +189,11 @@ job summary instead.
 
 - `on: pull_request` (paths `**/kindling.json`, `hardware.json`, `schema/**`, `tools/build_index.py`) → validate +
   preview. Fork PRs work: read-only token suffices.
-- `on: push: main` → regenerate; if `git diff --quiet` fails, commit as `github-actions[bot]` with
-  `concurrency: index-main` so two merges never race. Pushes made with `GITHUB_TOKEN` do not retrigger workflows, so
-  there is no loop.
-- Prerequisite: the `main` ruleset must let `github-actions[bot]` push (bypass entry), or the job uses a GitHub App
-  token. Decide before enabling branch protection.
+- `on: push: main` → regenerate; if `git diff --quiet` fails, commit and push as `kindling-release-bot` (an app token
+  from the `RELEASE_PLEASE_APP_*` secrets) with `concurrency: index-main` so two merges never race. The app's push
+  runs the workflow once more, which finds the index current and commits nothing, so there is no loop.
+- Prerequisite: the `main` ruleset lists `kindling-release-bot` as a bypass actor. GitHub Actions' own token cannot
+  be one (the API rejects it for repository rulesets).
 - `.gitattributes`: `index.json linguist-generated=true` so diffs collapse in PR views.
 
 ## 4. Website sync (one-time kindling-site change)
@@ -350,7 +350,8 @@ Remote steps left, in order:
 
 1. Create `kindlingai/recipes` (public), push `main` and the tags (`git push origin main --tags`; GitHub creates no
    workflow events for more than three tags in one push, so the 150 adopted tags trigger nothing).
-2. `main` ruleset: let `github-actions[bot]` push (the Index workflow commits `index.json`).
+2. `main` ruleset: done (`default`, like gr8's: PRs required, squash or merge commits, the `validate` check; bypass for
+   org admins and `kindling-release-bot`, which the Index workflow pushes as).
 3. GHCR: give `kindlingai/recipes` write access to the four built images (`glm-5.3-exlr8-k4-4x-spark`,
    `glm-5.3-flash-exlr8-{1x,2x}-spark`, `deepseek-v4.1-flash-exlr8-4x-spark`).
 4. npm: create the `@kindlingai` scope, add `NPM_TOKEN`, push tag `cli/v0.1.0`.
@@ -365,7 +366,7 @@ Remote steps left, in order:
 3. **gx10 stacks**: `external` entries; they stay their own repos.
 4. **deepseek-v4.1-flash-exlr8-2x-spark**: held back (private, empty configs); adopt with `tools/adopt.sh` when it has
    numbers and should be public.
-5. **Bot push to `main`**: ruleset bypass for `github-actions[bot]` (`index.yml` uses `GITHUB_TOKEN`).
+5. **Bot push to `main`**: as `kindling-release-bot` via an app token; GitHub Actions cannot be a ruleset bypass actor.
 6. **qwen3.8-flash-next 1x-gpu hardware**: `rtx-5090`, what was measured.
 7. **Sage images**: their repos never had image CI, so their `kindling.json` has no `build` object and CI does not
    build them, as before. Their READMEs say each commit is published as `sha-<commit>`; adding `build` and a

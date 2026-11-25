@@ -26,7 +26,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 <!-- recipes:index:start -->
 <!-- Written by tools/build_index.py from each recipe's kindling.json. Edits here are overwritten. -->
 
-19 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
+20 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
 
 ### DeepSeek-V4.1-Flash
 
@@ -53,6 +53,12 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 | [`glm-5.3-flash-exlr8-2x-spark`](glm-5.3-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 bit349, int4 KV | gr8 main@4057009 | 76.5 | 1,670 | 262,144 | stable |
 | [`glm-5.3-flash-exlr8-gx10`](glm-5.3-flash/dgx-spark/4x/exlr8-vllm) | 4× DGX Spark (GB10) | NVFP4 | vllm | 117.3 | – | 524,288 | external |
 | [`glm-5.3-flash-gx10`](glm-5.3-flash/dgx-spark/4x/nvfp4-vllm) | 4× DGX Spark (GB10) | NVFP4 | vllm | 117.3 | – | 524,288 | external |
+
+### Inkling-2-Mini
+
+| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
+|---|---|---|---|---|---|---|---|
+| [`inkling-2-mini-exlr8-1x-spark`](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash, 256K x 4 (1M KV) | gr8 main@6b87480 | 64.6 | 3,457 | 262,144 | stable |
 
 ### Nemotron 3.5 Bolt 74B-A9B
 

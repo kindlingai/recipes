@@ -1,0 +1,12 @@
+{
+  "dgx-spark": {
+    "name": "DGX Spark (GB10)",
+    "unit": "box",
+    "aliases": ["ASUS GX10", "GB10"]
+  },
+  "rtx-5090": {
+    "name": "RTX 5090",
+    "unit": "GPU",
+    "aliases": []
+  }
+}

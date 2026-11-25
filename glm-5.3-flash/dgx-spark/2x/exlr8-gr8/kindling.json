@@ -1,5 +1,7 @@
 {
  "version": 1,
+ "id": "glm-5.3-flash-exlr8-2x-spark",
+ "status": "stable",
  "title": "GLM-5.3-Flash",
  "variant": "exlr8 bit349, int4 KV",
  "summary": "GLM-5.3-Flash on two GB10s at TP=2 with gr8: the exlr8 release at its bit349 manifest (K3 with K4 where it lowers KL most, about 3.49 bits a routed weight), int4 KV, DFlash2 speculative decoding, four sessions (SESS=4, max concurrent 4; TUNE=context serves 8) sharing a 2,097,152-token KV pool, shared waterfill MTP=3 drafting, a prompt cache on disk, and image input.",
@@ -11,6 +13,10 @@
   "DFlash2",
   "int4 KV"
  ],
+ "image": "ghcr.io/kindlingai/glm-5.3-flash-exlr8-2x-spark",
+ "build": {
+  "nvcc_cache": "flash-int4-w2"
+ },
  "default_config": "tp2",
  "configs": [
   {
@@ -82,5 +88,11 @@
     }
    ]
   }
- ]
+ ],
+ "engine": {
+  "repo": "kindlingai/gr8",
+  "ref": "main",
+  "commit": "405700981e2aa6172481486b74d3c48ee23ec9e2",
+  "pin": "source"
+ }
 }

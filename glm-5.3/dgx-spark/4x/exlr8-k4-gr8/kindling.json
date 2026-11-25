@@ -1,5 +1,7 @@
 {
   "version": 1,
+  "id": "glm-5.3-exlr8-k4-4x-spark",
+  "status": "stable",
   "title": "GLM-5.3",
   "variant": "exlr8 bit387 (K4), int4 KV, pure quality",
   "summary": "Quality-first GLM-5.3 on four GB10 boxes with gr8 v1.1.1: every routed expert at K4 except layers 3-12 at K3, int4 KV, eight bit-exact v1.1.0 kernels ON with MOE_UNION_CAP=0 (100% uncapped routing), DFlash2 + MTP drafts, eight sessions sharing a 442,368-token KV pool.",
@@ -12,11 +14,15 @@
     "MTP",
     "int4 KV"
   ],
+  "image": "ghcr.io/kindlingai/glm-5.3-exlr8-k4-4x-spark",
+  "build": {
+    "nvcc_cache": "glm-int4-w4"
+  },
   "engine": {
     "repo": "kindlingai/gr8",
     "ref": "v1.1.1",
     "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
-    "pin": "submodule",
+    "pin": "source",
     "image": "ghcr.io/kindlingai/gr8:v1.1.1",
     "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
   },

@@ -1,5 +1,7 @@
 {
  "version": 1,
+ "id": "sage-s2.1-flash-exlr8-4x-spark",
+ "status": "stable",
  "title": "Sage-S2.1-Flash",
  "variant": "exlr8 k4, int4 KV",
  "summary": "Sage-S2.1-Flash on four GB10s at TP=4 with gr8: the exlr8 k4 manifest, int4 KV, eight sessions (SESS=8) sharing a 262,208-token KV pool (2,097,152 with TUNE=context), bit-exact shared waterfill MTP=2 drafting (DFLASH=0), a prompt cache on disk (FLASH_CACHE=aligned), and text-only default.",
@@ -11,11 +13,12 @@
   "MTP=2",
   "int4 KV"
  ],
+ "image": "ghcr.io/kindlingai/sage-s2.1-flash-exlr8-4x-spark",
  "engine": {
   "repo": "kindlingai/gr8",
   "ref": "main",
   "commit": "ca7e8745bfed31d4417d263ff1bc14dd59919f9c",
-  "pin": "submodule",
+  "pin": "source",
   "image": "ghcr.io/kindlingai/gr8:sha-ca7e874"
  },
  "default_config": "tp4",

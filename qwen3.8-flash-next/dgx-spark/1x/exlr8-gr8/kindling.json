@@ -1,5 +1,7 @@
 {
   "version": 1,
+  "id": "qwen3.8-flash-next-exlr8-1x-spark",
+  "status": "experimental",
   "title": "Qwen3.8-Flash-Next",
   "variant": "exlr8, MTP=3, 139K",
   "summary": "Qwen3.8-Flash-Next on one DGX Spark (GB10, 128 GB) at TP=1 with gr8 v1.2.0: exlr8 pmcgx K3 (bit300, 83.0 tok/s code, 61.5 prose, 155.2 at 8 streams) or K4 (bit400, 78.4 tok/s code, 55.1 prose, 140.6 at 8 streams, 0.0046 mean KL), Layer-48 MTP=3 speculative decoding, async O_DIRECT NVMe PLE rowstore with 4 GiB host LRU cache, opt-in BF16 vision tower, and 8 dedicated 139,200-token KV slots (1,114,112 total KV rows).",

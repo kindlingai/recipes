@@ -1,5 +1,7 @@
 {
  "version": 1,
+ "id": "glm-5.3-exlr8-4x-spark",
+ "status": "stable",
  "title": "GLM-5.3",
  "variant": "exlr8 bit325, int4 KV, 1M context, DFlash2 drafter",
  "summary": "Full GLM-5.3 on four DGX Sparks at TP=4 with gr8 v1.1.1: exlr8 bit325 (v0.6), int4 KV with a 1,130,496-token pool and 1,048,576 max context, zero-copy shared prefix pages, DFlash2 + MTP=2 drafting, eight bit-exact kernel paths plus MoE union cap (48 quality default, 32 fast preset), up to 8 concurrent chats, and a persistent SSD KV store. Live-proven at 3x300K, 4x153K, and 8x26K shared prefix.",
@@ -139,7 +141,7 @@
      "source": "computed"
     }
    ],
-   "max_tokens_per_chat_note": "prompt + max_tokens \u00b7 live-proven: 3x300K (899K resident), 4x153K (614K resident), 8x26K shared prefix",
+   "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 3x300K (899K resident), 4x153K (614K resident), 8x26K shared prefix",
    "quality": [
     {
      "name": "GSM8K-250 (C=4)",

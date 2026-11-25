@@ -1,5 +1,7 @@
 {
  "version": 1,
+ "id": "glm-5.3-exlr8-3x-spark",
+ "status": "stable",
  "title": "GLM-5.3",
  "variant": "exlr8 bit273, int4 KV, 384K context",
  "summary": "Full GLM-5.3 on three DGX Sparks at TP=3 with gr8 v1.1.1: high-precision exlr8 bit273 experts (2.73 bpw, v0.6), int4 KV with a 393,216-token pool (393,210 max context), zero-copy shared prefix pages, MTP=3 drafting with confidence stopping, distributed PF_OWN=2 prefill, seven bit-exact kernel paths plus MoE union cap (48 quality default, 32 fast preset), up to 8 concurrent chats, and ~82 s boots from disk. Live-proven 12/12 clean from 119K to 359K single-session and 4x87K concurrent.",
@@ -66,13 +68,13 @@
      "streams": 4,
      "aggregate_tps": 77.5,
      "per_stream_tps": 27.4,
-     "ttft_p50_s": 1.50
+     "ttft_p50_s": 1.5
     },
     {
      "streams": 8,
      "aggregate_tps": 106.5,
      "per_stream_tps": 21.3,
-     "ttft_p50_s": 2.90
+     "ttft_p50_s": 2.9
     }
    ],
    "concurrency_prompt_tokens": [
@@ -128,7 +130,7 @@
      "value": "119K-359K & 4x87K: 12/12"
     }
    ],
-   "lowest_mem_available_gib": 3.80,
+   "lowest_mem_available_gib": 3.8,
    "notes": "bit273 experts (2.73 bpw, v0.6 @ 3e388b45), int4 KV (CAP=393,216, 2,389 physical pages/rank, max_model_len=393,210, SHARE_LIMIT=32,768, SESS=8, GR8_KV_SHARE_PAGES=1), MTP=3 with confidence stopping, PF_OWN=2 + PF_ATTN_ROWS=1536, 7 bit-exact v1.1.1 kernels ON, DEC_BK_MAX=2048, MOE_UNION_CAP=48 quality default (set MOE_UNION_CAP=32 for fast mode: 85.7 tok/s at C=4, 119.1 tok/s at C=8; or 0 for uncapped exact: 68.7 at C=4, 81.9 at C=8). bench/bench.py default level on 2026-11-21, one fresh boot on a 200G switch, GPU clocks uncapped in timed stages. Lowest MemAvailable: 4.38 GiB after boot, 3.80 GiB after bench, 3.73 GiB after GSM8K/HumanEval, 3.64 GiB after 359K & 4x87K live stress proofs."
   }
  ]

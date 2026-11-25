@@ -1,5 +1,7 @@
 {
  "version": 1,
+ "id": "glm-5.3-flash-exlr8-1x-spark",
+ "status": "stable",
  "title": "GLM-5.3-Flash",
  "variant": "exlr8 bit201, int4 KV",
  "summary": "GLM-5.3-Flash on one GB10 with gr8: the bit201 exlr8 manifest, int4 KV, DFlash2 for a request alone, four sessions sharing a 700K-token KV pool, and a prompt cache on disk.",
@@ -11,6 +13,10 @@
   "DFlash2",
   "int4 KV"
  ],
+ "image": "ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark",
+ "build": {
+  "nvcc_cache": "flash-int4-w1"
+ },
  "default_config": "tp1",
  "configs": [
   {
@@ -68,5 +74,11 @@
     }
    ]
   }
- ]
+ ],
+ "engine": {
+  "repo": "kindlingai/gr8",
+  "ref": "main",
+  "commit": "d598965a1bbf3cd220ad9ad856bfd63da2466424",
+  "pin": "source"
+ }
 }

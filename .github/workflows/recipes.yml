@@ -1,0 +1,104 @@
+# Checks and images for the recipes a change touches (tools/changed_recipes.py picks them):
+#   check  every touched recipe's pins agree (tools/check_pin.py), its compose.yaml parses with .env.example, and the
+#          engine image it pins exists. A change to tools/, schema/ or hardware.json checks every recipe.
+#   image  recipe-image.yml for each touched recipe whose kindling.json has a build object.
+# A tag <id>/v<version> or <id>/stable-<n> builds and pushes that recipe's image under <version> / stable-<n>.
+name: Recipes
+
+on:
+  push:
+    branches: [main]
+    tags: ['*/v*', '*/stable-*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: A recipe id (kindling.json id), or all
+        default: all
+      engine:
+        description: "auto: gr8's published binaries when gr8 has an image of engine.commit, else a build. build: always build"
+        type: choice
+        options: [auto, build]
+        default: auto
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      check: ${{ steps.pick.outputs.check }}
+      image: ${{ steps.pick.outputs.image }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          fetch-depth: 0
+      - id: pick
+        env:
+          RECIPE: ${{ inputs.recipe }}
+          BEFORE: ${{ github.event.before }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          case "$GITHUB_EVENT_NAME:$GITHUB_REF" in
+            pull_request:*) args=(--base "origin/$BASE_REF") ;;
+            push:refs/tags/*) args=(--id "${GITHUB_REF_NAME%%/*}") ;;
+            push:*)
+              # a new branch, or a force push whose old head is gone: everything
+              if [ "$BEFORE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BEFORE^{commit}" 2> /dev/null; then
+                args=(--all)
+              else args=(--base "$BEFORE"); fi ;;
+            workflow_dispatch:*) if [ "$RECIPE" = all ]; then args=(--all); else args=(--id "$RECIPE"); fi ;;
+          esac
+          python3 tools/changed_recipes.py "${args[@]}" | tee -a "$GITHUB_OUTPUT"
+
+  check:
+    needs: select
+    if: needs.select.outputs.check != '[]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - name: Pins agree in kindling.json, compose.yaml and the Dockerfile
+        env:
+          DIRS: ${{ needs.select.outputs.check }}
+        run: jq -r '.[]' <<< "$DIRS" | xargs python3 tools/check_pin.py
+      - name: compose.yaml parses with .env.example
+        env:
+          DIRS: ${{ needs.select.outputs.check }}
+        run: |
+          for d in $(jq -r '.[]' <<< "$DIRS"); do
+            [ -f "$d/compose.yaml" ] || continue
+            if [ -f "$d/.env.example" ]; then cp "$d/.env.example" "$d/.env"; else touch "$d/.env"; fi
+            (cd "$d" && docker compose config --quiet) || { echo "::error file=$d/compose.yaml::docker compose config failed"; exit 1; }
+            echo "$d: compose ok"
+          done
+      - name: The engine image each recipe pins exists
+        env:
+          DIRS: ${{ needs.select.outputs.check }}
+        run: |
+          for d in $(jq -r '.[]' <<< "$DIRS"); do
+            img=$(jq -r '.engine // {} | select(.pin == "image" and (.image_digest // "") != "") | (.image | split(":")[0]) + "@" + .image_digest' "$d/kindling.json")
+            [ -n "$img" ] || continue
+            docker manifest inspect "$img" > /dev/null || { echo "::error file=$d/kindling.json::$img does not exist"; exit 1; }
+            echo "$d: $img exists"
+          done
+
+  image:
+    needs: select
+    if: needs.select.outputs.image != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.select.outputs.image) }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/recipe-image.yml
+    with:
+      dir: ${{ matrix.dir }}
+      image: ${{ matrix.image }}
+      id: ${{ matrix.id }}
+      nvcc_cache: ${{ matrix.nvcc_cache }}
+      engine: ${{ inputs.engine || 'auto' }}

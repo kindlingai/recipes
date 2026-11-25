@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kindlingai/recipes/blob/main/schema/index.v1.json",
+  "title": "Kindling recipes index",
+  "description": "index.json at the root of kindlingai/recipes, written by tools/build_index.py. The Kindling site, gr8's card script and the npx @kindlingai/recipe CLI read it. Do not edit by hand.",
+  "type": "object",
+  "required": ["version", "repo", "recipes"],
+  "properties": {
+    "version": { "const": 1 },
+    "repo": { "type": "string", "description": "owner/name of the recipes repo" },
+    "hardware": {
+      "type": "object",
+      "description": "hardware.json, copied",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "unit"],
+        "properties": {
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "url", "model", "hardware", "hardware_name", "count", "variant", "status", "updated_at", "kindling"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string", "description": "<model>/<hardware>/<count>x/<variant>" },
+          "url": { "type": "string", "description": "Where the recipe is browsed: the folder on GitHub, or source.repo for status external" },
+          "model": { "type": "string" },
+          "hardware": { "type": "string", "description": "hardware.json key" },
+          "hardware_name": { "type": "string" },
+          "count": { "type": "integer", "minimum": 1 },
+          "variant": { "type": "string" },
+          "status": { "enum": ["stable", "experimental", "wip", "external", "retired"] },
+          "updated_at": { "type": ["string", "null"], "description": "Committer date of the last commit touching the folder; null before the folder is committed" },
+          "kindling": { "$ref": "kindling.v1.json" }
+        }
+      }
+    }
+  }
+}

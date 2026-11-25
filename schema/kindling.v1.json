@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kindlingai/recipes/blob/main/schema/kindling.v1.json",
+  "title": "Kindling recipe",
+  "description": "kindling.json in a recipe folder (<model>/<hardware>/<count>x/<variant>/). tools/build_index.py validates it and copies it into index.json, which the Kindling site renders. Keys not listed here are allowed and passed through.",
+  "type": "object",
+  "required": ["version", "id", "status", "title", "configs"],
+  "properties": {
+    "version": { "const": 1 },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*$",
+      "description": "Stable slug: the image name, the site's card id, the CLI argument (npx @kindlingai/recipe <id>) and the prefix of this recipe's tags. Recipes adopted from their own repo keep that repo's name."
+    },
+    "status": {
+      "enum": ["stable", "experimental", "wip", "external", "retired"],
+      "description": "experimental and wip get an Experimental tag on the site; retired is left out of the site; external means the recipe lives in source.repo and this folder holds only its card data."
+    },
+    "title": { "type": "string", "description": "Model name, e.g. GLM-5.3-Flash" },
+    "variant": { "type": "string", "description": "Short description of the build, e.g. exlr8 bit201, int4 KV" },
+    "summary": { "type": "string", "description": "One or two sentences on what the recipe does" },
+    "model": { "type": "string", "description": "Checkpoint or model id" },
+    "weights_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Hugging Face commit of the checkpoint the recipe boots" },
+    "hardware": { "type": "string", "description": "Free text kept for older readers. The index uses hardware.json's name for the folder's hardware slug." },
+    "stack": { "type": "array", "items": { "type": "string" } },
+    "image": {
+      "type": "string",
+      "pattern": "^ghcr\\.io/kindlingai/[a-z0-9][a-z0-9._-]*$",
+      "description": "The recipe's own image, without a tag, for recipes with a Dockerfile. compose.yaml must default to it."
+    },
+    "build": {
+      "type": "object",
+      "description": "Present when CI builds and pushes the recipe's image (.github/workflows/recipe-image.yml). The recipe's smoke.sh tests the built image.",
+      "properties": {
+        "nvcc_cache": { "type": "string", "description": "Id of the gr8 compile cache kept between runs, e.g. flash-int4-w1. Omit when the Dockerfile has no engine cache mount." }
+      },
+      "additionalProperties": false
+    },
+    "engine": {
+      "type": "object",
+      "description": "The engine the recipe runs. tools/check_pin.py keeps it in agreement with compose.yaml and the Dockerfile.",
+      "required": ["repo", "ref", "pin"],
+      "properties": {
+        "repo": { "type": "string", "description": "e.g. kindlingai/gr8" },
+        "ref": { "type": "string", "description": "Release tag, stable or main" },
+        "commit": { "type": "string", "description": "Full commit hash; empty only while a release is pending" },
+        "pin": {
+          "enum": ["image", "source"],
+          "description": "image: compose.yaml runs the engine's published image, pinned by digest. source: the recipe's Dockerfile builds from the engine's source at commit (tools/engine.sh checks it out into <recipe>/gr8)."
+        },
+        "image": { "type": "string" },
+        "image_digest": { "type": "string" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "description": "status external only: where the recipe lives. tools/sync_external.py refreshes this file from there.",
+      "required": ["repo"],
+      "properties": {
+        "repo": { "type": "string" },
+        "path": { "type": "string", "default": "kindling.json" },
+        "ref": { "type": "string" }
+      }
+    },
+    "site": {
+      "type": "object",
+      "properties": {
+        "hidden": { "type": "boolean", "description": "Leave the card off the site" },
+        "order": { "type": "integer", "description": "Lower sorts first; recipes without it follow, by path" }
+      },
+      "additionalProperties": false
+    },
+    "default_config": { "type": "string", "description": "id of the config shown first; its nodes must equal the folder's count" },
+    "configs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "nodes"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string", "description": "Tab label, e.g. TP=4" },
+          "nodes": { "type": "integer", "minimum": 1, "description": "Boxes or GPUs" },
+          "decode": {
+            "type": "object",
+            "description": "Single-stream decode tok/s by workload. code, prose and structured are shown in that order; other keys follow.",
+            "additionalProperties": { "type": "number" }
+          },
+          "decode_prompt_tokens": { "type": "array", "items": { "type": "integer" } },
+          "prefill": {
+            "type": "array",
+            "description": "Cold prefill tok/s at a prompt length",
+            "items": {
+              "type": "object", "required": ["context", "tps"],
+              "properties": { "context": { "type": "integer" }, "tps": { "type": "number" } }
+            }
+          },
+          "concurrency": {
+            "type": "array",
+            "description": "Aggregate tok/s across concurrent streams",
+            "items": {
+              "type": "object", "required": ["streams", "aggregate_tps"],
+              "properties": {
+                "streams": { "type": "integer" },
+                "aggregate_tps": { "type": "number" },
+                "per_stream_tps": { "type": "number" },
+                "ttft_p50_s": { "type": "number" }
+              }
+            }
+          },
+          "concurrency_prompt_tokens": { "type": "array", "items": { "type": "integer" } },
+          "max_context": { "type": "integer", "description": "Longest request, in tokens" },
+          "kv_pool_tokens": { "type": "integer" },
+          "max_concurrent": { "type": "integer", "description": "Requests decoding at once" },
+          "max_tokens_per_chat": {
+            "type": "array",
+            "items": {
+              "type": "object", "required": ["chats", "tokens"],
+              "properties": {
+                "chats": { "type": "integer" },
+                "tokens": { "type": "integer" },
+                "source": { "enum": ["measured", "computed"] }
+              }
+            }
+          },
+          "max_tokens_per_chat_note": { "type": "string" },
+          "lowest_mem_available_gib": { "type": "number" },
+          "quality": {
+            "type": "array",
+            "items": {
+              "type": "object", "required": ["name", "value"],
+              "properties": { "name": { "type": "string" }, "value": { "type": "string" } }
+            }
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "external" } } },
+      "then": { "required": ["source"] }
+    }
+  ]
+}

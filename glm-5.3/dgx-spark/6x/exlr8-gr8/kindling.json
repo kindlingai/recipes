@@ -1,5 +1,7 @@
 {
  "version": 1,
+ "id": "glm-5.3-exlr8-6x-spark",
+ "status": "stable",
  "title": "GLM-5.3",
  "variant": "exlr8 bit325, int4 KV, 1M context (2.18M pool)",
  "summary": "Full GLM-5.3 on six DGX Sparks at TP=6 with gr8 v1.1.1: exlr8 bit325 (v0.6), int4 KV with a 2,179,072-token pool (1,048,576 max context, SHARE_LIMIT=65,536), zero-copy shared prefix pages, MTP=3 drafting with confidence stopping, seven bit-exact v1.1.0 kernel paths plus MoE union cap (48 quality default, 32 fast preset), 8 concurrent sessions, 7.4+ GiB free RAM per box, and live-proven 4x250K concurrency (998K resident tokens).",
@@ -109,7 +111,7 @@
      "source": "computed"
     }
    ],
-   "max_tokens_per_chat_note": "prompt + max_tokens \u00b7 live-proven: 4x250K (998,413 resident tok, 4/4 needles, 99.9% cached)",
+   "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 4x250K (998,413 resident tok, 4/4 needles, 99.9% cached)",
    "quality": [
     {
      "name": "Smoke test",

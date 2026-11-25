@@ -1,5 +1,7 @@
 {
   "version": 1,
+  "id": "deepseek-v4.1-flash-exlr8-4x-spark",
+  "status": "stable",
   "title": "DeepSeek-V4.1-Flash",
   "variant": "exlr8 native, fp8 KV, fast mode",
   "summary": "DeepSeek-V4.1-Flash on four GB10 boxes with gr8 at TP=4: the exlr8 native release, fp8 KV, Engram, 32 chats at once, fast mode (not exact), measured 2026-11-11 on the staged image built from gr8 c2220f2 (one boot).",
@@ -11,6 +13,8 @@
     "Engram",
     "fp8 KV"
   ],
+  "image": "ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark",
+  "build": {},
   "default_config": "tp4",
   "configs": [
     {
@@ -104,5 +108,11 @@
         }
       ]
     }
-  ]
+  ],
+  "engine": {
+    "repo": "kindlingai/gr8",
+    "ref": "main",
+    "commit": "933c8853a1657e48d868e28a43fae4a40d3ddb3d",
+    "pin": "source"
+  }
 }

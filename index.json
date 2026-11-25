@@ -1346,7 +1346,7 @@
       "count": 4,
       "variant": "exlr8-vllm",
       "status": "external",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-25T12:38:04-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-gx10",
@@ -1522,7 +1522,7 @@
       "count": 4,
       "variant": "nvfp4-vllm",
       "status": "external",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-25T12:38:04-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-gx10",

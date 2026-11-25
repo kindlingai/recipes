@@ -1,0 +1,62 @@
+# Inkling-2-Mini EXLR8 + DFlash on one NVIDIA DGX Spark (GB10, 128 GB).
+# Runs gr8's published image, pinned by tag and digest, with this recipe's .env.
+# Serves an OpenAI-compatible API on http://127.0.0.1:${PORT:-8100}/v1
+#
+#   cp .env.example .env
+#   hf download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 \
+#     --local-dir ./models/inkling-2-mini-exlr8-k2-k3-k4
+#   docker compose up -d
+#   docker compose logs -f
+
+name: inkling-2-mini-1x-spark
+services:
+  gr8:
+    # The engine pin: gr8 main commit 6b874803 (PR #615); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:sha-6b87480@sha256:63465222330e8b938da2a5b6543912e2ddcd0fbb280b932eb5e7485df16b991c}
+    container_name: inkling-2-mini-1x-spark
+    entrypoint: ["/bin/bash", "/recipe/serve.sh"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - MODEL_DIR=/models/inkling-2-mini-exlr8-k2-k3-k4
+      - WORK_DIR=/tmp/ink2-gr8
+      - ENGINE_ROOT=/opt/gr8
+      - PY=/usr/bin/python3
+      - CAP=${CAP:-262144}
+      - SESSIONS=${SESSIONS:-4}
+      - VARIANT=${VARIANT:-k4}
+      - MTP=${MTP:-7}
+      - PREFILL=${PREFILL:-4096}
+      - PORT=${PORT:-8100}
+    network_mode: host
+    pid: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1
+      core: 0
+    cap_drop: [ALL]
+    cap_add: [IPC_LOCK]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: 30s
+    volumes:
+      - ./serve.sh:/recipe/serve.sh:ro
+      - ${MODEL_DIR:-./models/inkling-2-mini-exlr8-k2-k3-k4}:/models/inkling-2-mini-exlr8-k2-k3-k4:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:${PORT:-8100}/v1/models >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s
+    restart: on-failure

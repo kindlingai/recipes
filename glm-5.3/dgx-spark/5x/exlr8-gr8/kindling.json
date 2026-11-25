@@ -1,0 +1,130 @@
+{
+ "version": 1,
+ "title": "GLM-5.3",
+ "variant": "exlr8 bit325, int4 KV, 983K context",
+ "summary": "Full GLM-5.3 on five DGX Sparks at TP=5 with gr8 v1.1.1: exlr8 bit325 experts (v0.6), int4 KV with a 983,040-token pool, MTP=3 drafting with confidence stopping, seven bit-exact v1.1.0 kernel paths plus MoE union cap (48 quality default, 32 fast preset), up to 8 concurrent sessions, and 8.8+ GiB free RAM per box.",
+ "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+ "hardware": "DGX Spark (GB10)",
+ "stack": [
+  "gr8",
+  "exlr8",
+  "MTP",
+  "int4 KV"
+ ],
+ "engine": {
+  "repo": "kindlingai/gr8",
+  "ref": "v1.1.1",
+  "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+  "pin": "image",
+  "image": "ghcr.io/kindlingai/gr8:v1.1.1",
+  "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+ },
+ "default_config": "tp5",
+ "configs": [
+  {
+   "id": "tp5",
+   "label": "TP=5",
+   "nodes": 5,
+   "decode": {
+    "code": 68.9,
+    "prose": 50.8,
+    "structured": 71.8,
+    "counting": 74.9
+   },
+   "decode_prompt_tokens": [
+    46,
+    54
+   ],
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 1937
+    },
+    {
+     "context": 32768,
+     "tps": 1960
+    },
+    {
+     "context": 131072,
+     "tps": 1837
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 1,
+     "aggregate_tps": 60.9,
+     "per_stream_tps": 61.7,
+     "ttft_p50_s": 0.38
+    },
+    {
+     "streams": 2,
+     "aggregate_tps": 81.1,
+     "per_stream_tps": 47.3,
+     "ttft_p50_s": 0.76
+    },
+    {
+     "streams": 4,
+     "aggregate_tps": 104.2,
+     "per_stream_tps": 36.6,
+     "ttft_p50_s": 1.42
+    },
+    {
+     "streams": 8,
+     "aggregate_tps": 141.5,
+     "per_stream_tps": 29.0,
+     "ttft_p50_s": 3.14
+    }
+   ],
+   "concurrency_prompt_tokens": [
+    48,
+    55
+   ],
+   "max_context": 983034,
+   "kv_pool_tokens": 983040,
+   "max_concurrent": 8,
+   "max_tokens_per_chat": [
+    {
+     "chats": 1,
+     "tokens": 983034,
+     "source": "measured"
+    },
+    {
+     "chats": 2,
+     "tokens": 425722,
+     "source": "computed"
+    },
+    {
+     "chats": 4,
+     "tokens": 147322,
+     "source": "computed"
+    },
+    {
+     "chats": 8,
+     "tokens": 27834,
+     "source": "computed"
+    }
+   ],
+   "max_tokens_per_chat_note": "prompt + max_tokens",
+   "quality": [
+    {
+     "name": "Smoke test",
+     "value": "14 of 14"
+    },
+    {
+     "name": "Needle recall",
+     "value": "found at 128K"
+    },
+    {
+     "name": "Prompt cache",
+     "value": "422 of 423 cached"
+    },
+    {
+     "name": "Boot with QO cache",
+     "value": "60 s"
+    }
+   ],
+   "lowest_mem_available_gib": 8.77,
+   "notes": "bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=983,040, SHARE_LIMIT=32,768, SESS=8), MTP=3 with confidence stopping, 7 bit-exact v1.1.0 kernels ON, DEC_BK_MAX=2048, MOE_UNION_CAP=48 quality default (set MOE_UNION_CAP=32 for fast mode: 119.6 tok/s at C=4, 160.5 tok/s at C=8; or 0 for uncapped exact: 89.5 at C=4, 110.5 at C=8). bench/bench.py default level on 2026-11-20, one fresh boot on a 200G switch, GPU clocks uncapped in timed stages."
+  }
+ ]
+}

@@ -27,7 +27,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:13-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "deepseek-v4.1-flash-exlr8-4x-spark",
@@ -157,7 +157,7 @@
       "count": 3,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:11:59-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-3x-spark",
@@ -306,7 +306,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:00-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-4x-spark",
@@ -613,7 +613,7 @@
       "count": 4,
       "variant": "exlr8-k4-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:06-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-k4-4x-spark",
@@ -750,7 +750,7 @@
       "count": 5,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:01-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-5x-spark",
@@ -894,7 +894,7 @@
       "count": 6,
       "variant": "exl3-vllm",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:16-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-full-exl3-tp6",
@@ -991,7 +991,7 @@
       "count": 6,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:02-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-6x-spark",
@@ -1140,7 +1140,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:07-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-1x-spark",
@@ -1236,7 +1236,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:09-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-2x-spark",
@@ -1337,6 +1337,636 @@
       }
     },
     {
+      "id": "glm-5.3-flash-exlr8-gx10",
+      "path": "glm-5.3-flash/dgx-spark/4x/exlr8-vllm",
+      "url": "https://github.com/kindlingai/glm-5.3-flash-exlr8-gx10",
+      "model": "glm-5.3-flash",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 4,
+      "variant": "exlr8-vllm",
+      "status": "external",
+      "updated_at": null,
+      "kindling": {
+        "version": 1,
+        "id": "glm-5.3-flash-exlr8-gx10",
+        "status": "external",
+        "source": {
+          "repo": "kindlingai/glm-5.3-flash-exlr8-gx10"
+        },
+        "title": "GLM-5.3-Flash",
+        "variant": "NVFP4",
+        "summary": "nvidia/GLM-5.3-Flash-NVFP4 on vLLM with mentat in place of Ray, over RoCE. DFlash2 speculative decoding, GB10 NVFP4 MoE kernels, RDMA collectives and processed-weight snapshots for ~3 minute restarts.",
+        "model": "nvidia/GLM-5.3-Flash-NVFP4",
+        "hardware": "ASUS GX10 (GB10)",
+        "stack": [
+          "vLLM",
+          "mentat",
+          "DFlash2",
+          "RoCE"
+        ],
+        "default_config": "tp4",
+        "configs": [
+          {
+            "id": "tp2",
+            "label": "TP=2",
+            "nodes": 2,
+            "decode": {
+              "code": 66.2,
+              "prose": 42.6,
+              "structured": 94.7
+            },
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 2931
+              },
+              {
+                "context": 131072,
+                "tps": 2871
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 89
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 116
+              }
+            ],
+            "max_context": 160000,
+            "kv_pool_tokens": 1379896,
+            "max_concurrent": 16,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "6/6 up to 128k"
+              }
+            ]
+          },
+          {
+            "id": "tp3",
+            "label": "TP=3",
+            "nodes": 3,
+            "decode": {
+              "code": 88.0,
+              "prose": 54.2,
+              "structured": 121.4
+            },
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 3864
+              },
+              {
+                "context": 131072,
+                "tps": 3736
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 113
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 146
+              }
+            ],
+            "max_context": 524288,
+            "kv_pool_tokens": 2241667,
+            "max_concurrent": 64,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "12/12 up to 507k"
+              }
+            ]
+          },
+          {
+            "id": "tp4",
+            "label": "TP=4",
+            "nodes": 4,
+            "decode": {
+              "code": 117.3,
+              "prose": 70.5,
+              "structured": 164.3
+            },
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 4934
+              },
+              {
+                "context": 131072,
+                "tps": 4776
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 148
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 199
+              }
+            ],
+            "max_context": 524288,
+            "kv_pool_tokens": 5083602,
+            "max_concurrent": 64,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "12/12 up to 507k"
+              }
+            ]
+          },
+          {
+            "id": "tp6",
+            "label": "TP=6",
+            "nodes": 6,
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 4907
+              },
+              {
+                "context": 131072,
+                "tps": 4731
+              }
+            ],
+            "max_context": 524288,
+            "kv_pool_tokens": 4470000,
+            "max_concurrent": 64,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "12/12 up to 480k"
+              }
+            ],
+            "notes": "Decode not measured at TP=6. Ran on other boxes and builds, with GPU clocks locked at 1989 MHz."
+          }
+        ]
+      }
+    },
+    {
+      "id": "glm-5.3-flash-gx10",
+      "path": "glm-5.3-flash/dgx-spark/4x/nvfp4-vllm",
+      "url": "https://github.com/kindlingai/glm-5.3-flash-gx10",
+      "model": "glm-5.3-flash",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 4,
+      "variant": "nvfp4-vllm",
+      "status": "external",
+      "updated_at": null,
+      "kindling": {
+        "version": 1,
+        "id": "glm-5.3-flash-gx10",
+        "status": "external",
+        "source": {
+          "repo": "kindlingai/glm-5.3-flash-gx10"
+        },
+        "title": "GLM-5.3-Flash",
+        "variant": "NVFP4",
+        "summary": "nvidia/GLM-5.3-Flash-NVFP4 on vLLM with mentat in place of Ray, over RoCE. DFlash2 speculative decoding, GB10 NVFP4 MoE kernels, RDMA collectives and processed-weight snapshots for ~3 minute restarts.",
+        "model": "nvidia/GLM-5.3-Flash-NVFP4",
+        "hardware": "DGX SPARK (GB10)",
+        "stack": [
+          "vLLM",
+          "mentat",
+          "DFlash2",
+          "RoCE"
+        ],
+        "default_config": "tp4",
+        "configs": [
+          {
+            "id": "tp2",
+            "label": "TP=2",
+            "nodes": 2,
+            "decode": {
+              "code": 66.2,
+              "prose": 42.6,
+              "structured": 94.7
+            },
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 2931
+              },
+              {
+                "context": 131072,
+                "tps": 2871
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 89
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 116
+              }
+            ],
+            "max_context": 160000,
+            "kv_pool_tokens": 1379896,
+            "max_concurrent": 16,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "6/6 up to 128k"
+              }
+            ]
+          },
+          {
+            "id": "tp3",
+            "label": "TP=3",
+            "nodes": 3,
+            "decode": {
+              "code": 88.0,
+              "prose": 54.2,
+              "structured": 121.4
+            },
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 3864
+              },
+              {
+                "context": 131072,
+                "tps": 3736
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 113
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 146
+              }
+            ],
+            "max_context": 524288,
+            "kv_pool_tokens": 2241667,
+            "max_concurrent": 64,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "12/12 up to 507k"
+              }
+            ]
+          },
+          {
+            "id": "tp4",
+            "label": "TP=4",
+            "nodes": 4,
+            "decode": {
+              "code": 117.3,
+              "prose": 70.5,
+              "structured": 164.3
+            },
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 4934
+              },
+              {
+                "context": 131072,
+                "tps": 4776
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 148
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 199
+              }
+            ],
+            "max_context": 524288,
+            "kv_pool_tokens": 5083602,
+            "max_concurrent": 64,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "12/12 up to 507k"
+              }
+            ]
+          },
+          {
+            "id": "tp6",
+            "label": "TP=6",
+            "nodes": 6,
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 4907
+              },
+              {
+                "context": 131072,
+                "tps": 4731
+              }
+            ],
+            "max_context": 524288,
+            "kv_pool_tokens": 4470000,
+            "max_concurrent": 64,
+            "quality": [
+              {
+                "name": "Needle recall",
+                "value": "12/12 up to 480k"
+              }
+            ],
+            "notes": "Decode not measured at TP=6. Ran on other boxes and builds, with GPU clocks locked at 1989 MHz."
+          }
+        ]
+      }
+    },
+    {
+      "id": "nemotron-3.5-bolt-rtx5090",
+      "path": "nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm",
+      "url": "https://github.com/kindlingai/recipes/tree/main/nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm",
+      "model": "nemotron-3.5-bolt",
+      "hardware": "rtx-5090",
+      "hardware_name": "RTX 5090",
+      "count": 1,
+      "variant": "nvidia-24gb-vllm",
+      "status": "stable",
+      "updated_at": "2026-11-25T12:12:19-05:00",
+      "kindling": {
+        "version": 1,
+        "id": "nemotron-3.5-bolt-rtx5090",
+        "status": "stable",
+        "title": "Nemotron 3.5 Bolt 74B-A9B",
+        "variant": "NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter",
+        "summary": "The model card's vLLM command for Nemotron 3.5 Bolt 74B-A9B (24GB) on one 32 GB RTX 5090, changed only where a 32 GB card needs it, with three profiles: fast, long and multi.",
+        "model": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+        "hardware": "RTX 5090 32 GB",
+        "stack": [
+          "vLLM",
+          "fp8 KV",
+          "DFlash"
+        ],
+        "default_config": "fast",
+        "configs": [
+          {
+            "id": "fast",
+            "label": "fast",
+            "nodes": 1,
+            "decode": {
+              "512 tokens": 218
+            },
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 6277
+              },
+              {
+                "context": 32768,
+                "tps": 6003
+              }
+            ],
+            "max_context": 262144,
+            "max_concurrent": 1,
+            "quality": [
+              {
+                "name": "Needle at 196K tokens",
+                "value": "passed"
+              },
+              {
+                "name": "Needle at 250K tokens",
+                "value": "passed"
+              }
+            ],
+            "notes": "DFlash LiLiCorr drafter, 5 tokens, GPU mem util 0.95. Power limit 408 W, stock clocks, fp8 KV, warm runs. Decode is about 218 tok/s: medians of 8 runs on 3 boots were 226, 213, 217."
+          },
+          {
+            "id": "long",
+            "label": "long",
+            "nodes": 1,
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 6675
+              },
+              {
+                "context": 32768,
+                "tps": 6263
+              }
+            ],
+            "max_context": 262144,
+            "max_concurrent": 1,
+            "quality": [
+              {
+                "name": "Needle at 196K tokens",
+                "value": "passed"
+              }
+            ],
+            "notes": "No drafter, GPU mem util 0.96. Power limit 408 W, stock clocks, fp8 KV, warm runs. 196K prefill 4,460-4,490 tok/s."
+          },
+          {
+            "id": "multi",
+            "label": "multi",
+            "nodes": 1,
+            "decode": {
+              "512 tokens": 172
+            },
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 6537
+              },
+              {
+                "context": 32768,
+                "tps": 6092
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 463,
+                "per_stream_tps": 121
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 738,
+                "per_stream_tps": 95
+              }
+            ],
+            "max_context": 32768,
+            "max_concurrent": 8,
+            "notes": "No drafter, 8 sequences, GPU mem util 0.88 with VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0. Power limit 408 W, stock clocks, fp8 KV, warm runs, 512-token decode, all requests started at once. The 4-request figures were measured with 4 sequences; with 8 sequences 4 requests give 429-434 tok/s total."
+          }
+        ]
+      }
+    },
+    {
+      "id": "nemotron-3.5-super-vl-dgx-spark",
+      "path": "nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm",
+      "url": "https://github.com/kindlingai/recipes/tree/main/nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm",
+      "model": "nemotron-3.5-super-vl",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 1,
+      "variant": "nvfp4-vllm",
+      "status": "stable",
+      "updated_at": "2026-11-25T12:12:18-05:00",
+      "kindling": {
+        "version": 1,
+        "id": "nemotron-3.5-super-vl-dgx-spark",
+        "status": "stable",
+        "title": "Nemotron 3.5 Super VL 120B-A12B",
+        "variant": "NVFP4, DFlash LiLiCorr drafter",
+        "summary": "The model card's vLLM recipe for Nemotron 3.5 Super VL NVFP4 on one DGX Spark, and tensor-parallel across two with vLLM's built-in multi-node options, plus two tuned TP2 profiles.",
+        "model": "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4",
+        "hardware": "DGX Spark (GB10)",
+        "stack": [
+          "vLLM",
+          "NVFP4",
+          "DFlash"
+        ],
+        "default_config": "1spark",
+        "configs": [
+          {
+            "id": "1spark",
+            "label": "1 Spark, drafter",
+            "nodes": 1,
+            "decode": {
+              "tg128": 40.9
+            },
+            "prefill": [
+              {
+                "context": 2048,
+                "tps": 2156
+              },
+              {
+                "context": 8192,
+                "tps": 3058
+              },
+              {
+                "context": 32768,
+                "tps": 2870
+              }
+            ],
+            "notes": "Card recipe: DFlash LiLiCorr drafter, 7 tokens, 1 sequence, 1M context, stock clocks for the 8K/32K prefill (512-token bench: 25-26 tok/s single-stream decode). tg128 and the 2048 prefill are llama-benchy pp2048 + tg128 at depth 0, mean of 3 runs, GPU clock capped at 2000 MHz."
+          },
+          {
+            "id": "1spark-nospec",
+            "label": "1 Spark, no drafter",
+            "nodes": 1,
+            "decode": {
+              "512 tokens": 18.7
+            },
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 47,
+                "per_stream_tps": 11.9
+              }
+            ],
+            "max_concurrent": 4,
+            "quality": [
+              {
+                "name": "Needle at 60% depth, 250K-token prompt",
+                "value": "found (first token after 137 s)"
+              },
+              {
+                "name": "Needle, 900K-token prompt",
+                "value": "not found (1 try)"
+              }
+            ],
+            "notes": "--max-num-seqs 4, 1M context, stock clocks, 512-token decode, warm runs."
+          },
+          {
+            "id": "tp2-balanced",
+            "label": "TP=2, balanced",
+            "nodes": 2,
+            "decode": {
+              "tg128": 65.0
+            },
+            "prefill": [
+              {
+                "context": 2048,
+                "tps": 3357
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 1,
+                "aggregate_tps": 68
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 108
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 116
+              },
+              {
+                "streams": 10,
+                "aggregate_tps": 129,
+                "per_stream_tps": 19
+              }
+            ],
+            "quality": [
+              {
+                "name": "250K-token needle",
+                "value": "found (first token after 102 s)"
+              }
+            ],
+            "notes": "b12x MoE + linear, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 3,314-3,372 tok/s at 8K and 3,300-3,314 at 32K; single-stream decode 43-44 tok/s prose, 59-74 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 4.2 s)."
+          },
+          {
+            "id": "tp2-decode",
+            "label": "TP=2, decode",
+            "nodes": 2,
+            "decode": {
+              "tg128": 64.1
+            },
+            "prefill": [
+              {
+                "context": 2048,
+                "tps": 2584
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 1,
+                "aggregate_tps": 50
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 141
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 113
+              },
+              {
+                "streams": 10,
+                "aggregate_tps": 122,
+                "per_stream_tps": 20
+              }
+            ],
+            "quality": [
+              {
+                "name": "250K-token needle",
+                "value": "found (first token after 113 s)"
+              }
+            ],
+            "notes": "marlin MoE, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 2,798-3,014 tok/s at 8K and 2,892-2,900 at 32K; single-stream decode 44-46 tok/s prose, 71-79 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 5.4 s)."
+          }
+        ]
+      }
+    },
+    {
       "id": "qwen3.8-flash-next-exlr8-1x-spark",
       "path": "qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8",
       "url": "https://github.com/kindlingai/recipes/tree/main/qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8",
@@ -1346,7 +1976,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "experimental",
-      "updated_at": "2026-11-25T12:12:03-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-1x-spark",
@@ -1615,7 +2245,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "experimental",
-      "updated_at": "2026-11-25T12:12:04-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-2x-spark",
@@ -1884,6 +2514,66 @@
       }
     },
     {
+      "id": "qwen3.8-flash-next-exlr8-1x-gpu",
+      "path": "qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8",
+      "url": "https://github.com/kindlingai/recipes/tree/main/qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8",
+      "model": "qwen3.8-flash-next",
+      "hardware": "rtx-5090",
+      "hardware_name": "RTX 5090",
+      "count": 1,
+      "variant": "exlr8-gr8",
+      "status": "experimental",
+      "updated_at": "2026-11-25T12:19:34-05:00",
+      "kindling": {
+        "version": 1,
+        "id": "qwen3.8-flash-next-exlr8-1x-gpu",
+        "status": "experimental",
+        "title": "Qwen3.8-Flash-Next",
+        "variant": "exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4",
+        "summary": "Qwen3.8-Flash-Next K3 (bit300, 3.00 bpw) on one Blackwell GPU with gr8: hot routed experts in VRAM, cold experts in pinned host RAM run on AVX-512 CPU threads and the GPU, FP8 dense weights and an INT4 MTP=4 drafter, under a 22.9 GiB VRAM ceiling.",
+        "model": "kindlingai/Qwen3.8-Flash-Next-exlr8",
+        "hardware": "RTX 5090 32 GB + 128 GB DDR5",
+        "stack": [
+          "gr8",
+          "exlr8",
+          "MTP",
+          "FP8",
+          "CPU offload"
+        ],
+        "engine": {
+          "repo": "kindlingai/gr8",
+          "ref": "main",
+          "commit": "5cedece3c4371e8dbf974078bdd22129c38e71c8",
+          "pin": "source"
+        },
+        "default_config": "1gpu",
+        "configs": [
+          {
+            "id": "1gpu",
+            "label": "1 GPU",
+            "nodes": 1,
+            "decode": {
+              "code": 171.1,
+              "prose": 149.7,
+              "short chat": 130.2,
+              "multi-turn tool": 113.0,
+              "9.7K prompt": 124.7,
+              "38.5K prompt": 108.7
+            },
+            "max_context": 40960,
+            "max_concurrent": 1,
+            "quality": [
+              {
+                "name": "Greedy token parity, GPU UVA vs AVX-512 CPU MoE (MTP=0)",
+                "value": "32/32 bit-exact"
+              }
+            ],
+            "notes": "1x RTX 5090 32 GB, Ryzen 7 9800X3D, 128 GB DDR5. HTTP streaming /v1/chat/completions, temperature 0, 3-run medians, under a 22.9 GiB VRAM ceiling (about 7.2 GiB of other services resident on the card); 6,853 hot experts in VRAM. MTP=4, cap 40960 (serve.sh defaults). gr8 main with PR #610."
+          }
+        ]
+      }
+    },
+    {
       "id": "sage-s2.1-flash-exlr8-2x-spark",
       "path": "sage-s2.1-flash/dgx-spark/2x/exlr8-gr8",
       "url": "https://github.com/kindlingai/recipes/tree/main/sage-s2.1-flash/dgx-spark/2x/exlr8-gr8",
@@ -1893,7 +2583,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:11-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-2x-spark",
@@ -2001,7 +2691,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:12:12-05:00",
+      "updated_at": "2026-11-25T12:19:34-05:00",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-4x-spark",
@@ -2104,6 +2794,161 @@
                 "value": "found at 128K"
               }
             ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "step5-tp4-gb10-recipe",
+      "path": "step-5-preview/dgx-spark/4x/nvfp4-vllm",
+      "url": "https://github.com/kindlingai/recipes/tree/main/step-5-preview/dgx-spark/4x/nvfp4-vllm",
+      "model": "step-5-preview",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 4,
+      "variant": "nvfp4-vllm",
+      "status": "experimental",
+      "updated_at": "2026-11-25T12:12:17-05:00",
+      "kindling": {
+        "version": 1,
+        "id": "step5-tp4-gb10-recipe",
+        "status": "experimental",
+        "title": "Step-5 Preview",
+        "variant": "NVFP4, staged FP8 KV, MTP3, 576K context",
+        "summary": "A recipe skeleton for Step-5-Preview-NVFP4 with vLLM tensor parallelism across four DGX Sparks: weights split over three nodes' NVMe and shared read-only over NFS, dense attention, staged FP8 KV and MTP3.",
+        "model": "stepfun-ai/Step-5-Preview-NVFP4",
+        "weights_commit": "bc246cc2848e17b37f377eda8fd825c5b3018d1f",
+        "hardware": "DGX Spark (GB10)",
+        "stack": [
+          "vLLM",
+          "NVFP4",
+          "FP8 KV",
+          "MTP",
+          "NFS"
+        ],
+        "default_config": "b5-fp8",
+        "configs": [
+          {
+            "id": "b5-fp8",
+            "label": "TP=4, 576K FP8 KV",
+            "nodes": 4,
+            "decode": {
+              "code": 27.89,
+              "prose": 27.24,
+              "structured": 28.4
+            },
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 1317.13
+              },
+              {
+                "context": 32768,
+                "tps": 1232.33
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 62.93,
+                "per_stream_tps": 16.28
+              }
+            ],
+            "max_context": 589824,
+            "kv_pool_tokens": 604080,
+            "max_concurrent": 8,
+            "lowest_mem_available_gib": 8.222,
+            "quality": [
+              {
+                "name": "Cold 575K-token needle",
+                "value": "PASS (1 try)"
+              }
+            ],
+            "notes": "Default profile. Run b5-fp8-20261016T002142Z, 2026-10-16. Four DGX Sparks, GPU clocks capped at 2000 MHz, MTP3, FP8 E4M3 KV (staged overlay), 40000 blocks, GMU 0.86, dense attention, dual-rail C2. 512-token decode; prefill is prompt tokens / client TTFT. Three-repeat medians."
+          },
+          {
+            "id": "b4-fp8",
+            "label": "TP=4, 442K FP8 KV",
+            "nodes": 4,
+            "decode": {
+              "code": 28.27,
+              "prose": 28.02,
+              "structured": 28.56
+            },
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 1321.13
+              },
+              {
+                "context": 32768,
+                "tps": 1232.78
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 63.71,
+                "per_stream_tps": 16.86
+              }
+            ],
+            "max_context": 442368,
+            "kv_pool_tokens": 444739,
+            "max_concurrent": 8,
+            "lowest_mem_available_gib": 10.0592,
+            "quality": [
+              {
+                "name": "430K-token needle (prefix-cached retry)",
+                "value": "PASS"
+              },
+              {
+                "name": "Top-1 agreement vs BF16 KV, 8K / 32K prompt",
+                "value": "99.84% / 99.98%"
+              },
+              {
+                "name": "Mean NLL change vs BF16 KV (41,157 positions)",
+                "value": "-0.0001"
+              }
+            ],
+            "notes": "Safer FP8 profile. Run b4-fp8-20261015T232239Z, 2026-10-15. GPU clocks capped at 2000 MHz, MTP3, 30000 blocks, GMU 0.85, dual-rail C2. Three-repeat medians."
+          },
+          {
+            "id": "b4-bf16-192k",
+            "label": "TP=4, 192K BF16 KV",
+            "nodes": 4,
+            "decode": {
+              "code": 28.61,
+              "prose": 27.95,
+              "structured": 27.07
+            },
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 1324.84
+              },
+              {
+                "context": 32768,
+                "tps": 1236.88
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 4,
+                "aggregate_tps": 60.09,
+                "per_stream_tps": 16.06
+              }
+            ],
+            "max_context": 196608,
+            "kv_pool_tokens": 258523,
+            "max_concurrent": 8,
+            "lowest_mem_available_gib": 9.5595,
+            "quality": [
+              {
+                "name": "190K-token needle",
+                "value": "PASS (1 try)"
+              }
+            ],
+            "notes": "BF16 KV safe option. Run b4-20261015T223410Z, 2026-10-15. GPU clocks capped at 2000 MHz, MTP3, GMU 0.85, dense attention, dual-rail C2. Three-repeat medians."
           }
         ]
       }

@@ -5,7 +5,8 @@ README and an `index.json` the website reads. Adding a recipe becomes: add a fol
 website change, no new repo.
 
 Survey date: 2026-11-25, from `gh repo list kindlingai` plus each repo's tree, `kindling.json`, workflows, submodules,
-open PRs and issues.
+open PRs and issues. **Status: built locally, not pushed.** Section 7 has what is done and the remote steps left;
+section 8 the decisions taken.
 
 ## 1. What exists today
 
@@ -68,7 +69,7 @@ recipes/
 │   ├── kindling.v1.json      moved here from kindling-site; source of truth
 │   └── index.v1.json
 ├── tools/
-│   ├── build_index.py        scan, validate, write index.json + README block (stdlib only)
+│   ├── build_index.py        scan, validate (jsonschema), write index.json + README block
 │   ├── check_pin.py          today's per-repo check.py, generalised: check_pin.py <dir> [--strict]
 │   ├── engine.sh             check out the pinned gr8 commit into <dir>/gr8 for local image builds
 │   └── adopt.sh              import a repo with history into <path> (from graveyard/bury.sh)
@@ -76,7 +77,8 @@ recipes/
 │   ├── index.yml             validate on PR; regenerate + commit on main
 │   ├── recipes.yml           per changed recipe: check_pin, compose config, pinned image exists
 │   └── recipe-image.yml      reusable (workflow_call): the one image.yml every Dockerfile recipe shares
-├── AGENTS.md / CONTRIBUTING.md
+├── CONTRIBUTING.md
+├── cli/                      @kindlingai/recipe: npx <id> fetches one recipe, ready to run
 ├── glm-5.3/
 │   └── dgx-spark/
 │       ├── 3x/exlr8-gr8/     kindling.json, compose.yaml, .env.example, README.md, AGENTS.md, docs/
@@ -331,29 +333,43 @@ the site shows them with no special case.
 - `kindling-site` cutover (section 4) after wave 1 merges, so the site never shows fewer recipes than today: until then
   it keeps reading the old repos.
 
-## 7. Phases and acceptance
+## 7. Status
 
-| Phase | Done when |
+Done locally (this repo, branch `main`; nothing pushed):
+
+| Phase | State |
 |---|---|
-| 0. Bootstrap | `kindlingai/recipes` exists (public), root files from section 2, `hardware.json`, schemas; `build_index.py` on an empty tree writes an empty index and README block; ruleset lets the bot push. |
-| 1. Wave 1 | 7 recipes adopted with history; `index.yml` on `main` produced the README table and `index.json` without a hand edit; `recipes.yml` green for all 7; old repos archived with pointer READMEs. |
-| 2. Site cutover | `/api/recipes` serves every non-retired index entry; adding a throwaway `kindling.json` folder on a branch → merged → card appears on the site within ~10 min with no kindling-site commit; reverting removes it. |
-| 3. Wave 2 | Each image recipe pushes to its **old** `ghcr.io/kindlingai/<id>` name from `recipe-image.yml`; no submodules left; PR #39 (deepseek-4x) and PR #2 (glm-5.3-4x) merged or closed before adoption. |
-| 4. Wave 3 + external | vLLM recipes adopted with authored `kindling.json`; two `external` entries render cards linking to their repos. |
-| 5. gr8 follow-through | `gr8/docs/cards/make.sh` reads `index.json`; gr8 docs link the new paths. |
+| 0. Bootstrap | Root files, `hardware.json`, schemas, tools, workflows (`index.yml`, `recipes.yml`, `recipe-image.yml`, `cli.yml`; actionlint clean). |
+| 1-3. Waves | All 17 repos adopted with history (`tools/adopt.sh`); per-repo CI, submodules, `check.py` and duplicate licenses removed; `engine` pins backfilled; `smoke.sh` extracted from each image workflow; READMEs/AGENTS.md rewritten for the monorepo; `kindling.json` authored for the four recipes that had none. `build_index.py`: 19 recipes valid; `check_pin.py`: all pass. |
+| 4. External | `glm-5.3-flash-gx10` and `glm-5.3-flash-exlr8-gx10` listed as `external` (`tools/sync_external.py`). |
+| 5. Site | `kindling-site` branch `recipes-index`: reads `index.json` once, bundled fallback, hardware names/units from the index. |
+| 6. gr8 | `gr8` branch `recipes-monorepo`: `recipes.json` by id, `docs/cards/make.sh` reads the index, doc links point at the monorepo. |
+| 7. CLI | `cli/`: `npx @kindlingai/recipe <id>` (sparse folder fetch, `.env` from `.env.example`), `--history` (filter-branch, grafted onto the old repo's history with original ids and tags), `--engine`, `--list`; `cli/smoke.sh` passes. |
 
-## 8. Decisions needed
+Remote steps left, in order:
 
-1. **Layout depth**: four fixed levels `<model>/<hardware>/<count>x/<variant>` (recommended; three levels already
-   collide on `glm-5.3/dgx-spark/4x`), or three levels with `<count>x-<variant>` as the leaf name.
-2. **Hardware slug for GB10**: `dgx-spark` (matches site copy and repo names; ASUS GX10 as an alias) or `gb10` (the
-   chip; vendor-neutral).
-3. **gx10 stacks**: `external` link entries (recommended) or full migration with issue transfer.
-4. **deepseek-v4.1-flash-exlr8-2x-spark**: stays private and out of the public repo until it has numbers, or is
-   published as `status: wip`.
-5. **Bot push to `main`**: ruleset bypass for `github-actions[bot]`, or a GitHub App token.
-6. **qwen3.8-flash-next 1x-gpu hardware**: `rtx-5090` (what was measured) or a generic `blackwell-gpu` slug (what the
-   README claims).
+1. Create `kindlingai/recipes` (public), push `main` and the tags (`git push origin main --tags`; GitHub creates no
+   workflow events for more than three tags in one push, so the 150 adopted tags trigger nothing).
+2. `main` ruleset: let `github-actions[bot]` push (the Index workflow commits `index.json`).
+3. GHCR: give `kindlingai/recipes` write access to the four built images (`glm-5.3-exlr8-k4-4x-spark`,
+   `glm-5.3-flash-exlr8-{1x,2x}-spark`, `deepseek-v4.1-flash-exlr8-4x-spark`).
+4. npm: create the `@kindlingai` scope, add `NPM_TOKEN`, push tag `cli/v0.1.0`.
+5. Push and merge `kindling-site` `recipes-index` and `gr8` `recipes-monorepo`.
+6. Per old repo: merge or close open PRs (`glm-5.3-exlr8-4x-spark` #2, `deepseek-v4.1-flash-exlr8-4x-spark` #39),
+   push a pointer README, archive.
+
+## 8. Decisions taken
+
+1. **Layout depth**: four fixed levels `<model>/<hardware>/<count>x/<variant>`.
+2. **Hardware slug for GB10**: `dgx-spark`, with ASUS GX10 and GB10 as aliases.
+3. **gx10 stacks**: `external` entries; they stay their own repos.
+4. **deepseek-v4.1-flash-exlr8-2x-spark**: held back (private, empty configs); adopt with `tools/adopt.sh` when it has
+   numbers and should be public.
+5. **Bot push to `main`**: ruleset bypass for `github-actions[bot]` (`index.yml` uses `GITHUB_TOKEN`).
+6. **qwen3.8-flash-next 1x-gpu hardware**: `rtx-5090`, what was measured.
+7. **Sage images**: their repos never had image CI, so their `kindling.json` has no `build` object and CI does not
+   build them, as before. Their READMEs say each commit is published as `sha-<commit>`; adding `build` and a
+   `smoke.sh` would make that true.
 
 ## 9. Risks
 

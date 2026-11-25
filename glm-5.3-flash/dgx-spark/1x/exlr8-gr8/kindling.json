@@ -1,0 +1,72 @@
+{
+ "version": 1,
+ "title": "GLM-5.3-Flash",
+ "variant": "exlr8 bit201, int4 KV",
+ "summary": "GLM-5.3-Flash on one GB10 with gr8: the bit201 exlr8 manifest, int4 KV, DFlash2 for a request alone, four sessions sharing a 700K-token KV pool, and a prompt cache on disk.",
+ "model": "kindlingai/glm-5.3-flash-exlr8-k2-k3-k4",
+ "hardware": "ASUS GX10 / DGX Spark (GB10)",
+ "stack": [
+  "gr8",
+  "exlr8",
+  "DFlash2",
+  "int4 KV"
+ ],
+ "default_config": "tp1",
+ "configs": [
+  {
+   "id": "tp1",
+   "label": "TP=1",
+   "nodes": 1,
+   "decode": {
+    "code": 53.8,
+    "prose": 28.2,
+    "structured": 65.1
+   },
+   "prefill": [
+    {
+     "context": 8192,
+     "tps": 995
+    },
+    {
+     "context": 32768,
+     "tps": 1024
+    },
+    {
+     "context": 131072,
+     "tps": 916
+    }
+   ],
+   "concurrency": [
+    {
+     "streams": 1,
+     "aggregate_tps": 43.5
+    },
+    {
+     "streams": 2,
+     "aggregate_tps": 41.3
+    },
+    {
+     "streams": 4,
+     "aggregate_tps": 53.4
+    },
+    {
+     "streams": 8,
+     "aggregate_tps": 57.5
+    }
+   ],
+   "max_context": 262144,
+   "kv_pool_tokens": 700032,
+   "max_concurrent": 4,
+   "quality": [
+    {
+     "name": "int4 vs bf16 KV",
+     "value": "top-1 12/12 after 8K and 32K prefills"
+    },
+    {
+     "name": "Needle recall",
+     "value": "found at 128K (8 of 8 runs)"
+    }
+   ]
+  }
+ ]
+}

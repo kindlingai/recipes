@@ -1,8 +1,9 @@
 # For agents: boot Sage-S2.1-Flash on four DGX Sparks
 
-You are booting this recipe for someone. This file is the end-to-end quickstart from clone to a served, tested endpoint,
-with every knob and how to check each step. It is derived from `README.md`, `knobs.sh`, `.env.example`, `compose.yaml`,
-`Dockerfile`, and `gr8` (the `gr8/` submodule). If this file and `knobs.sh` or `compose.yaml` disagree, follow
+You are booting this recipe for someone. This file is the end-to-end quickstart from download to a served, tested
+endpoint, with every knob and how to check each step. It is derived from `README.md`, `knobs.sh`, `.env.example`,
+`compose.yaml`, `Dockerfile`, and `gr8` (its source in `gr8/`, at the commit `kindling.json` pins as `engine.commit`).
+Paths here are relative to this recipe's folder. If this file and `knobs.sh` or `compose.yaml` disagree, follow
 `knobs.sh` and `compose.yaml` and tell the person. Do not skip checks.
 
 ## 1. Check the four boxes
@@ -42,14 +43,13 @@ On all four boxes:
   - Direct ring (`SHAPE=ring`): list `PEERS` in cable order (each box's `f0` port cabled to the next box's `f1` port)
     and leave `IPS` and `IPS2` unset.
 
-## 2. Clone and configure
+## 2. Get the recipe and configure
 
 Use the exact same `.env` on all four boxes.
 
 ```bash
-git clone --recurse-submodules https://github.com/kindlingai/sage-s2.1-flash-exlr8-4x-spark
-cd sage-s2.1-flash-exlr8-4x-spark
-cp .env.example .env
+npx @kindlingai/recipe sage-s2.1-flash-exlr8-4x-spark && cd sage-s2.1-flash-exlr8-4x-spark
+# the CLI already copied .env.example to .env; edit it as below
 ```
 
 Edit `.env` on all four boxes to uncomment and set `PEERS`, `IPS`, `IPS2` (or `PEERS` + `SHAPE=ring`, or `MENTAT=1`).
@@ -102,7 +102,9 @@ All knobs:
    ```bash
    docker compose up -d
    ```
-   (Use `docker compose up -d --build` to build locally from the `gr8/` submodule instead of pulling from GHCR.)
+   (Use `docker compose up -d --build` to build locally instead of pulling from GHCR. It needs gr8's source in `gr8/`
+   at `engine.commit`: get the recipe with `npx @kindlingai/recipe sage-s2.1-flash-exlr8-4x-spark --engine`, or run
+   `tools/engine.sh sage-s2.1-flash/dgx-spark/4x/exlr8-gr8` from the root of a monorepo clone.)
 4. Follow logs on the head until `serving: http://...` appears:
    ```bash
    docker compose logs -f
@@ -155,7 +157,7 @@ Run all checks after `serving:` appears on the head:
 | `an engine is already running` | stop the other model container first |
 | `handshake refused: join: ... did not answer within 600s` | start all four boxes within 600 s; check `PEERS` matches and ports 7340/7341 are open |
 | `handshake refused: ...` | ensure `.env` and image digest are identical on all four boxes |
-| image fails to pull | run `docker compose build` on all four boxes from a clone with `--recurse-submodules` |
+| image fails to pull | put gr8's source in `gr8/` (`npx @kindlingai/recipe sage-s2.1-flash-exlr8-4x-spark --engine`, or `tools/engine.sh sage-s2.1-flash/dgx-spark/4x/exlr8-gr8` from the monorepo root), then run `docker compose build` on all four boxes |
 
 Logs while running: `docker compose exec gr8 gr8 glm53f logs supervisor` (or `shim`, `front`, or no arg for engine).
 

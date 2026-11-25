@@ -2,7 +2,7 @@
 # Run this file on both boxes with the same .env (PEERS: the two LAN addresses, head first). The head serves on port 8100.
 #
 #   docker compose up -d                # pulls the image (CI publishes it), fetches this box's part, joins the other
-#   docker compose up -d --build        # or builds the image here from the gr8 submodule
+#   docker compose up -d --build        # or builds the image here from gr8/ (the pinned engine source, --engine)
 #   docker compose logs -f              # the supervisor, ready when it prints that the cluster serves
 #   docker compose exec gr8 gr8 glm53f smoke
 #

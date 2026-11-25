@@ -67,14 +67,17 @@ Set a knob (below) with `-e`, for example `-e CAP=262208`. `:latest` is main. Ea
 `compose.yaml` runs the same image with the same settings, and reads the knobs from `.env`:
 
 ```bash
-git clone --recurse-submodules https://github.com/kindlingai/glm-5.3-flash-exlr8-1x-spark
-cd glm-5.3-flash-exlr8-1x-spark
+npx @kindlingai/recipe glm-5.3-flash-exlr8-1x-spark --engine && cd glm-5.3-flash-exlr8-1x-spark
 docker compose up -d
 docker compose logs -f
 docker compose exec gr8 gr8 glm53f smoke
 ```
 
-`docker compose up -d --build` builds the image on the box instead (about 30 minutes cold).
+`docker compose up -d --build` builds the image on the box instead (about 30 minutes cold). `--engine` puts the gr8
+source in `gr8/` at the commit `kindling.json` pins (`engine.commit`); without it, compose only pulls the image.
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3-flash/dgx-spark/1x/exlr8-gr8)
+at `glm-5.3-flash/dgx-spark/1x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
 
 ## Knobs
 
@@ -134,6 +137,6 @@ needs.
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/glm-5.3-flash-exlr8-1x-spark/issues). Include the command you ran and the end of
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue (https://github.com/kindlingai/recipes/issues) with
+`glm-5.3-flash-exlr8-1x-spark` in the title. Include the command you ran and the end of
 `docker logs glm53f-1x-spark`. Remove addresses and hostnames before you post.

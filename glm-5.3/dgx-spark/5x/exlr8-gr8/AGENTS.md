@@ -2,7 +2,8 @@
 
 You are booting this recipe for someone. Follow the steps in order and run each check. If a check fails, stop and
 tell the person what failed. If this file and `compose.yaml` or `.env.example` disagree, follow those two files and
-tell the person.
+tell the person. Paths here are relative to this recipe's folder (`glm-5.3/dgx-spark/5x/exlr8-gr8` in
+[kindlingai/recipes](https://github.com/kindlingai/recipes)); run every command in it unless a step says otherwise.
 
 ## 1. Check every box
 
@@ -22,7 +23,8 @@ tell the person.
 On every box: `sudo mkdir -p /srv/gr8/cache/qocache && sudo chown -R 1000:1000 /srv/gr8/cache` (or the `GR8_CACHE`
 directory the person wants, with a `qocache` directory in it). Without `qocache`, no QO cache is written.
 
-Copy `.env.example` to `.env`. Set `PEERS` to the five LAN addresses, head first. Use the same `.env` on every box.
+`npx @kindlingai/recipe glm-5.3-exlr8-5x-spark` already copied `.env.example` to `.env`; in a clone of the recipes
+repo, copy it yourself. Set `PEERS` to the five LAN addresses, head first. Use the same `.env` on every box.
 Ask the person before you change any other line.
 
 ## 3. Boot
@@ -43,7 +45,7 @@ On the head:
 
 On the head: `docker compose exec gr8 /opt/gr8/gr8 glm53 down`. Then `docker compose down` on every box.
 
-## Rules for changes to this repo
+## Rules for changes to this recipe
 
 - Every number in `README.md` and `kindling.json` comes from a measured run. Say the date, the box count and the
   engine build. Do not copy a number from another build without its date.
@@ -52,4 +54,4 @@ On the head: `docker compose exec gr8 /opt/gr8/gr8 glm53 down`. Then `docker com
 - The engine pin is one exact gr8 commit and one image digest. Never a moving tag alone, never a patched engine. An
   engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8) as a pull request; this recipe then moves
   its pin to the merged commit or the next release.
-- Run `python3 check.py` before you commit.
+- Run `python3 tools/check_pin.py glm-5.3/dgx-spark/5x/exlr8-gr8` from the monorepo root before you commit.

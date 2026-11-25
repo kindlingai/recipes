@@ -84,9 +84,9 @@ Even on this quality-first `bit387` (`MOE_UNION_CAP=0`) recipe, `gr8` uses **mix
 On each of the four boxes:
 
 ```bash
-git clone https://github.com/kindlingai/glm-5.3-exlr8-k4-4x-spark
-cd glm-5.3-exlr8-k4-4x-spark
-cp .env.example .env        # fill in PEERS (and IPS, IPS2) unless the boxes run mentat; keep DRAFTER + DEC_BK=2048
+npx @kindlingai/recipe glm-5.3-exlr8-k4-4x-spark && cd glm-5.3-exlr8-k4-4x-spark
+# the CLI already copied .env.example to .env; edit it:
+nano .env                   # fill in PEERS (and IPS, IPS2) unless the boxes run mentat; keep DRAFTER + DEC_BK=2048
 docker compose up -d
 ```
 
@@ -99,12 +99,21 @@ docker compose exec gr8 /opt/gr8/gr8 glm53 smoke        # on the head
 curl http://localhost:8100/v1/models                    # on the head
 ```
 
+`docker compose up -d --build` builds the image on the box instead. For that, fetch the recipe with
+`npx @kindlingai/recipe glm-5.3-exlr8-k4-4x-spark --engine`: it puts the gr8 source in `gr8/` at the commit
+`kindling.json` pins (`engine.commit`); without it, compose only pulls the image.
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/4x/exlr8-k4-gr8) at `glm-5.3/dgx-spark/4x/exlr8-k4-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
+
 Stop and update:
 
 ```bash
 docker compose exec gr8 /opt/gr8/gr8 glm53 down         # on the head: stops every box
-git pull && docker compose pull && docker compose up -d # on every box
+docker compose pull && docker compose up -d             # on every box
 ```
+
+For a newer version of the recipe itself, `git pull` in a clone of kindlingai/recipes, or fetch the folder again with
+the CLI and keep your `.env`.
 
 ## Knobs
 
@@ -121,11 +130,13 @@ Every other option is gr8's launcher default, listed in
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.1`](https://github.com/kindlingai/gr8/releases/tag/v1.1.1) at [`a3f44a0`](https://github.com/kindlingai/gr8/commit/a3f44a075854fc9af0ed56c6d43f7739705bc871) (`gr8/` submodule) |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.1`](https://github.com/kindlingai/gr8/releases/tag/v1.1.1) at [`a3f44a0`](https://github.com/kindlingai/gr8/commit/a3f44a075854fc9af0ed56c6d43f7739705bc871) (`engine.commit` in `kindling.json`; `--engine` or `tools/engine.sh` puts it in `gr8/`) |
 | prebuilt engine image | `ghcr.io/kindlingai/gr8:v1.1.1@sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96` |
 | weights | [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/9e25c28a2e8808d8b2599d780521fd6af24e7558) (`9e25c28a`, `bit387`) |
 
-Run `python3 check.py` to verify that `kindling.json`, `gr8/` submodule, and `Dockerfile` agree.
+`python3 tools/check_pin.py glm-5.3/dgx-spark/4x/exlr8-k4-gr8`, run from the monorepo root, checks that `kindling.json`,
+`compose.yaml` and the `Dockerfile` agree. Bumping the engine means editing `engine.commit` (and `engine.ref`) in
+`kindling.json`.
 
 ## Help
 

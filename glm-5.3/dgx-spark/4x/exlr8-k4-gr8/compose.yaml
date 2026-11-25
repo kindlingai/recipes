@@ -3,7 +3,7 @@
 # the OpenAI API on port 8100.
 #
 #   docker compose up -d                                  # pulls the image (CI publishes it), fetches this box's part
-#   docker compose up -d --build                          # or builds the image here from the gr8 submodule
+#   docker compose up -d --build                          # or builds the image here from gr8/ (--engine or tools/engine.sh)
 #   docker compose logs -f                                # this box's supervisor
 #   docker compose exec gr8 /opt/gr8/gr8 glm53 smoke      # on the head, once it serves
 #   docker compose exec gr8 /opt/gr8/gr8 glm53 down       # on the head: stops every rank

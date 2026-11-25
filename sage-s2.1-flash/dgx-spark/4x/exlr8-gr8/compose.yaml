@@ -2,7 +2,7 @@
 # Run this file on all four boxes with the same .env (PEERS: the four LAN addresses, head first). The head serves on port 8100.
 #
 #   docker compose up -d                # pulls the image (CI publishes it), fetches this box's part, joins the others
-#   docker compose up -d --build        # or builds the image here from the gr8 submodule
+#   docker compose up -d --build        # or builds the image here from the engine source in gr8/ (kindling.json pins it)
 #   docker compose logs -f              # the supervisor, ready when it prints that the cluster serves
 #   docker compose exec gr8 gr8 glm53f smoke
 #

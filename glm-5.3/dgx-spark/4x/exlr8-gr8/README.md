@@ -103,12 +103,14 @@ On every box, first turn off proactive memory compaction and open TCP ports 7340
 ([What you need](#what-you-need)). Then, on every box:
 
 ```bash
-git clone https://github.com/kindlingai/glm-5.3-exlr8-4x-spark && cd glm-5.3-exlr8-4x-spark
-cp .env.example .env
+npx @kindlingai/recipe glm-5.3-exlr8-4x-spark && cd glm-5.3-exlr8-4x-spark
+# the CLI already copied .env.example to .env; edit it:
 nano .env                  # PEERS: the four LAN addresses, head first. The same file on every box.
 docker compose up -d       # pulls the pinned gr8 image; the first boot fetches this box's part of the model
 docker compose logs -f     # this box's supervisor; ready when the cluster serves
 ```
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/4x/exlr8-gr8) at `glm-5.3/dgx-spark/4x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
 
 Then, on the head (the first address in `PEERS`):
 
@@ -147,8 +149,8 @@ gr8's [GLM-5.3 page](https://github.com/kindlingai/gr8/blob/main/docs/GLM-5.3.md
 The same image and the same `compose.yaml` serve GLM-5.3 on three, five or six boxes. For five or six boxes with tuned
 settings and expanded context pools, use the dedicated recipes:
 
-- **Five boxes (`v1.1.0`, 983K context):** [glm-5.3-exlr8-5x-spark](https://github.com/kindlingai/glm-5.3-exlr8-5x-spark) — measured 2026-11-20 on `gr8 v1.1.0`.
-- **Six boxes (`v1.1.0`, 1M context / 2.18M KV pool):** [glm-5.3-exlr8-6x-spark](https://github.com/kindlingai/glm-5.3-exlr8-6x-spark) — measured 2026-11-20 on `gr8 v1.1.0`.
+- **Five boxes (`v1.1.0`, 983K context):** [glm-5.3-exlr8-5x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/5x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
+- **Six boxes (`v1.1.0`, 1M context / 2.18M KV pool):** [glm-5.3-exlr8-6x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/6x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
 
 | | TP=3 (2026-10-24) | TP=5 (`v1.1.0`, 2026-11-20) | TP=6 (`v1.1.0`, 2026-11-20) |
 |---|---|---|---|
@@ -162,8 +164,8 @@ TP=3 row above is from 2026-10-24 ([RigMark](https://github.com/alexellis/rigmar
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/glm-5.3-exlr8-4x-spark/issues). Say which step failed, and include:
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in
+[kindlingai/recipes](https://github.com/kindlingai/recipes/issues) with `glm-5.3-exlr8-4x-spark` in the title. Say which step failed, and include:
 
 - the command you ran, and the end of `docker logs glm53-4x-spark`, before you remove the container;
 - if it still runs, `docker exec glm53-4x-spark /opt/gr8/gr8 glm53 status`.
@@ -183,11 +185,12 @@ This recipe has no engine code. It runs one published gr8 image, named by tag an
 
 The TP=4 benchmark tables above were measured on 2026-11-20 on `gr8 v1.1.0` (`cdd1e09`); `v1.1.1` (`a3f44a0`) is a hotfix on top of `v1.1.0` fixing the 150K+ multi-session TP=4 CP staged index ordering bug (verified 24/24 clean across greedy and sampled multi-turn runs with no prefill regression).
 
-After v1.0, the pin moves to a newer gr8 release only after this recipe was booted and measured on it. `python3 check.py` checks
-that `compose.yaml` and `kindling.json` name the same image; CI runs it on every pull request.
+After v1.0, the pin moves to a newer gr8 release only after this recipe was booted and measured on it.
+`python3 tools/check_pin.py glm-5.3/dgx-spark/4x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and
+`kindling.json` name the same image; CI (`.github/workflows/recipes.yml`) runs it on every pull request.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). GLM-5.3 and the DFlash2 drafter have their own licences: see the
+MIT, see [LICENSE](../../../../LICENSE). GLM-5.3 and the DFlash2 drafter have their own licences: see the
 [model page](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4) and
 [incoai/GLM-5.3-DFlash2](https://huggingface.co/incoai/GLM-5.3-DFlash2) (CC BY-NC-ND).

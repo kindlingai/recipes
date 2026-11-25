@@ -6,7 +6,7 @@ _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg
 
 Sage-S2.1-Flash on two DGX Sparks (GB10, 128 GB each) at TP=2, served by [gr8](https://github.com/kindlingai/gr8) from
 the `k4` manifest of [kindlingai/sage-s2.1-flash-exlr8-k4](https://huggingface.co/kindlingai/sage-s2.1-flash-exlr8-k4).
-For a four-box deployment, see [sage-s2.1-flash-exlr8-4x-spark](https://github.com/kindlingai/sage-s2.1-flash-exlr8-4x-spark).
+For a four-box deployment, see [sage-s2.1-flash-exlr8-4x-spark](../../4x/exlr8-gr8).
 
 ![Sage-S2.1-Flash on two GB10s: decode, prefill and concurrency](docs/card.png)
 
@@ -110,21 +110,27 @@ docker exec sage-2x-spark gr8 glm53f smoke   # on the head: 14 checks against th
 docker stop sage-2x-spark && docker rm sage-2x-spark   # on both boxes
 ```
 
-`:latest` is `main`. Each commit is also published as `sha-<commit>`, and each tag under its name.
+`:latest` is `main`. Each commit is also published as `sha-<commit>`, and each git tag
+`sage-s2.1-flash-exlr8-2x-spark/<name>` as `<name>`.
 
 ## Run it with compose
 
 `compose.yaml` runs the same image with the same settings and reads `PEERS` and the knobs from `.env`. On both boxes:
 
 ```bash
-git clone --recurse-submodules https://github.com/kindlingai/sage-s2.1-flash-exlr8-2x-spark
-cd sage-s2.1-flash-exlr8-2x-spark
-cp .env.example .env          # edit PEERS, IPS and IPS2 and remove their #: the same file on both boxes
+npx @kindlingai/recipe sage-s2.1-flash-exlr8-2x-spark --engine && cd sage-s2.1-flash-exlr8-2x-spark
+# the CLI already copied .env.example to .env; edit it: set PEERS, IPS and IPS2 and remove their #, the same file on both boxes
 docker compose up -d
 docker compose logs -f
 ```
 
-`docker compose up -d --build` builds the image on the box instead.
+`docker compose up -d --build` builds the image on the box instead, from the engine source that `--engine` put in
+`gr8/`: gr8 at the commit `kindling.json` pins (`engine.commit`). In a clone of the monorepo,
+`tools/engine.sh sage-s2.1-flash/dgx-spark/2x/exlr8-gr8` (from the root) puts it there.
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/sage-s2.1-flash/dgx-spark/2x/exlr8-gr8)
+at `sage-s2.1-flash/dgx-spark/2x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also
+works.
 
 ## Knobs
 
@@ -295,6 +301,6 @@ needs.
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/sage-s2.1-flash-exlr8-2x-spark/issues). Include the command you ran and the end of
-`docker logs sage-2x-spark`. Remove addresses and hostnames before you post.
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in kindlingai/recipes
+(https://github.com/kindlingai/recipes/issues) with `sage-s2.1-flash-exlr8-2x-spark` in the title. Include the command
+you ran and the end of `docker logs sage-2x-spark`. Remove addresses and hostnames before you post.

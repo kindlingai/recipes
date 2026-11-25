@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Usage: smoke.sh IMAGE
 #
-# The no-GPU smoke test CI runs on the recipe's image after each build (.github/workflows/recipe-image.yml, from the
-# recipe folder): the binaries link, the token map is the one the engine checks, the launcher resolves the recipe's
-# options with MENTAT 0 (PEERS) and 1, the knobs are refused when wrong, and the engine will not start without the
-# release
+# The no-GPU smoke test CI runs on the recipe's image after each build (the monorepo root's
+# .github/workflows/recipe-image.yml, run from the recipe folder): the binaries link, the token map is the one the
+# engine checks, the launcher resolves the recipe's options with MENTAT 0 (PEERS) and 1, the knobs are refused when
+# wrong, and the engine will not start without the release
 set -euo pipefail
 img=${1:?usage: smoke.sh IMAGE}
 docker image ls "$img"

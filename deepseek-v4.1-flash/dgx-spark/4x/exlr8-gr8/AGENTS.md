@@ -1,9 +1,10 @@
 # For agents: boot DeepSeek-V4.1-Flash on four DGX Sparks
 
 You are booting this recipe for someone. This file has the steps, every knob, and how to check each step. It is taken
-from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (the `gr8/` submodule). If this
-file and `knobs.sh` or `compose.yaml` disagree, follow `knobs.sh` and `compose.yaml`, and tell the person. If you
-cannot run a check yourself, ask the person.
+from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (its source in `gr8/`, at the
+commit `kindling.json` pins as `engine.commit`). Paths here are relative to this recipe's folder. If this file and
+`knobs.sh` or `compose.yaml` disagree, follow `knobs.sh` and `compose.yaml`, and tell the person. If you cannot run a
+check yourself, ask the person.
 
 ## 1. Check the four boxes
 
@@ -155,9 +156,8 @@ Any other gr8 launcher option works too (gr8/KNOBS.md).
    Or with compose, on every box:
 
    ```bash
-   git clone --recurse-submodules https://github.com/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark
-   cd deepseek-v4.1-flash-exlr8-4x-spark
-   cp .env.example .env          # uncomment and set PEERS, IPS and IPS2 (or MENTAT=1), and TUNE: the same file on every box
+   npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark && cd deepseek-v4.1-flash-exlr8-4x-spark
+   # the CLI already copied .env.example to .env; edit it: uncomment and set PEERS, IPS and IPS2 (or MENTAT=1), and TUNE: the same file on every box
    docker compose run --rm gr8 fetch
    ./install-seccomp.py
    docker compose up -d
@@ -207,7 +207,7 @@ Any other gr8 launcher option works too (gr8/KNOBS.md).
 | `SESS=...: want a number of chats, 1 or more` | set `SESS` to a whole number from 1 to 32, no leading zero |
 | `gr8: memlock is limited ...` | `--ulimit memlock=-1` with `docker run`, `ulimits.memlock: -1` in compose |
 | `gr8: ... is not writable by uid 1000 ...` | `chown 1000:1000` the `GR8_HOME_DIR` directory |
-| the image does not pull | build it on the box from a clone with its submodule: `docker compose build` in the clone (it tags the image `ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest`), or `docker buildx build --platform linux/arm64 -t ds41-4x-spark .` and use that tag |
+| the image does not pull | build it on the box from the recipe with its engine source: `npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark --engine` (or `tools/engine.sh deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` from the root of a monorepo clone) puts gr8 in `gr8/` at `engine.commit`, then `docker compose build` in the recipe folder (it tags the image `ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest`), or `docker buildx build --platform linux/arm64 -t ds41-4x-spark .` and use that tag |
 | a box never joins | start all four within 600 s; check that `PEERS` and every other knob are the same on every box, head first, and that ports 7340 and 7341 are open |
 
 The container's exit status is the launcher's: 0 after a stop, 1 when a rank failed, 2 for bad options, 4 when the

@@ -106,12 +106,14 @@ On every box, first turn off proactive memory compaction and open TCP ports 7340
 ([What you need](#what-you-need)). Then, on every box:
 
 ```bash
-git clone https://github.com/kindlingai/glm-5.3-exlr8-3x-spark && cd glm-5.3-exlr8-3x-spark
-cp .env.example .env
+npx @kindlingai/recipe glm-5.3-exlr8-3x-spark && cd glm-5.3-exlr8-3x-spark
+# the CLI already copied .env.example to .env; edit it:
 nano .env                  # PEERS: the three LAN addresses, head first. The same file on every box.
 docker compose up -d       # pulls the pinned gr8 image; the first boot fetches this box's part of the model
 docker compose logs -f     # this box's supervisor; ready when the cluster serves
 ```
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/3x/exlr8-gr8) at `glm-5.3/dgx-spark/3x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
 
 Then, on the head (the first address in `PEERS`):
 
@@ -141,15 +143,15 @@ gr8's [GLM-5.3 page](https://github.com/kindlingai/gr8/blob/main/docs/GLM-5.3.md
 
 ## Other box counts
 
-- **Four boxes (1M context, `bit325`, DFlash2):** [glm-5.3-exlr8-4x-spark](https://github.com/kindlingai/glm-5.3-exlr8-4x-spark)
-- **Four boxes K4 (`bit387`, uncapped routing):** [glm-5.3-exlr8-k4-4x-spark](https://github.com/kindlingai/glm-5.3-exlr8-k4-4x-spark)
-- **Five boxes (983K context, `bit325`):** [glm-5.3-exlr8-5x-spark](https://github.com/kindlingai/glm-5.3-exlr8-5x-spark)
-- **Six boxes (1M context / 2.18M KV pool, `bit325`):** [glm-5.3-exlr8-6x-spark](https://github.com/kindlingai/glm-5.3-exlr8-6x-spark)
+- **Four boxes (1M context, `bit325`, DFlash2):** [glm-5.3-exlr8-4x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/4x/exlr8-gr8)
+- **Four boxes K4 (`bit387`, uncapped routing):** [glm-5.3-exlr8-k4-4x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/4x/exlr8-k4-gr8)
+- **Five boxes (983K context, `bit325`):** [glm-5.3-exlr8-5x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/5x/exlr8-gr8)
+- **Six boxes (1M context / 2.18M KV pool, `bit325`):** [glm-5.3-exlr8-6x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/6x/exlr8-gr8)
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/glm-5.3-exlr8-3x-spark/issues). Say which step failed, and include:
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in
+[kindlingai/recipes](https://github.com/kindlingai/recipes/issues) with `glm-5.3-exlr8-3x-spark` in the title. Say which step failed, and include:
 
 - the command you ran, and the end of `docker logs glm53-3x-spark`, before you remove the container;
 - if it still runs, `docker exec glm53-3x-spark /opt/gr8/gr8 glm53 status`.
@@ -167,9 +169,10 @@ This recipe has no engine code. It runs one published gr8 image, named by tag an
 | image | `ghcr.io/kindlingai/gr8:v1.1.1` |
 | digest | `sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96` |
 
-`python3 check.py` checks that `compose.yaml` and `kindling.json` name the same image.
+`python3 tools/check_pin.py glm-5.3/dgx-spark/3x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and
+`kindling.json` name the same image.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). GLM-5.3 has its own licence: see the
+MIT, see [LICENSE](../../../../LICENSE). GLM-5.3 has its own licence: see the
 [model page](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4).

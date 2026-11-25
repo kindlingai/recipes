@@ -2,7 +2,10 @@
 
 You are booting this recipe for someone. Follow the steps in order and run each check. If a check fails, stop and
 tell the person what failed. If this file and `compose.yaml` or `.env.example` disagree, follow those two files and
-tell the person.
+tell the person. This recipe is the folder `qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8` of
+[kindlingai/recipes](https://github.com/kindlingai/recipes); paths below are relative to it. Get it on both boxes with
+`npx @kindlingai/recipe qwen3.8-flash-next-exlr8-2x-spark` (or a sparse clone of the monorepo) and run the commands
+from inside the folder.
 
 ## 1. Check both boxes
 
@@ -20,9 +23,10 @@ tell the person.
 
 ## 2. Write .env
 
-Copy `.env.example` to `.env`. Set `PEERS` to the two LAN addresses, head first (and uncomment `IPS` / `IPS2` if
-pinning dual-rail ConnectX-7 RoCE addresses explicitly). Use the **same** `.env` on both boxes. Ask the person before
-changing `VARIANT=bit400` (K4), `GR8_QW38_VISION=1`, `REUSE=1`, or `KV_STORE`.
+Copy `.env.example` to `.env` (the `npx @kindlingai/recipe` CLI already did). Set `PEERS` to the two LAN addresses,
+head first (and uncomment `IPS` / `IPS2` if pinning dual-rail ConnectX-7 RoCE addresses explicitly). Use the **same**
+`.env` on both boxes. Ask the person before changing `VARIANT=bit400` (K4), `GR8_QW38_VISION=1`, `REUSE=1`, or
+`KV_STORE`.
 
 ## 3. Boot
 
@@ -42,7 +46,7 @@ On the head (the first address in `PEERS`):
 
 On the head: `docker compose exec gr8 /opt/gr8/gr8 qw38 down`. Then `docker compose down` on both boxes.
 
-## Rules for changes to this repo
+## Rules for changes to this recipe
 
 - Every number in `README.md` and `kindling.json` comes from a measured run. Say the date, the box count and the
   engine build. Do not copy a number from another build without its date.
@@ -53,4 +57,5 @@ On the head: `docker compose exec gr8 /opt/gr8/gr8 qw38 down`. Then `docker comp
 - Once `gr8 v1.2.0` is published, the engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never
   a moving tag alone, never a patched engine. An engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8)
   as a pull request; this recipe then moves its pin to the merged commit or next release.
-- Run `python3 check.py` (and `python3 check.py --strict` once `v1.2.0` is pinned) before you commit.
+- From the monorepo root, run `python3 tools/check_pin.py qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8` (add `--strict`
+  once `v1.2.0` is pinned) before you commit.

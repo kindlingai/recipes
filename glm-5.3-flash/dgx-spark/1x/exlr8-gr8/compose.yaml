@@ -1,7 +1,7 @@
 # GLM-5.3-Flash on one GB10 box (ASUS GX10 / DGX Spark): gr8, the K2 exlr8 release, int4 KV, a prompt cache on disk.
 #
 #   docker compose up -d                # pulls the image (CI publishes it), fetches the model, serves on port 8100
-#   docker compose up -d --build        # or builds the image here from the gr8 submodule
+#   docker compose up -d --build        # or builds the image here from gr8/ (the pinned engine source, --engine)
 #   docker compose logs -f              # the supervisor; ready when it prints that the cluster serves
 #   docker compose exec gr8 gr8 glm53f smoke
 #

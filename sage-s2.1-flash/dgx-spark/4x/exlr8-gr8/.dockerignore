@@ -1,4 +1,4 @@
-# The build context is the repo root. The Dockerfile's COPY lines say what goes in; this keeps the upload small.
+# The build context is the recipe folder. The Dockerfile's COPY lines say what goes in; this keeps the upload small.
 .git
 gr8/.git
 **/target

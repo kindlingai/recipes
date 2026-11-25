@@ -1,11 +1,11 @@
-# DeepSeek-V4.1-Flash on four GB10 boxes: gr8 (the gr8/ submodule) with only the engine this recipe runs, g6m4_ds41 at
-# TP=4, plus the front end, the loader, the launcher and Engram's token map. linux/arm64, CUDA 13, sm_121a. All four
-# boxes run this image.
+# DeepSeek-V4.1-Flash on four GB10 boxes: gr8 (its source in gr8/, at kindling.json's engine.commit) with only the
+# engine this recipe runs, g6m4_ds41 at TP=4, plus the front end, the loader, the launcher and Engram's token map.
+# linux/arm64, CUDA 13, sm_121a. All four boxes run this image.
 #
 #   docker buildx build --platform linux/arm64 -t ds41-4x-spark .      (compose.yaml builds it the same way)
 #
 # The stages are gr8's own Dockerfile cut down to one engine: gr8's builds every engine for every TP width, which takes
-# far longer. Keep the two in step when the submodule moves (toolchain, Rust pin, runtime packages).
+# far longer. Keep the two in step when engine.commit in kindling.json moves (toolchain, Rust pin, runtime packages).
 ARG CUDA_VERSION=13.0.1
 ARG UBUNTU=ubuntu24.04
 

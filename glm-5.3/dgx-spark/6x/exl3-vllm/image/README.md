@@ -1,12 +1,12 @@
 # image/
 
 Docker build inputs for the TP4 and TP6 images. `build-context.sh` assembles a build context from this folder, the
-overlays and one thing that is not in this repo: the r17 b12x package. This page says how to get it.
+overlays and one thing that is not in this recipe: the r17 b12x package. This page says how to get it.
 
 ## b12x
 
 `build-context.sh tp4|tp6 <b12x dir> <context dir>` wants the `b12x/` Python package (the folder that holds
-`__init__.py`) as its second argument. The repo does not vendor it. Build it from the pins in
+`__init__.py`) as its second argument. The recipe does not vendor it. Build it from the pins in
 `pins/b12x.lock.json`:
 
 1. Clone [local-inference-lab/b12x](https://github.com/local-inference-lab/b12x) and check out the base commit

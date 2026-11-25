@@ -1,7 +1,8 @@
 # For agents: boot GLM-5.3-Flash on two DGX Sparks
 
 You are booting this recipe for someone. This file has the steps, every knob, and how to check each step. It is taken
-from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (the `gr8/` submodule). If this
+from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (in `gr8/` after `--engine`, at the
+`engine.commit` that `kindling.json` pins). Paths here are relative to the recipe folder. If this
 file and `knobs.sh` or `compose.yaml` disagree, follow `knobs.sh` and `compose.yaml`, and tell the person. If you
 cannot run a check yourself, ask the person to run it and paste the output. Do not skip it.
 
@@ -190,9 +191,8 @@ netplan example (README.md, Clustering): replace them with yours. With `mentat`,
    Or with compose, on both boxes:
 
    ```bash
-   git clone --recurse-submodules https://github.com/kindlingai/glm-5.3-flash-exlr8-2x-spark
-   cd glm-5.3-flash-exlr8-2x-spark
-   cp .env.example .env          # edit PEERS, IPS and IPS2 and remove their # (or set MENTAT=1), and set TUNE: the same file on both boxes
+   npx @kindlingai/recipe glm-5.3-flash-exlr8-2x-spark --engine && cd glm-5.3-flash-exlr8-2x-spark
+   # the CLI already copied .env.example to .env; edit PEERS, IPS and IPS2 and remove their # (or set MENTAT=1), and set TUNE: the same file on both boxes
    docker compose up -d
    ```
 
@@ -253,7 +253,7 @@ Wait for `serving:` in the head's log, then run the other checks below.
 | `handshake refused: join: the head ... did not answer within 600s` | start both boxes within 600 s; check that `PEERS` is the same on both, head first, and that ports 7340 and 7341 are open (step 1) |
 | `handshake refused: checks` | a box failed its checks: the lines below it name the box and each problem. Fix them, then start both boxes again |
 | any other `handshake refused: ...`, such as `member list` | the message names what differs between the boxes: use the same `.env` or `-e` values and the same image on both, then start both boxes again |
-| the image does not pull | build the image on each box, in a clone with its submodule. `docker compose build` tags it `ghcr.io/kindlingai/glm-5.3-flash-exlr8-2x-spark:latest`. Without compose, `docker buildx build --platform linux/arm64 -t glm53f-2x-spark .`, then use the tag `glm53f-2x-spark` |
+| the image does not pull | build the image on each box, in a copy fetched with `--engine` (or `tools/engine.sh glm-5.3-flash/dgx-spark/2x/exlr8-gr8` from a monorepo clone's root), so `gr8/` holds the pinned engine source. `docker compose build` tags it `ghcr.io/kindlingai/glm-5.3-flash-exlr8-2x-spark:latest`. Without compose, `docker buildx build --platform linux/arm64 -t glm53f-2x-spark .`, then use the tag `glm53f-2x-spark` |
 
 The container's exit status is the launcher's: 0 after a stop, 1 when a rank failed or the boxes did not join, 2 for
 bad options, 4 when the boxes' handshake refused the boot. `docker inspect -f '{{.State.ExitCode}}' glm53f-2x-spark`
@@ -271,7 +271,7 @@ If a step fails for a reason not listed here, ask on the KindlingAI Discord (the
 ## 6. Not measured yet: tell the person
 
 This list is the recipe's checklist of what is still to be measured. If the person measures one of these, ask them to
-post the numbers on Discord or in an issue (https://github.com/kindlingai/glm-5.3-flash-exlr8-2x-spark/issues).
+post the numbers on Discord or in an issue (https://github.com/kindlingai/recipes/issues, with `glm-5.3-flash-exlr8-2x-spark` in the title).
 
 - The release card's KL against BF16 (`bit349` 0.397, `k4` 0.384) was not measured through gr8 at TP=2. Neither
   width has been scored against BF16 here.

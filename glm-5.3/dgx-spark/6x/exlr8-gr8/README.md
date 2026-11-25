@@ -107,13 +107,16 @@ On every box, first turn off proactive memory compaction and open TCP ports 7340
 ([What you need](#what-you-need)). Then, on every box:
 
 ```bash
-git clone https://github.com/kindlingai/glm-5.3-exlr8-6x-spark && cd glm-5.3-exlr8-6x-spark
+npx @kindlingai/recipe glm-5.3-exlr8-6x-spark && cd glm-5.3-exlr8-6x-spark
 sudo mkdir -p /srv/gr8/cache/qocache && sudo chown -R 1000:1000 /srv/gr8/cache
-cp .env.example .env
+# the CLI already copied .env.example to .env; edit it:
 nano .env                  # PEERS: the six LAN addresses, head first. The same file on every box.
 docker compose up -d       # pulls the pinned gr8 image; the first boot fetches this box's part of the model
 docker compose logs -f     # this box's supervisor; ready when the cluster serves
 ```
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/6x/exlr8-gr8)
+at `glm-5.3/dgx-spark/6x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
 
 The first boot also writes the QO cache (13 GB a box) to `/srv/gr8/cache/qocache`. Later boots read it (~58 s). The engine
 does not make that directory: without the `mkdir` line no cache is written, and every boot takes the long time.
@@ -159,8 +162,8 @@ gr8's [SETTINGS.md](https://github.com/kindlingai/gr8/blob/main/docs/SETTINGS.md
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/glm-5.3-exlr8-6x-spark/issues). Say which step failed, and include:
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in the recipes repo
+(https://github.com/kindlingai/recipes/issues) with `glm-5.3-exlr8-6x-spark` in the title. Say which step failed, and include:
 
 - the command you ran, and the end of `docker logs glm53-6x-spark`, before you remove the container;
 - if it still runs, `docker exec glm53-6x-spark /opt/gr8/gr8 glm53 status`.
@@ -180,13 +183,15 @@ This recipe has no engine code. It runs one published gr8 image, named by tag an
 
 The TP=6 benchmark tables above were measured on 2026-11-20 on `gr8 v1.1.0` (`cdd1e09`); `v1.1.1` (`a3f44a0`) adds the `v1.1.1` hotfix and TP=5/6 default launcher parity.
 
-After v1.0, the pin moves to a newer gr8 release only after this recipe was booted and measured on it. `python3 check.py` checks
-that `compose.yaml` and `kindling.json` name the same image; CI runs it on every pull request.
+After v1.0, the pin moves to a newer gr8 release only after this recipe was booted and measured on it.
+`python3 tools/check_pin.py glm-5.3/dgx-spark/6x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and
+`kindling.json` name the same image; the root `.github/workflows/recipes.yml` runs it on every pull request that touches
+this folder.
 
-For four boxes, see [glm-5.3-exlr8-4x-spark](https://github.com/kindlingai/glm-5.3-exlr8-4x-spark).
-For five boxes, see [glm-5.3-exlr8-5x-spark](https://github.com/kindlingai/glm-5.3-exlr8-5x-spark).
+For four boxes, see [glm-5.3-exlr8-4x-spark](../../4x/exlr8-gr8).
+For five boxes, see [glm-5.3-exlr8-5x-spark](../../5x/exlr8-gr8).
 
 ## License
 
-MIT, see [LICENSE](LICENSE). GLM-5.3 has its own licence: see the
+MIT, see [LICENSE](../../../../LICENSE). GLM-5.3 has its own licence: see the
 [model page](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4).

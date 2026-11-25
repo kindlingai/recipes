@@ -172,9 +172,9 @@ docker logs -f ds41-4x-spark     # on the head: ready at "serving: http://..."
 ```
 
 `<dir>/seccomp-iouring.json` is the profile that `install-seccomp.py` writes (see "The seccomp profile for io_uring"
-below): clone this repo on each box and run the script once. Without that option, Docker's default profile blocks
-io_uring and Engram reads its rows with a thread pool instead: the output is the same, and the numbers in "Results"
-were measured with the profile.
+below): get this recipe on each box (`npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark`) and run the script
+once. Without that option, Docker's default profile blocks io_uring and Engram reads its rows with a thread pool
+instead: the output is the same, and the numbers in "Results" were measured with the profile.
 
 With `mentat` running, replace the `PEERS`, `IPS` and `IPS2` settings with `-e MENTAT=1`. The head is then the box
 with the lowest address. A container stops at once, and says why, if the release on its box is not whole. The boxes
@@ -198,7 +198,8 @@ docker exec ds41-4x-spark gr8 ds41 smoke   # on the head: checks the API, tool c
 docker stop ds41-4x-spark && docker rm ds41-4x-spark   # on every box
 ```
 
-`:latest` follows `main`. Each commit is also published as `sha-<commit>`, and each tag under its name.
+`:latest` follows `main`. Each commit is also published as `sha-<commit>`, and each git tag
+`deepseek-v4.1-flash-exlr8-4x-spark/<name>` as `<name>`.
 
 After you update the image, run the fetch once more on every box: it checks every file and downloads only what is
 wrong or missing. If the fetch names a file that does not match and stops, `fetch --force` deletes that file and
@@ -210,9 +211,8 @@ fetches it again.
 same `ds41-release` volume as the commands above. On every box:
 
 ```bash
-git clone --recurse-submodules https://github.com/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark
-cd deepseek-v4.1-flash-exlr8-4x-spark
-cp .env.example .env          # uncomment and set PEERS, IPS and IPS2: the same file on every box
+npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark --engine && cd deepseek-v4.1-flash-exlr8-4x-spark
+# the CLI already copied .env.example to .env; edit it: uncomment and set PEERS, IPS and IPS2, the same file on every box
 docker compose run --rm gr8 fetch
 ./install-seccomp.py
 docker compose up -d
@@ -222,7 +222,13 @@ docker compose logs -f
 Fetch first: compose restarts a container that stops with an error, so without the whole release it starts and stops
 again until the fetch is done.
 
-`docker compose up -d --build` builds the image on the box instead.
+`docker compose up -d --build` builds the image on the box instead. It needs the engine source in `gr8/`: `--engine`
+puts gr8 there at the commit `kindling.json` pins (`engine.commit`); in a clone of the monorepo,
+`tools/engine.sh deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` (from the root) does the same.
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8)
+at `deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe)
+also works.
 
 ### The seccomp profile for io_uring
 
@@ -232,7 +238,7 @@ makes a profile that allows it, for this recipe's Compose service only.
 `install-seccomp.py` needs Python 3, curl and access to Docker. It detects the Docker **server** version and fetches
 that version's default profile from the official Moby `docker-v<version>` tag. It adds only `io_uring_setup`,
 `io_uring_enter` and `io_uring_register`, writes `seccomp-iouring.json` next to `compose.yaml`, and updates only
-`SECCOMP_PROFILE` in `.env`. The generated profile is not shipped in this repo or image. Run it on each box before
+`SECCOMP_PROFILE` in `.env`. The generated profile is not shipped in this recipe or image. Run it on each box before
 starting Compose and again after a Docker upgrade. It does not start or restart containers.
 
 If the version lookup or fetch fails, it warns and selects Docker's `builtin` profile (not `unconfined`), so Compose
@@ -383,7 +389,7 @@ needs.
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark/issues). Include the command you ran and the end of
-`docker logs ds41-4x-spark`. [AGENTS.md](AGENTS.md#5-when-a-step-fails) lists the errors we know and what to do for
-each. Remove addresses and hostnames before you post.
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in kindlingai/recipes
+(https://github.com/kindlingai/recipes/issues) with `deepseek-v4.1-flash-exlr8-4x-spark` in the title. Include the
+command you ran and the end of `docker logs ds41-4x-spark`. [AGENTS.md](AGENTS.md#5-when-a-step-fails) lists the
+errors we know and what to do for each. Remove addresses and hostnames before you post.

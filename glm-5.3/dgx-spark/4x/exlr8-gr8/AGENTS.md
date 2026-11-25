@@ -39,7 +39,7 @@ On the head:
 
 On the head: `docker compose exec gr8 /opt/gr8/gr8 glm53 down`. Then `docker compose down` on every box.
 
-## Rules for changes to this repo
+## Rules for changes to this recipe
 
 - Every number in `README.md` and `kindling.json` comes from a measured run. Say the date, the box count and the
   engine build. Do not copy a number from another build without its date.
@@ -48,4 +48,4 @@ On the head: `docker compose exec gr8 /opt/gr8/gr8 glm53 down`. Then `docker com
 - The engine pin is one exact gr8 commit and one image digest. Never a moving tag alone, never a patched engine. An
   engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8) as a pull request; this recipe then moves
   its pin to the merged commit or the next release.
-- Run `python3 check.py` before you commit.
+- Run `python3 tools/check_pin.py glm-5.3/dgx-spark/4x/exlr8-gr8` from the monorepo root before you commit.

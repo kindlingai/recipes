@@ -1,7 +1,7 @@
 # GLM 5.3 (full) EXL3 on DGX Spark: TP6 and TP4 builds
 
 > **Newer: [gr8](https://github.com/kindlingai/gr8)** serves the full GLM-5.3 on three to six DGX Sparks with its
-> own CUDA engine, without vLLM, and has the current numbers. This repo is the earlier vLLM build, kept for
+> own CUDA engine, without vLLM, and has the current numbers. This recipe is the earlier vLLM build, kept for
 > reference.
 
 Two ways we serve the full GLM 5.3 model (MoE, 256 experts, MLA + sparse attention, one MTP layer) from the
@@ -48,6 +48,10 @@ Both builds start from vLLM on the MiaAI-Lab ARM image with the r17 EXL3 "TR3" l
 | graph warmup | `overlays/vllm-common/` | FULL CUDA-graph warmup including the EXL3 route-pack kernels | yes | yes |
 
 ## Reproduce
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/6x/exl3-vllm) at `glm-5.3/dgx-spark/6x/exl3-vllm`;
+`npx @kindlingai/recipe glm-5.3-full-exl3-tp6` fetches only this folder, and a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
+Paths below are relative to the recipe folder.
 
 1. **Image.** `image/build-context.sh tp4|tp6 <r17 b12x package dir> <context dir>`, then `docker build` there
    (TP6 is three Dockerfiles in order: `Dockerfile.1-fragments` → `.2-fastload` → `.3-e3`, tag each as the next
@@ -113,7 +117,7 @@ rely on D.
 
 ## Caveats
 
-- **Not re-run from this repo.** The launchers are reconstructed from the recorded container configs of the measured
+- **Not re-run from this recipe.** The launchers are reconstructed from the recorded container configs of the measured
   runs (same flags, env and bind targets) and were only dry-run checked. The images were built step by step on our
   nodes and not rebuilt from `image/`. Expect to debug.
 - **Known prefill hang on TP6** that we did not root-cause; on our cluster a CUPTI injection library

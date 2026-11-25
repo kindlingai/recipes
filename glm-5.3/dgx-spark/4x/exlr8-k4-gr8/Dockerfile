@@ -1,16 +1,16 @@
-# GLM-5.3 on four GB10 boxes at K4: gr8 (the gr8/ submodule) with only the engine this recipe runs, g6m4-int4 at TP=4,
+# GLM-5.3 on four GB10 boxes at K4: gr8 (source in gr8/, at kindling.json's engine.commit) with only the engine this recipe runs, g6m4-int4 at TP=4,
 # plus the front end, the loader and the launcher. linux/arm64, CUDA 13, sm_121a.
 #
 #   docker buildx build --platform linux/arm64 -t glm53-k4-4x-spark .      (compose.yaml builds it the same way)
 #
 # The stages are gr8's own Dockerfile cut down to one engine: gr8's builds every engine for every TP width, which takes
-# far longer. Keep the two in step when the submodule moves (toolchain, Rust pin, XGrammar, runtime packages).
+# far longer. Keep the two in step when engine.commit moves (toolchain, Rust pin, XGrammar, runtime packages).
 #
 # ENGINE_SRC says where the binaries come from:
-#   build  (the default) the stages below compile them from the gr8/ submodule
+#   build  (the default) the stages below compile them from gr8/ (tools/engine.sh or the CLI's --engine fills it)
 #   image  they are copied from GR8_IMAGE, gr8's published image of the same commit (ghcr.io/kindlingai/gr8@sha256:...),
-#          and nothing compiles. CI takes this path when gr8 publishes an image of the submodule's commit
-#          (.github/workflows/image.yml)
+#          and nothing compiles. CI takes this path when gr8 publishes an image of the pinned engine.commit
+#          (the monorepo's .github/workflows/recipe-image.yml)
 # Either way the runtime stage gets the same files at the same paths, from the bins stage.
 ARG CUDA_VERSION=13.0.1
 ARG UBUNTU=ubuntu24.04
@@ -89,7 +89,7 @@ COPY --from=libs /out/libgr8knobs.a engine/knobs-rs/target/release/libgr8knobs.a
 COPY --from=front /out-xgrammar /opt/xgrammar
 COPY --from=xgrammar /out/libxgrammar.a /opt/xgrammar-lib/libxgrammar.a
 ENV GR8_XGRAMMAR=/opt/xgrammar GR8_XGRAMMAR_LIB=/opt/xgrammar-lib/libxgrammar.a
-# The compile cache (gr8/docs/BUILD-CACHE.md) is a cache mount, which CI keeps between runs (image.yml), so a
+# The compile cache (gr8/docs/BUILD-CACHE.md) is a cache mount, which CI keeps between runs (recipe-image.yml), so a
 # rebuild compiles only what changed.
 ENV GR8_NVCC_CACHE_DIR=/var/cache/gr8-nvcc
 RUN --mount=type=cache,id=gr8-nvcc-glm-int4-w4,target=/var/cache/gr8-nvcc \

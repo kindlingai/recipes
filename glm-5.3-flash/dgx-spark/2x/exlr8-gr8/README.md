@@ -6,7 +6,7 @@ _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg
 
 GLM-5.3-Flash on two DGX Sparks (GB10, 128 GB each) at TP=2, served by [gr8](https://github.com/kindlingai/gr8) from
 the `bit349` manifest of [kindlingai/glm-5.3-flash-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-flash-exlr8-k2-k3-k4).
-One box serves GLM-5.3-Flash with [glm-5.3-flash-exlr8-1x-spark](https://github.com/kindlingai/glm-5.3-flash-exlr8-1x-spark).
+One box serves GLM-5.3-Flash with [glm-5.3-flash-exlr8-1x-spark](../../1x/exlr8-gr8).
 
 ![GLM-5.3-Flash on two GB10s: decode, prefill and concurrency](docs/card.png)
 
@@ -128,14 +128,17 @@ docker stop glm53f-2x-spark && docker rm glm53f-2x-spark   # on both boxes
 `compose.yaml` runs the same image with the same settings and reads `PEERS` and the knobs from `.env`. On both boxes:
 
 ```bash
-git clone --recurse-submodules https://github.com/kindlingai/glm-5.3-flash-exlr8-2x-spark
-cd glm-5.3-flash-exlr8-2x-spark
-cp .env.example .env          # edit PEERS, IPS and IPS2 and remove their #: the same file on both boxes
+npx @kindlingai/recipe glm-5.3-flash-exlr8-2x-spark --engine && cd glm-5.3-flash-exlr8-2x-spark
+# the CLI already copied .env.example to .env; edit PEERS, IPS and IPS2 and remove their #: the same file on both boxes
 docker compose up -d
 docker compose logs -f
 ```
 
-`docker compose up -d --build` builds the image on the box instead.
+`docker compose up -d --build` builds the image on the box instead. `--engine` puts the gr8 source in `gr8/` at the
+commit `kindling.json` pins (`engine.commit`); without it, compose only pulls the image.
+
+This recipe lives in [kindlingai/recipes](https://github.com/kindlingai/recipes/tree/main/glm-5.3-flash/dgx-spark/2x/exlr8-gr8)
+at `glm-5.3-flash/dgx-spark/2x/exlr8-gr8`; a [sparse clone](https://github.com/kindlingai/recipes#run-a-recipe) also works.
 
 ## Knobs
 
@@ -257,6 +260,6 @@ needs.
 
 ## Help
 
-Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue in this repo
-(https://github.com/kindlingai/glm-5.3-flash-exlr8-2x-spark/issues). Include the command you ran and the end of
+Ask on Discord (https://discord.gg/8EAvYPV2rE) or open an issue (https://github.com/kindlingai/recipes/issues) with
+`glm-5.3-flash-exlr8-2x-spark` in the title. Include the command you ran and the end of
 `docker logs glm53f-2x-spark`. Remove addresses and hostnames before you post.

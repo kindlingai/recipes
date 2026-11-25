@@ -5,7 +5,7 @@
 #   docker compose run --rm gr8 fetch   # once on every box: the whole release, 510.6 GB, into the release volume
 #   ./install-seccomp.py                # local Docker default plus io_uring (warning + builtin on failure)
 #   docker compose up -d                # pulls the image (CI publishes it) and joins the other three boxes
-#   docker compose up -d --build        # or builds the image here from the gr8 submodule
+#   docker compose up -d --build        # or builds the image here from the engine source in gr8/ (kindling.json pins it)
 #   docker compose logs -f              # the supervisor, ready when it prints that the cluster serves
 #   docker compose exec gr8 gr8 ds41 smoke    # on the head
 #

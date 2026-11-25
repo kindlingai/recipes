@@ -1,7 +1,8 @@
 # For agents: boot GLM-5.3-Flash on one DGX Spark
 
 You are booting this recipe for someone. This file has the steps, every knob, and how to check each step. It is taken
-from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (the `gr8/` submodule). If this
+from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (in `gr8/` after `--engine`, at the
+`engine.commit` that `kindling.json` pins). Paths here are relative to the recipe folder. If this
 file and `knobs.sh` or `compose.yaml` disagree, follow `knobs.sh` and `compose.yaml`, and tell the person. If you
 cannot run a check yourself, ask the person to run it and paste the output. Do not skip it.
 
@@ -110,9 +111,8 @@ The commands below use `TUNE=speed`: put in the value you picked.
    Or with compose:
 
    ```bash
-   git clone --recurse-submodules https://github.com/kindlingai/glm-5.3-flash-exlr8-1x-spark
-   cd glm-5.3-flash-exlr8-1x-spark
-   cp .env.example .env          # optional: uncomment TUNE, or any other knob, and set it
+   npx @kindlingai/recipe glm-5.3-flash-exlr8-1x-spark --engine && cd glm-5.3-flash-exlr8-1x-spark
+   # the CLI already copied .env.example to .env; optional: uncomment TUNE, or any other knob, and set it
    docker compose up -d
    ```
 
@@ -166,7 +166,7 @@ Wait for `serving:` in the log first; the checks after it confirm it.
 | `gr8: memlock is limited ...` | `--ulimit memlock=-1` with `docker run`, `ulimits.memlock: -1` in compose |
 | `gr8: ... is not writable by uid 1000 ...` | run `chown 1000:1000` on the host directory you set as `GR8_HOME_DIR` |
 | `an engine is already running` or `a g6m4 --rank process is running` | ask the person, then stop the other model (README.md, Run another model) |
-| the image does not pull | build the image on the box, in a clone with its submodule. `docker compose build` (about 30 minutes cold) tags it `ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:latest`. Without compose, `docker buildx build --platform linux/arm64 -t glm53f-1x-spark .`, then use the tag `glm53f-1x-spark` |
+| the image does not pull | build the image on the box, in a copy fetched with `--engine` (or `tools/engine.sh glm-5.3-flash/dgx-spark/1x/exlr8-gr8` from a monorepo clone's root), so `gr8/` holds the pinned engine source. `docker compose build` (about 30 minutes cold) tags it `ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:latest`. Without compose, `docker buildx build --platform linux/arm64 -t glm53f-1x-spark .`, then use the tag `glm53f-1x-spark` |
 
 The container exits with 0 after a stop, 1 when the engine failed, and 2 for bad options.
 `docker inspect -f '{{.State.ExitCode}}' glm53f-1x-spark` prints it.
@@ -183,7 +183,7 @@ If a step fails for a reason not listed here, ask on the KindlingAI Discord (the
 ## 6. Not measured yet: tell the person
 
 This list is the recipe's checklist of what is still to be measured. If the person measures one of these, ask them to
-post the numbers on Discord or in an issue (https://github.com/kindlingai/glm-5.3-flash-exlr8-1x-spark/issues).
+post the numbers on Discord or in an issue (https://github.com/kindlingai/recipes/issues, with `glm-5.3-flash-exlr8-1x-spark` in the title).
 
 - `TUNE=context` was measured once, on the box of README.md's benchmark card, with `MAX_MODEL_LEN` raised: one
   672K-token prompt. The lowest free memory was 3.9 GiB on Kindling Spark OS, and about 2 GiB less on DGX OS.

@@ -1,4 +1,7 @@
-# Working on this repo
+# Working on this recipe
+
+Paths here are relative to the recipe folder (`glm-5.3/dgx-spark/6x/exl3-vllm` in the
+[kindlingai/recipes](https://github.com/kindlingai/recipes) monorepo).
 
 README.md and RESULTS.md are what people compare their own runs against, so
 a number changes only when it was measured. Read RESULTS.md's benchmark
@@ -6,7 +9,7 @@ definitions before adding a row.
 
 ## kindling.json
 
-`kindling.json` at the repo root is the README's results table in a form a
+`kindling.json` at the recipe folder's root is the README's results table in a form a
 program can read. The Kindling AI site reads it from `main`, so whatever is
 merged there is what people see.
 

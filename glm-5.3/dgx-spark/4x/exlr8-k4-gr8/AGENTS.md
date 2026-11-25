@@ -1,8 +1,8 @@
 # For agents: boot GLM-5.3 K4 on four DGX Sparks
 
-You are booting this recipe for someone. Follow these steps in order, and run each check. If you cannot run a check
-yourself, ask the person to run it and paste the output. If this file and `compose.yaml` or the `Dockerfile` disagree,
-follow those files and tell the person.
+You are booting this recipe for someone. Paths here are relative to the recipe folder. Follow these steps in order,
+and run each check. If you cannot run a check yourself, ask the person to run it and paste the output. If this file
+and `compose.yaml` or the `Dockerfile` disagree, follow those files and tell the person.
 
 ## 1. Check each box
 
@@ -19,7 +19,7 @@ On all four boxes:
 
 ## 2. Configure
 
-Copy `.env.example` to `.env` on every box. Keep its `DRAFTER`, `DEC_BK=2048`, `DEC_BK_MAX=2048`, and `MOE_UNION_CAP=0` lines: the README's numbers were measured with them (pure quality, uncapped routing, 4.3+ GiB free per box). If the boxes run mentat (`docker ps` shows a `mentat` container), leave `PEERS` commented out. Otherwise fill in `PEERS` (the four LAN addresses, head first) and, if the boxes have more than one ConnectX address each, `IPS` and `IPS2`. Use the same `.env` on every box.
+`.env` is on every box (the CLI copied `.env.example` to it; in a sparse clone, copy it yourself). Keep its `DRAFTER`, `DEC_BK=2048`, `DEC_BK_MAX=2048`, and `MOE_UNION_CAP=0` lines: the README's numbers were measured with them (pure quality, uncapped routing, 4.3+ GiB free per box). If the boxes run mentat (`docker ps` shows a `mentat` container), leave `PEERS` commented out. Otherwise fill in `PEERS` (the four LAN addresses, head first) and, if the boxes have more than one ConnectX address each, `IPS` and `IPS2`. Use the same `.env` on every box.
 
 ## 3. Start and check
 
@@ -32,11 +32,13 @@ Copy `.env.example` to `.env` on every box. Keep its `DRAFTER`, `DEC_BK=2048`, `
 If a box's log says another engine is running, run `docker compose exec gr8 /opt/gr8/gr8 glm53 down` on the head,
 wait until `pgrep -f 'bin/g6m4'` finds nothing on every box, and start again.
 
-## Rules for changes to this repo
+## Rules for changes to this recipe
 
 - Every number in `README.md` and `kindling.json` comes from a measured run. Say the date, the box count and the
   engine build. Do not copy a number from another build without its date.
 - `README.md`'s results and `kindling.json` say the same thing. A change to one changes the other, and
   `docs/card.png` is drawn again: `python3 bench/gif.py card kindling.json --out docs/card.png` from a gr8 checkout.
 - This K4 recipe is quality-first: keep `MOE_UNION_CAP=0` (uncapped) in `Dockerfile` and `.env.example`.
-- Run `python3 check.py` before you commit.
+- Run `python3 tools/check_pin.py glm-5.3/dgx-spark/4x/exlr8-k4-gr8` from the monorepo root before you commit.
+- Bumping the engine means editing `engine.commit` (and `engine.ref`) in `kindling.json`; `tools/engine.sh
+  glm-5.3/dgx-spark/4x/exlr8-k4-gr8`, run from the monorepo root, puts that commit's source in `gr8/` for a local build.

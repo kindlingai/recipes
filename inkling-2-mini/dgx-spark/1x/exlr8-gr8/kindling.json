@@ -3,10 +3,10 @@
   "id": "inkling-2-mini-exlr8-1x-spark",
   "status": "stable",
   "title": "Inkling-2-Mini",
-  "variant": "exlr8, DFlash, 256K x 4 (1M KV)",
-  "summary": "Inkling-2-Mini on one DGX Spark (GB10, 128 GB) at TP=1 with gr8 and bundled DFlash speculative decoding: load-time width selection across k4 (-27.4% KL vs Official NVFP4, 93.54% on 1,362 tasks), bit325 (8/8 exact DFlash greedy parity, 3,484 tok/s 8K prefill), bit250, and k2 (up to 167.5 math / 230.0 C=6 / 479.5 6x math tok/s), with a 1,048,576-token (1M) KV pool.",
+  "variant": "exlr8, DFlash, 144K x 8 (1.18M KV)",
+  "summary": "Inkling-2-Mini on one DGX Spark (GB10, 128 GB) at TP=1 with gr8 and bundled DFlash speculative decoding: bit325 default (8/8 exact DFlash greedy parity, 3,484 tok/s 8K prefill, 144K x 8 = 1.18M KV pool at max 8 concurrent streams), k4 for higher quality / graduate-level science (-27.4% KL vs Official NVFP4, 93.54% on 1,362 tasks), and bit225 fast tier (133.5 Code / 160.2 Math / 228.2 C=6 tok/s, 0.041282 KL).",
   "model": "kindlingai/inkling-2-mini-exlr8-k2-k3-k4",
-  "weights_commit": "34fbad15ce2164208aa33cbe49488d68380d7b70",
+  "weights_commit": "3037e66b3f01003ddf2c62b7e1d9469c59104609",
   "hardware": "DGX Spark (GB10)",
   "stack": [
     "gr8",
@@ -22,75 +22,8 @@
     "image": "ghcr.io/kindlingai/gr8:sha-6b87480",
     "image_digest": "sha256:63465222330e8b938da2a5b6543912e2ddcd0fbb280b932eb5e7485df16b991c"
   },
-  "default_config": "tp1-k4",
+  "default_config": "tp1-bit325",
   "configs": [
-    {
-      "id": "tp1-k4",
-      "label": "TP=1 · K4 (default)",
-      "nodes": 1,
-      "decode": {
-        "code": 64.6,
-        "prose": 48.6,
-        "structured": 90.9,
-        "counting": 162.8,
-        "math": 107.3
-      },
-      "decode_prompt_tokens": [
-        49,
-        97
-      ],
-      "prefill": [
-        {
-          "context": 8192,
-          "tps": 3457
-        }
-      ],
-      "concurrency": [
-        {
-          "streams": 6,
-          "aggregate_tps": 139.1,
-          "per_stream_tps": 33.0,
-          "ttft_p50_s": 1.708
-        }
-      ],
-      "max_context": 262144,
-      "kv_pool_tokens": 1048576,
-      "max_concurrent": 4,
-      "max_tokens_per_chat": [
-        {
-          "chats": 1,
-          "tokens": 262144,
-          "source": "measured"
-        },
-        {
-          "chats": 2,
-          "tokens": 262144,
-          "source": "computed"
-        },
-        {
-          "chats": 4,
-          "tokens": 262144,
-          "source": "computed"
-        }
-      ],
-      "max_tokens_per_chat_note": "4 dedicated 262,144-token slabs (1M KV pool); CAP=131072 SESSIONS=8 (11.6 GiB free) and CAP=1048576 SESSIONS=1 (7.8 GiB free) also verified live",
-      "lowest_mem_available_gib": 12.2,
-      "quality": [
-        {
-          "name": "40x2K FP64 KL vs BF16 (k4)",
-          "value": "0.010460 mean / 0.001632 med · 96.91% top-1 (-27.4% vs NVFP4)"
-        },
-        {
-          "name": "1,362-task eval (HE+, GPQA, MATH-500, GSM8K)",
-          "value": "93.54% (1274/1362) · ties Official W4A4 (McNemar p=0.6655)"
-        },
-        {
-          "name": "Needle recall (Docker Compose live)",
-          "value": "PASS at 36.6K (3,068 tok/s) and 146.4K (2,089 tok/s)"
-        }
-      ],
-      "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled 279 MB DFlash drafter (MTP=7, auto-discovered). Default Docker Compose CAP=262144 SESSIONS=4 (1,048,576 total KV pool) verified live 2026-11-25 on ghcr.io/kindlingai/gr8:sha-6b87480 (10.3 s boot, 12.20 GiB MemAvailable after 146.4K needle PASS). 8-domain decode, C=6 mixed, and 8K cold prefill measured 2026-11-25 on 1x DGX Spark (gr8 PR #615, GR8_INK2_PF_MX8_MOE=2, GR8_INK2_MX8_DENSE=2, GR8_INK2_MX8_LM_HEAD=0)."
-    },
     {
       "id": "tp1-bit325",
       "label": "TP=1 · bit325",
@@ -128,9 +61,28 @@
           "ttft_p50_s": 1.598
         }
       ],
-      "max_context": 262144,
-      "kv_pool_tokens": 1048576,
-      "max_concurrent": 4,
+      "max_context": 147456,
+      "kv_pool_tokens": 1179648,
+      "max_concurrent": 8,
+      "max_tokens_per_chat": [
+        {
+          "chats": 1,
+          "tokens": 147456,
+          "source": "measured"
+        },
+        {
+          "chats": 4,
+          "tokens": 147456,
+          "source": "computed"
+        },
+        {
+          "chats": 8,
+          "tokens": 147456,
+          "source": "computed"
+        }
+      ],
+      "max_tokens_per_chat_note": "8 x 147,456 slabs (1.18M pool, 9.69 GiB free); up to 2.10M (moe=0) or 1M x 1",
+      "lowest_mem_available_gib": 9.52,
       "quality": [
         {
           "name": "DFlash K=7 vs MTP=0 greedy parity",
@@ -145,18 +97,18 @@
           "value": "92.80% pooled · 91.46% HE+ · 97.80% MATH-500"
         }
       ],
-      "notes": "bit325 experts (3.25 bpw, 16.43 GB device image) + bundled DFlash (MTP=7). Set VARIANT=bit325 in .env. Measured 2026-11-25 on 1x DGX Spark (gr8 PR #615). Thinking-ON prose (512 tok, t=0.6): c1 48.5 / c2 70.2 / c4 100.3 / c6 122.6 tok/s. Homogeneous 6x Math: 298.6 tok/s."
+      "notes": "bit325 experts (3.25 bpw, 16.43 GB device image) + bundled 279 MB DFlash drafter (MTP=7, auto-discovered). Default CAP=147456 SESSIONS=8 (1,179,648 KV pool, 9.95 s boot, 9.52-9.69 GiB MemAvailable). Also verified live on 1x DGX Spark: 163840x8 (1.31M, 5.45 GiB free), 262144x5 (1.31M, 5.54 GiB free), PF_MX8_MOE=1 196608x8 (1.57M, 9.12 GiB free), PF_MX8_MOE=0 262144x8 (2.10M, 4.44 GiB free). In 1,362-task evals, bit325 performed nearly the same as 4-bit except graduate-level science (GPQA). Measured 2026-11-25 on gr8 commit 6b874803."
     },
     {
-      "id": "tp1-k2",
-      "label": "TP=1 · K2 speed",
+      "id": "tp1-k4",
+      "label": "TP=1 · K4 quality",
       "nodes": 1,
       "decode": {
-        "code": 100.5,
-        "prose": 80.8,
-        "structured": 148.9,
-        "counting": 228.3,
-        "math": 167.5
+        "code": 64.6,
+        "prose": 48.6,
+        "structured": 90.9,
+        "counting": 162.8,
+        "math": 107.3
       },
       "decode_prompt_tokens": [
         49,
@@ -165,31 +117,80 @@
       "prefill": [
         {
           "context": 8192,
-          "tps": 3475
+          "tps": 3457
         }
       ],
       "concurrency": [
         {
           "streams": 6,
-          "aggregate_tps": 230.0,
-          "per_stream_tps": 42.7,
-          "ttft_p50_s": 0.899
+          "aggregate_tps": 139.1,
+          "per_stream_tps": 33.0,
+          "ttft_p50_s": 1.708
         }
       ],
       "max_context": 262144,
       "kv_pool_tokens": 1048576,
       "max_concurrent": 4,
+      "lowest_mem_available_gib": 12.2,
       "quality": [
         {
-          "name": "40x2K FP64 KL vs BF16 (k2 E2E KL)",
-          "value": "0.052425 mean / 0.015119 med · 91.70% top-1 (-11.65% vs stock k2)"
+          "name": "40x2K FP64 KL vs BF16 (k4)",
+          "value": "0.010460 mean / 0.001632 med · 96.91% top-1 (-27.4% vs NVFP4)"
         },
         {
-          "name": "Homogeneous 6x peak",
-          "value": "479.5 tok/s (6x Math) · 425.2 (6x JSON) · 358.0 (6x Code)"
+          "name": "1,362-task eval (recommended for GPQA / max quality)",
+          "value": "93.54% (1274/1362) · ties Official W4A4 (McNemar p=0.6655)"
+        },
+        {
+          "name": "Needle recall (Docker Compose live)",
+          "value": "PASS at 36.6K (3,068 tok/s) and 146.4K (2,089 tok/s)"
         }
       ],
-      "notes": "k2 E2E-KL experts (2.00 bpw, 12.60 GB device image) + bundled DFlash (MTP=7) with speed flags (VARIANT=k2, GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1, GR8_INK2_S2_COST=14.0,2.5,2.0,0.4,0.0,0.0). Measured 2026-11-25 on 1x DGX Spark (gr8 PR #615). Thinking-ON prose (512 tok, t=0.6): c1 66.9 / c2 98.0 / c4 150.5 / c6 166.3 tok/s (t=0.0: 72.5 / 114.4 / 158.7 / 191.2). 3-user 1K avg TTFT: 0.827 s."
+      "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled 279 MB DFlash drafter (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Set VARIANT=k4, CAP=262144, SESSIONS=4 (or CAP=131072 SESSIONS=8, or CAP=1048576 SESSIONS=1). Verified live 2026-11-25 on ghcr.io/kindlingai/gr8:sha-6b87480 (10.3 s boot, 12.20 GiB MemAvailable after 146.4K needle PASS)."
+    },
+    {
+      "id": "tp1-bit225",
+      "label": "TP=1 · bit225 fast",
+      "nodes": 1,
+      "decode": {
+        "code": 133.5,
+        "prose": 75.5,
+        "structured": 144.4,
+        "counting": 211.7,
+        "math": 160.2
+      },
+      "decode_prompt_tokens": [
+        49,
+        97
+      ],
+      "prefill": [
+        {
+          "context": 8192,
+          "tps": 3474
+        }
+      ],
+      "concurrency": [
+        {
+          "streams": 6,
+          "aggregate_tps": 228.2,
+          "per_stream_tps": 40.9,
+          "ttft_p50_s": 0.982
+        }
+      ],
+      "max_context": 147456,
+      "kv_pool_tokens": 1179648,
+      "max_concurrent": 8,
+      "quality": [
+        {
+          "name": "40x2K FP64 KL vs BF16 (bit225)",
+          "value": "0.041282 mean / 0.011148 med · 92.70% top-1 (-21.3% vs k2)"
+        },
+        {
+          "name": "3-user 1K avg TTFT / boot",
+          "value": "0.845 s TTFT · 7.61 s boot from NVMe"
+        }
+      ],
+      "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (VARIANT=bit225, GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1, GR8_INK2_S2_COST=14.0,2.5,2.0,0.4,0.0,0.0). Standard flags (MX8_DENSE=2, MX8_LM_HEAD=0) also measured: 112.6 Code / 141.0 Math / 119.3 JSON / 185.6 C=6 / 3,467 8K prefill. Measured 2026-11-25 on 1x DGX Spark (gr8 commit 6b874803)."
     }
   ]
 }

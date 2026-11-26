@@ -1,44 +1,49 @@
-# KindlingAI: Inkling-2-Mini EXLR8 on one DGX Spark (K4, bit325 & K2)
+# KindlingAI: Inkling-2-Mini EXLR8 on one DGX Spark (bit325, K4 & bit225)
 
 If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first, then the Quickstart.
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-Inkling-2-Mini on **one DGX Spark** (GB10, 128 GB) at `TP=1`, served by [gr8](https://github.com/kindlingai/gr8) (`main`, [PR #615](https://github.com/kindlingai/gr8/pull/615)) from [kindlingai/inkling-2-mini-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/inkling-2-mini-exlr8-k2-k3-k4/tree/34fbad15ce2164208aa33cbe49488d68380d7b70):
-one single pack gives load-time width selection across **`k4`** (`-27.4%` KL vs Official NVFP4, ties Official W4A4 on 1,362 tasks), **`bit325`** (`8/8` exact DFlash greedy parity, `3,484 tok/s` 8K prefill), **`bit250`**, and **`k2`** (`-11.65%` E2E KL vs stock `k2`, up to `230 tok/s` C=6 / `480 tok/s` 6× Math), with a bundled **279 MB DFlash speculative drafter** auto-discovered with zero extra flags and a **`1,048,576`-token (`1M`) KV pool** (`CAP=262144 × 4` by default, or `131072 × 8`, or full **`1M` single-stream `1048576 × 1`**).
-This recipe is the published `gr8` image, one launcher script, and one `.env` file. Nothing is compiled.
+Inkling-2-Mini on **one DGX Spark** (GB10, 128 GB) at `TP=1`, served by [gr8](https://github.com/kindlingai/gr8) (`main`, [PR #615](https://github.com/kindlingai/gr8/pull/615)) from [kindlingai/inkling-2-mini-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/inkling-2-mini-exlr8-k2-k3-k4/tree/3037e66b3f01003ddf2c62b7e1d9469c59104609):
+one single pack gives load-time width selection across:
+- **`bit325` (3.25-bit, default)** — in our 1,362-task evals, 3.25-bit performed nearly the same as 4-bit across coding and math except for graduate-level science (GPQA), while running faster (**90.6** Code / **160.0** `C=6` / **3,484** 8K prefill, **8/8 exact DFlash greedy parity**) and unlocking a **`1,179,648`-token (`1.18M`) KV pool** at the maximum **8 concurrent sessions** (`147,456 × 8`, `~9.6 GiB` free OS memory) — or up to **`1.31M`–`2.10M`** KV pools via `.env`.
+- **`k4` (4-bit, higher quality)** — recommended for maximum quality and graduate-level science (GPQA): **`-27.4%` KL** vs Official NVFP4 and ties Official W4A4 on 1,362 tasks (`93.54%`, McNemar `p=0.6655`), with a **`1M` KV pool** (`262K × 4`, `128K × 8`, or `1M × 1`).
+- **`bit225` (2.25-bit, fast version)** — `13.37 GB` device image (`0` extra weight bytes), **`0.041282` mean KL** (`-21.3%` lower KL than `k2`), hitting **`133.5 tok/s`** Code, **`160.2 tok/s`** Math, **`144.4 tok/s`** JSON, **`228.2 tok/s`** `C=6` mixed, **`3,474 tok/s`** 8K prefill, and **`7.61 s`** NVMe boot.
 
-![Inkling-2-Mini K4 on one DGX Spark: decode, prefill and concurrency](docs/card.png)
+A bundled **279 MB DFlash speculative drafter** is auto-discovered with zero extra flags. This recipe is the published `gr8` image, one launcher script, and one `.env` file. Nothing is compiled.
 
-**K4 (`k4`, default):** **64.6 tok/s** code · **107.3 tok/s** math · **90.9 tok/s** JSON · **48.6 tok/s** prose · **162.8 tok/s** counting · **3,457 tok/s** 8K prefill · **139.1 tok/s** C=6 mixed · **`0.010460` mean KL** (`-27.4%` vs Official NVFP4) · **93.54%** on 1,362 tasks · 10.3 s boot from local NVMe
-**K2 (`k2`, speed preset):** **100.5 tok/s** code · **167.5 tok/s** math · **148.9 tok/s** JSON · **80.8 tok/s** prose · **228.3 tok/s** counting · **3,475 tok/s** 8K prefill · **230.0 tok/s** C=6 mixed (`479.5 tok/s` 6× Math) · **0.827 s** 3-user 1K avg TTFT
+![Inkling-2-Mini bit325 on one DGX Spark: decode, prefill and concurrency](docs/card.png)
+
+**`bit325` (3.25-bit, default):** **90.6 tok/s** code · **105.2 tok/s** math · **91.2 tok/s** JSON · **49.5 tok/s** prose · **172.4 tok/s** counting · **3,484 tok/s** 8K prefill · **160.0 tok/s** `C=6` mixed (`298.6` 6× Math) · **8/8 exact DFlash greedy parity** · **`1.18M` KV pool (`144K × 8`)** · **9.95 s** boot
+**`k4` (4-bit, higher quality / GPQA):** **64.6 tok/s** code · **107.3 tok/s** math · **90.9 tok/s** JSON · **48.6 tok/s** prose · **162.8 tok/s** counting · **3,457 tok/s** 8K prefill · **`0.010460` mean KL** (`-27.4%` vs Official NVFP4) · **93.54%** on 1,362 tasks · **10.3 s** boot
+**`bit225` (2.25-bit, fast version):** **133.5 tok/s** code · **160.2 tok/s** math · **144.4 tok/s** JSON · **75.5 tok/s** prose · **211.7 tok/s** counting · **3,474 tok/s** 8K prefill · **228.2 tok/s** `C=6` mixed · **0.845 s** 3-user 1K TTFT · **`0.041282` mean KL** (`-21.3%` vs `k2`) · **7.61 s** boot
 
 ## Results
 
-One DGX Spark (GB10, 128 GB) with local NVMe storage, `TP=1`, measured 2026-11-25 on `gr8` commit `6b874803` ([PR #615](https://github.com/kindlingai/gr8/pull/615)) with bundled DFlash (`MTP=7`, auto-discovered, zero extra flags), `GR8_INK2_PF_MX8_MOE=2`, `GR8_INK2_MX8_DENSE=2`, `GR8_INK2_MX8_LM_HEAD=0` (and `MX8_DENSE=1`, `MX8_LM_HEAD=1`, `GR8_S2_ADAPT=1` for `k2` speed). Every speed is in tokens per second (tok/s).
+One DGX Spark (GB10, 128 GB) with local NVMe storage, `TP=1`, measured 2026-11-25 on `gr8` commit `6b874803` ([PR #615](https://github.com/kindlingai/gr8/pull/615)) with bundled DFlash (`MTP=7`, auto-discovered, zero extra flags), `GR8_INK2_PF_MX8_MOE=2`, `GR8_INK2_MX8_DENSE=2`, `GR8_INK2_MX8_LM_HEAD=0` (and `MX8_DENSE=1`, `MX8_LM_HEAD=1`, `GR8_S2_ADAPT=1` for `bit225` fast and `k2` fast). Every speed is in tokens per second (tok/s).
 
 ### One request, 8 domains & concurrency (`MTP=7`, 49–97 prompt tokens, 256 max tokens)
 
-| Metric | `k4` (default, 18.72 GB) | `bit325` (16.43 GB) | `bit250` (14.13 GB) | **`k2` speed (12.60 GB)** |
-|---|---:|---:|---:|---:|
-| Code (tok/s) | 64.6 | 90.6 | **111.3** | **100.5** |
-| Math (tok/s) | 107.3 | 105.2 | 133.4 | **167.5** |
-| JSON / structured (tok/s) | 90.9 | 91.2 | 108.3 | **148.9** |
-| HTML (tok/s) | 77.4 | 85.3 | 100.0 | **144.1** |
-| Prose (tok/s) | 48.6 | 49.5 | 55.3 | **80.8** |
-| Narrative (tok/s) | 42.6 | 46.6 | 46.1 | **74.1** |
-| Summary (tok/s) | 55.2 | 61.8 | 66.0 | **97.4** |
-| Counting (tok/s) | 162.8 | 172.4 | 186.3 | **228.3** |
-| C=6 Mixed Agg Decode (tok/s) | 139.1 | 160.0 | 167.6 | **230.0** |
-| Homogeneous C=6 Peak (`6× Math`) | — | 298.6 | — | **479.5** |
-| 8K Cold Prefill (tok/s) | 3,457 | **3,484** | 3,480 | 3,475 |
-| 3-User 1K Avg TTFT | 0.935 s | 0.935 s | 0.942 s | **0.827 s** |
+| Metric | **`bit325` (default, 16.43 GB)** | `k4` (quality, 18.72 GB) | `bit225` (std, 13.37 GB) | **`bit225` fast (13.37 GB)** | `k2` fast (12.60 GB) |
+|---|---:|---:|---:|---:|---:|
+| Code (tok/s) | 90.6 | 64.6 | 112.6 | **133.5** | 100.5 |
+| Math (tok/s) | 105.2 | 107.3 | 141.0 | 160.2 | **167.5** |
+| JSON / structured (tok/s) | 91.2 | 90.9 | 119.3 | 144.4 | **148.9** |
+| HTML (tok/s) | 85.3 | 77.4 | 106.2 | 112.7 | **144.1** |
+| Prose (tok/s) | 49.5 | 48.6 | 56.4 | 75.5 | **80.8** |
+| Narrative (tok/s) | 46.6 | 42.6 | 51.1 | 71.9 | **74.1** |
+| Summary (tok/s) | 61.8 | 55.2 | 62.0 | 88.7 | **97.4** |
+| Counting (tok/s) | 172.4 | 162.8 | 194.7 | 211.7 | **228.3** |
+| `C=6` Mixed Agg Decode (tok/s) | 160.0 | 139.1 | 185.6 | 228.2 | **230.0** |
+| Homogeneous `C=6` Peak (`6× Math`) | 298.6 | — | — | — | **479.5** |
+| 8K Cold Prefill (tok/s) | **3,484** | 3,457 | 3,467 | 3,474 | 3,475 |
+| 3-User 1K Avg TTFT | 0.935 s | 0.935 s | 0.936 s | 0.845 s | **0.827 s** |
 
 *Thinking-ON prose (`512` tokens, `c=1/2/4/6`):*
-- **`k2` speed:** `66.9` / `98.0` / `150.5` / `166.3` tok/s at `t=0.6` (`72.5` / `114.4` / `158.7` / `191.2` tok/s at `t=0.0`).
 - **`bit325`:** `48.5` / `70.2` / `100.3` / `122.6` tok/s at `t=0.6` (`48.8` / `72.3` / `105.1` / `128.2` tok/s at `t=0.0`).
+- **`k2` fast:** `66.9` / `98.0` / `150.5` / `166.3` tok/s at `t=0.6` (`72.5` / `114.4` / `158.7` / `191.2` tok/s at `t=0.0`).
 
-![Inkling-2-Mini K2 speed preset on one DGX Spark: decode, prefill and concurrency](docs/card-k2.png)
+![Inkling-2-Mini bit225 fast preset on one DGX Spark: decode, prefill and concurrency](docs/card-bit225.png)
 
 ### Cold prefill sweep (`bit325`, `CAP=139264`, `PREFILL=4096`)
 
@@ -50,35 +55,41 @@ One DGX Spark (GB10, 128 GB) with local NVMe storage, `TP=1`, measured 2026-11-2
 
 Matched 40×2K (`81,920`-token) full-vocabulary `float64` KL against BF16 (`PPL = 5.3840`) and controlled execution-/SymPy-verified 1,362-task evaluation (HumanEval+ 164, GPQA-Diamond 198, MATH-500 500, GSM8K-500 500 at `temp=0.0`, `max_tokens=6144`, `reasoning_effort="low"`, `0` errors):
 
-| Variant | Device image | Mean / Med KL vs BF16 | Top-1 | 1,362-Task Pooled | Note |
+| Variant | Device image | Mean / Med KL vs BF16 | Top-1 | 1,362-Task Pooled | Guidance |
 |---|---:|---:|---:|---:|---|
-| **`k4`** *(default)* | **18.72 GB** | **0.010460 / 0.001632** | **96.91%** | **93.54%** (`1274/1362`) | **-27.4% KL** vs Official NVFP4 (`0.014407`); ties Official W4A4 (`93.83%`, McNemar `p=0.6655`) |
-| **`bit325`** | 16.43 GB | 0.015019 / 0.003027 | 96.00% | **92.80%** (`1264/1362`) | 91.46% HE+, 97.80% MATH-500, 8/8 exact DFlash greedy parity |
-| **`bit250`** | 14.13 GB | 0.030018 / 0.007401 | 93.93% | — | `-3.81%` KL vs stock `bit250` |
-| **`k2`** *(E2E KL)* | 12.60 GB | **0.052425 / 0.015119** | **91.70%** | — | **-11.65% KL** vs stock `k2` (`0.059341`), zero extra bytes |
+| **`bit325`** *(default)* | **16.43 GB** | `0.015019 / 0.003027` | `96.00%` | **92.80%** (`1264/1362`) | **Default:** performed nearly the same as 4-bit in evals (`91.46%` HE+, `97.80%` MATH-500) except graduate-level science (GPQA `72.22%`); 8/8 exact DFlash greedy parity |
+| **`k4`** *(higher quality)* | **18.72 GB** | **0.010460 / 0.001632** | **96.91%** | **93.54%** (`1274/1362`) | **Higher quality:** recommended for maximum quality & graduate-level science (GPQA `75.25%`); `-27.4%` KL vs Official NVFP4, ties Official W4A4 (`p=0.6655`) |
+| **`bit225`** *(fast version)* | **13.37 GB** | `0.041282 / 0.011148` | `92.70%` | — | **Fast version:** `-21.3%` lower KL than `k2`, `0` extra weight bytes, `133.5` Code / `160.2` Math / `228.2` `C=6` tok/s |
+| `bit250` | 14.13 GB | `0.030018 / 0.007401` | `93.93%` | — | Compact mid-tier (`-3.81%` vs stock `bit250`) |
+| `k2` *(E2E KL)* | 12.60 GB | `0.052425 / 0.015119` | `91.70%` | — | Minimum footprint (`-11.65%` KL vs stock `k2`) |
 
-### How long each chat can be (`1M` KV pool on 128 GB Spark)
+### Maximized concurrency & KV pools on 128 GB Spark (`bit325`, live verified)
 
-The default configuration allocates a **`1,048,576`-token (`1M`) total KV pool** (`CAP=262144`, `SESSIONS=4` — 4 dedicated 256K slots, leaving `12.2 GiB` free OS memory with `k4` + `23.5 GiB` cached MXFP8 prefill MoE):
+`g6m4_ink2` supports up to **8 concurrent sessions** (`SESSIONS=1..8`). The default **`bit325`** configuration maximizes both concurrency and prefill speed with a **`1,179,648`-token (`1.18M`) KV pool** (`147,456 × 8`, full `PF_MX8_MOE=2`, **`9.52–9.69 GiB` free OS memory**), with verified higher-capacity `.env` options up to **`2.10M` tokens (`256K × 8`)**:
 
-| Mode (`.env`) | Active chats | Max tokens per chat | Boot time | Verified free OS memory |
-|---|---:|---:|---:|---:|
-| Default (`CAP=262144`, `SESSIONS=4`) | 4 | **262,144** | 10.3 s | `12.2 GiB` (after 146.4K needle PASS) |
-| Multi-user (`CAP=131072`, `SESSIONS=8`) | 8 | **131,072** | ~10.3 s | `11.6 GiB` |
-| Full 1M native (`CAP=1048576`, `SESSIONS=1`) | 1 | **1,048,576** | 10.5 s | `7.8 GiB` |
+| Mode (`.env`, `bit325`) | `PF_MX8_MOE` | Active chats | Max tokens / chat | Total KV pool | Boot time | Verified free OS memory | 37.8K prefill |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **Default (`144K × 8`)** | `2` | **8** | **147,456** | **1,179,648 (`1.18M`)** | `9.95 s` | **`9.52–9.69 GiB`** | `2,945 tok/s` |
+| Max `moe=2` (`160K × 8`) | `2` | 8 | 163,840 | 1,310,720 (`1.31M`) | `9.92 s` | `5.45 GiB` | `2,876 tok/s` |
+| Long-chat `moe=2` (`256K × 5`) | `2` | 5 | 262,144 | 1,310,720 (`1.31M`) | `9.92 s` | `5.54 GiB` | `2,893 tok/s` |
+| Expanded pool (`192K × 8`) | `1` | 8 | 196,608 | 1,572,864 (`1.57M`) | `9.72 s` | `9.12 GiB` | `2,589 tok/s` |
+| Ultra pool (`256K × 8`) | `0` | **8** | **262,144** | **2,097,152 (`2.10M`)** | `9.52 s` | `4.44 GiB` | `1,955 tok/s` |
+| Full 1M native (`1M × 1`) | `2` | 1 | **1,048,576** | 1,048,576 (`1.05M`) | `10.5 s` | `7.8+ GiB` (`k4`) | — |
+
+*For `VARIANT=k4` with `PF_MX8_MOE=2`, verified live pools are `262,144 × 4` (`1M`, `12.2 GiB` free), `131,072 × 8` (`1M`, `11.6 GiB` free), and `1,048,576 × 1` (`1M`, `7.8 GiB` free).*
 
 ### Quality checks
 
-Measured on 2026-11-25 via live Docker Compose (`ghcr.io/kindlingai/gr8:sha-6b87480`, `k4`, `CAP=262144`, `SESSIONS=4`) and live `bit325` parity runs:
+Measured live on 2026-11-25 on 1× DGX Spark (`gr8` commit `6b874803` / `ghcr.io/kindlingai/gr8:sha-6b87480`):
 
 | Check | Result |
 |---|---|
 | DFlash `K=7` vs `MTP=0` greedy parity (`bit325`) | **8 of 8 exact token-for-token** (`1.41×–5.18×` speedup) |
-| Needle recall at `36.6K` (`k4`, Docker Compose) | **PASS** (`3,068 tok/s`) |
-| Needle recall at `146.4K` (`k4`, Docker Compose) | **PASS** (`2,089 tok/s`, `12.2 GiB` free after run) |
-| Boot to serving from local NVMe | `10.3 s` (`256K × 4`) / `10.5 s` (`1M × 1`) |
+| Needle recall (`bit325`, `144K × 8 = 1.18M` KV pool) | **PASS** at `35.4K` (`2,360 tok/s`, `9.52 GiB` free) |
+| Needle recall (`k4`, Docker Compose `256K × 4 = 1M` KV pool) | **PASS** at `36.6K` (`3,068 tok/s`) and `146.4K` (`2,089 tok/s`, `12.2 GiB` free) |
+| Boot to serving from local NVMe | `9.95 s` (`bit325` `144K × 8`) / `10.3 s` (`k4` `256K × 4`) / `7.61 s` (`bit225` fast) |
 
-[kindling.json](kindling.json) holds the `tp1-k4`, `tp1-bit325`, and `tp1-k2` results in machine-readable form. Both cards above are drawn from it.
+[kindling.json](kindling.json) holds the `tp1-bit325`, `tp1-k4`, and `tp1-bit225` results in machine-readable form. Both cards above are drawn from it.
 
 ## Quickstart
 
@@ -86,10 +97,10 @@ First turn off proactive memory compaction on the Spark ([What you need](#what-y
 
 ```bash
 npx @kindlingai/recipe inkling-2-mini-exlr8-1x-spark && cd inkling-2-mini-exlr8-1x-spark
-# the CLI already copied .env.example to .env
+# the CLI already copied .env.example to .env (defaults to bit325, 144K x 8 = 1.18M KV pool)
 hf download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 \
   --local-dir ./models/inkling-2-mini-exlr8-k2-k3-k4
-docker compose up -d       # pulls the pinned gr8 image; ready in ~10.3 s
+docker compose up -d       # pulls the pinned gr8 image; ready in ~10 s
 docker compose logs -f
 ```
 

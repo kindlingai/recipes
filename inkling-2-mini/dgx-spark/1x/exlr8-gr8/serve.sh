@@ -15,10 +15,10 @@ unset GR8_ROOT GR8_IMAGE GR8_DIR GR8_REPO GR8_REF
 
 MODEL_DIR="${MODEL_DIR:?Set MODEL_DIR to your local kindlingai/inkling-2-mini-exlr8-k2-k3-k4 directory}"
 SERVED_MODEL="${SERVED_MODEL:-inkling-2-mini}"
-VARIANT="${VARIANT:-k4}"
+VARIANT="${VARIANT:-bit325}"
 MTP="${MTP:-7}"
-CAP="${CAP:-262144}"
-SESSIONS="${SESSIONS:-4}"
+CAP="${CAP:-147456}"
+SESSIONS="${SESSIONS:-8}"
 CHUNK="${CHUNK:-8}"
 PREFILL="${PREFILL:-4096}"
 HOST="${HOST:-0.0.0.0}"

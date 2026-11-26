@@ -12,7 +12,7 @@ How it fits a 60+ GB MoE model comfortably on a single 32 GB GPU:
 - **FP8 dense weights + INT4 MTP=4 speculative drafter + aliased workspace:** Keeps total VRAM under **22.9 GiB** (leaving room for other workloads on a 32 GB GPU, or scaling up the hot-expert cache automatically on larger GPUs).
 - **Direct NVMe / mmap PLE streaming:** Streams Layer-1 Per-Layer Embeddings directly from local NVMe (`ple/exlr8-ple-L001.bin` from the Hugging Face release, or an optional compact GGUF PLE via `--ple`).
 
-![Qwen3.8-Flash-Next K3 on 1x RTX 5090 + 128 GB DDR5](docs/card.jpg)
+![Qwen3.8-Flash-Next K3 on 1x RTX 5090 + 128 GB DDR5](docs/card.png)
 
 ## Measured Results (1× RTX 5090 32 GB + Ryzen 7 9800X3D + 128 GB DDR5)
 

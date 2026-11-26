@@ -1,13 +1,15 @@
-# The recipe index: index.json (what the Kindling site, gr8's card script and npx @kindlingai/recipe read) and the
-# README's recipe tables, both written by tools/build_index.py from each recipe's kindling.json.
-#   pull_request  validate every recipe and show the tables the merge would produce in the job summary. Pull requests
-#                 never carry the generated files, so two recipe PRs never conflict on them.
-#   push to main  validate, regenerate, and commit the generated files when they changed.
+# The recipe index: index.json (what the Kindling site and npx @kindlingai/recipe read), the README's recipe tables
+# (both written by tools/build_index.py from each recipe's kindling.json), and each non-external recipe's docs/card.png
+# (drawn by tools/card.py from kindling.json).
+#   pull_request  validate every recipe, check that every card renders, and show the tables the merge would produce in
+#                 the job summary. Pull requests never carry the generated index files, so two recipe PRs never conflict
+#                 on them.
+#   push to main  validate, redraw any changed docs/card.png, regenerate the index, and commit when anything changed.
 #   schedule      also refresh external recipes' kindling.json from their own repos first (tools/sync_external.py).
 # The commit is pushed as kindling-release-bot (a GitHub App token from the RELEASE_PLEASE_APP_ID and
 # RELEASE_PLEASE_APP_PRIVATE_KEY secrets, as gr8's release workflow uses): the main ruleset requires pull requests,
 # GitHub Actions' own token cannot be a ruleset bypass actor, and the app is one. A push by the app runs this workflow
-# again; that run finds the index current and commits nothing, so it does not loop.
+# again; that run finds the cards and index current and commits nothing, so it does not loop.
 name: Index
 
 on:
@@ -36,10 +38,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r tools/requirements.txt
-      - name: Every recipe is valid; the tables this would produce
+      - name: Every recipe is valid; the tables and cards this would produce
         run: |
           echo "## Recipe index after this change" >> "$GITHUB_STEP_SUMMARY"
           python3 tools/build_index.py --summary "$GITHUB_STEP_SUMMARY"
+          python3 tools/card.py
           git diff --stat
 
   publish:
@@ -80,6 +83,15 @@ jobs:
           git diff --cached --quiet || git -c user.name='${{ steps.bot.outputs.name }}' \
             -c user.email='${{ steps.bot.outputs.email }}' \
             commit -q -m "Refresh external recipes from their repos" -m "tools/sync_external.py"
+      - name: Redraw recipe cards
+        run: |
+          python3 tools/card.py
+          git add -A -- '*/*/*/*/docs/card.png'
+          # its own commit, before the index: each recipe's updated_at is the date of the last commit touching it,
+          # so committing changed cards before build_index.py keeps the bot push idempotent on the re-triggered run
+          git diff --cached --quiet || git -c user.name='${{ steps.bot.outputs.name }}' \
+            -c user.email='${{ steps.bot.outputs.email }}' \
+            commit -q -m "Redraw recipe cards" -m "tools/card.py after ${GITHUB_SHA:0:7}."
       - name: Regenerate
         run: python3 tools/build_index.py --summary "$GITHUB_STEP_SUMMARY"
       - name: Commit the index when it changed, and push
@@ -89,5 +101,5 @@ jobs:
           git diff --cached --quiet || git -c user.name='${{ steps.bot.outputs.name }}' \
             -c user.email='${{ steps.bot.outputs.email }}' \
             commit -q -m "Update the recipe index" -m "tools/build_index.py after ${GITHUB_SHA:0:7}."
-          if [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]; then echo "index unchanged"; exit 0; fi
+          if [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]; then echo "index and cards unchanged"; exit 0; fi
           git push origin HEAD:main

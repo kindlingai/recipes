@@ -21,7 +21,6 @@
     "summary": { "type": "string", "description": "One or two sentences on what the recipe does" },
     "model": { "type": "string", "description": "Checkpoint or model id" },
     "weights_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Hugging Face commit of the checkpoint the recipe boots" },
-    "hardware": { "type": "string", "description": "Free text kept for older readers. The index uses hardware.json's name for the folder's hardware slug." },
     "stack": { "type": "array", "items": { "type": "string" } },
     "image": {
       "type": "string",

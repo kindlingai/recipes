@@ -1,0 +1,5 @@
+.env
+gr8/
+work/
+__pycache__/
+*.pyc

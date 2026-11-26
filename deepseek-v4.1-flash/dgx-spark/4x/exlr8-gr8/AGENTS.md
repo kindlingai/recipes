@@ -1,10 +1,15 @@
-# For agents: boot DeepSeek-V4.1-Flash on four DGX Sparks
+# For agents: boot DeepSeek-V4.1-Flash on 4× DGX Spark
 
-You are booting this recipe for someone. This file has the steps, every knob, and how to check each step. It is taken
-from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (its source in `gr8/`, at the
-commit `kindling.json` pins as `engine.commit`). Paths here are relative to this recipe's folder. If this file and
-`knobs.sh` or `compose.yaml` disagree, follow `knobs.sh` and `compose.yaml`, and tell the person. If you cannot run a
-check yourself, ask the person.
+You are booting this recipe for someone. Follow the steps in order and run each check. If a check fails, stop and tell
+the person what failed. If this file and `knobs.sh`, `compose.yaml` or `.env.example` disagree, follow those files and
+tell the person. If you cannot run a check yourself, ask the person to run it and paste the output.
+
+This recipe is the folder `deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` of
+[kindlingai/recipes](https://github.com/kindlingai/recipes); paths below are relative to it. Get it with
+`npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark` (or a sparse clone of the monorepo) on all four boxes and
+run the commands from inside the folder. This recipe runs `gr8`'s published image (`ghcr.io/kindlingai/gr8:v1.3.0`,
+pending `kindlingai/gr8#630`) directly with read-only mounts for `entrypoint.sh`, `knobs.sh`, and `fetch-release.sh`,
+plus the shipped `seccomp-iouring.json` profile; nothing is compiled here.
 
 ## 1. Check the four boxes
 
@@ -13,173 +18,93 @@ On every box:
 - It is a DGX Spark (GB10, 128 GB). All four are on one 200G switch, or cabled in a ring (README.md, Clustering).
 - Docker and the NVIDIA container toolkit are installed (both come with DGX OS): `docker info | grep -i nvidia` shows
   the `nvidia` runtime.
-- 510.6 GB of disk is free where Docker keeps volumes, for the release volume `ds41-release`:
-  `df -h "$(docker info --format '{{.DockerRootDir}}')"`. Or set `RELEASE_DIR` to a host directory on local NVMe,
-  owned by uid 1000. A `.env` copied from `.env.example` also turns the gen cache on, which needs about 80 GB more in
-  the home volume `ds41-home` (`GR8_HOME_DIR`), and up to about 160 GB once a second cache key exists, for example
-  after a new image or a `TUNE` change between `quality` and `speed` or `context` (section 2).
-- The box can reach Hugging Face for the fetch: `curl -sI https://huggingface.co` answers.
-- TCP ports 7340 and 7341 are open between the four boxes: no firewall blocks them. Check this before the boot, while
-  nothing listens on those ports. `nc` may not be installed, so use `python3` and bash. On a peer, listen on one port:
-
-  ```bash
-  python3 -c 'import socket; s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(("", 7340)); s.listen(1); print("ACCEPTED from", s.accept()[1])'
-  ```
-
-  On the head, connect to it:
-
-  ```bash
-  timeout 5 bash -c 'exec 3<>/dev/tcp/<peer-address>/7340' && echo OPEN || echo BLOCKED
-  ```
-
-  The peer prints `ACCEPTED from` and the head's address, and the head prints `OPEN`. The listener stops after one
-  connection, so start it again for each test. Do the same for port 7341, for each of the three peers, on the `PEERS`
-  addresses and, if you set them, the `IPS` and `IPS2` addresses. Then test once the other way: listen on the head and
-  connect from a peer.
-  `BLOCKED` means a firewall, a wrong address, or no listener on the other box.
-- No other model runs on the box: `docker ps` and `nvidia-smi` show none. The launcher refuses to start next to
-  another g6m4 engine on the box.
-- Proactive memory compaction is off: `sysctl vm.compaction_proactiveness` prints 0. If not, as root, once:
+- 510.6 GB of disk is free where Docker keeps volumes, for `ds41-release`:
+  `df -h "$(docker info --format '{{.DockerRootDir}}')"`. Or set `RELEASE_DIR` in `.env` to a host directory on local
+  NVMe owned by uid 1000. `.env.example` also turns on the gen cache (`GR8_GEN_CACHE=/var/lib/gr8/home/gen-cache`),
+  which needs ~80 GB in `ds41-home` (`GR8_HOME_DIR`), up to ~160 GB once two cache keys exist.
+- Hugging Face answers: `curl -sI https://huggingface.co`.
+- TCP ports 7340 and 7341 are open between all four boxes (verify in both directions on `PEERS`, `IPS`, `IPS2` with a
+  python socket listener and `timeout 5 bash -c 'exec 3<>/dev/tcp/<peer>/7340'`).
+- No other model runs on the box: `docker ps` and `nvidia-smi` show none.
+- Proactive memory compaction is off: `sysctl vm.compaction_proactiveness` prints `0`. If not, as root, once:
 
   ```bash
   echo 'vm.compaction_proactiveness = 0' > /etc/sysctl.d/90-gr8-no-proactive-compaction.conf
   sysctl -w vm.compaction_proactiveness=0
   ```
 
-- The fabric, one of:
-  - With `mentat` (README.md, Clustering) running on every box: `docker ps` shows the `mentat` container. Use
-    `MENTAT=1` below and leave out `PEERS`, `IPS` and `IPS2`.
-  - On a switch without `mentat`: each box has one ConnectX address per PCIe root. Addresses the ports already have
-    are fine; README.md, Clustering, has a netplan file only for ports that have none.
-    `ip -br addr show enp1s0f0np0` and `ip -br addr show enP2p1s0f0np0` show them, and `ls /dev/infiniband` lists
-    devices. You need all four boxes' 10G LAN addresses (`PEERS`, head first), their root-1 ConnectX addresses (`IPS`)
-    and their root-2 addresses (`IPS2`), each list in the same order.
-  - In a ring without a switch: each box's f0 port is cabled to the next box's f1 port. Use `SHAPE=ring`, `PEERS` in
-    that cable order, and no `IPS` or `IPS2`.
+- Fabric configuration (one of):
+  - With `mentat` on every box (`docker ps` shows `mentat`): set `MENTAT=1`, leave `PEERS`, `IPS`, `IPS2` commented out.
+  - On a switch without `mentat`: collect all four boxes' 10G LAN addresses (`PEERS`, head first), root-1 ConnectX
+    addresses (`IPS`), and root-2 addresses (`IPS2`), in identical order. Check `ip -br addr` and `ls /dev/infiniband`.
+  - In a ring without a switch: set `SHAPE=ring` and `PEERS` in cable order (each box's f0 to next box's f1), no
+    `IPS`/`IPS2`.
 
-## 2. Pick the settings
+## 2. Write .env and pick settings
 
-Set the same values on all four boxes, in `.env` (compose) or with `docker run -e`.
+Copy `.env.example` to `.env` on all four boxes (the `npx @kindlingai/recipe` CLI already did) and keep all four `.env`
+files identical. Uncomment and fill in `PEERS`, `IPS`, `IPS2` (or set `MENTAT=1`).
 
-`TUNE` picks what to prioritize. Ask the person, or use the default. We recommend `speed` or `context`. From README.md's
-"Our view": the model tends to hallucinate a lot. That is a model issue, not an engine or quant issue.
+`TUNE` picks what to prioritize. Keep `TUNE=speed` unless the person asks for `context` or `quality`:
 
-| `TUNE` | the settings it sets (`knobs.sh`) | what it gives |
+| `TUNE` | what `knobs.sh` sets | what it gives |
 |---|---|---|
-| `speed` (default) | `GR8_DS_RELAXED_ACCEPT=topp:0.9,ratio:0.1 GR8_DS_MOE_TOPK_DECODE=4 GR8_DS41_HEAD_MX=1 GR8_DS_ATTN_TC_MF=2 GR8_DS_CACHE_MIB=1024 GR8_DS_ENGRAM_CACHE_MIB=2048` and gr8's default v2 release stack (README.md "What `TUNE=speed` sets": 12,288-row v2 prefill with `GR8_DS_PF_V2=1 GR8_DS_PF_V2_W16K=1 GR8_DS_PF_V2_L20_TAIL=1 GR8_DS_PF_V2_SEND_FFN_OPT=3 GR8_DS_PF_V2_BF16_TC=7`, `GR8_DS_ATTN_TC_TILE=2`, `GR8_S2_ADMIT_HOLD=1 GR8_S2_TAIL_FIRST=1`, Engram io_uring), `SESS=32`, `CAP=327680` | fast mode: 32 chats of up to 327,670 tokens; replies not bit-identical to the exact model's |
-| `context` | the four switches above, `GR8_DS_ATTN_TC_TILE=1`, `GR8_DS_MHC_ROW_SHARD=1`, `GR8_DS_CACHE_MIB=2048`, `SESS=16`, `CAP=1048576` (not the release stack) | fast mode: one chat of up to 1,048,566 tokens, 16 chats at once |
-| `quality` | gr8's `EXACT=1` (the old prefill path, none of fast mode's or v2's switches), `SESS=5`, `CAP=262144` | the exact model's output: 5 chats of up to 262,134 tokens |
+| `speed` (default) | fast-mode switches (`GR8_DS_RELAXED_ACCEPT`, `GR8_DS_MOE_TOPK_DECODE=4`, `GR8_DS41_HEAD_MX=1`, `GR8_DS_ATTN_TC_MF=2`, `GR8_DS_CACHE_MIB=1024`, `GR8_DS_ENGRAM_CACHE_MIB=2048`) + gr8 v2 12K prefill stack, `SESS=32`, `CAP=327680` | fast mode: 32 chats up to 327,670 tokens (not bit-identical to exact) |
+| `context` | fast-mode switches + `GR8_DS_ATTN_TC_TILE=1`, `GR8_DS_MHC_ROW_SHARD=1`, `GR8_DS_CACHE_MIB=2048`, `SESS=16`, `CAP=1048576` | fast mode: 16 chats, one up to 1,048,566 tokens |
+| `quality` | `EXACT=1`, `SESS=5`, `CAP=262144` (old prefill path, no fast-mode switches) | exact model output: 5 chats up to 262,134 tokens |
 
-What else `knobs.sh` does:
+What else `knobs.sh` and `gr8` do:
 
-- Every value also sets Engram (`GR8_DS_ENGRAM=1`, `GR8_DS_ENGRAM_PREFIX`).
-- Every value adds `GR8_DS_SESS_DRAFTS=1` when `SESS` is above 5.
-- A `CAP` or `SESS` you set is kept.
-- An engine setting in `EXTRA_ENV` replaces the recipe's value for it and comes after the recipe's own.
-- `.env.example` sets `EXTRA_ENV=GR8_GEN_CACHE=/var/lib/gr8/home/gen-cache`, so a `.env` copied from it has the gen
-  cache on: the loader keeps the tensors it computes at load on the box's disk and reads them back at the next boot with
-  the same cache key (the same image, rank and release, and a `TUNE` of the same kind: `quality`, or `speed` and
-  `context`). Tell the person before the boot: it takes about 80 GB a box in the home volume (79.6 GB; up to about 160 GB
-  with two keys, as the loader keeps the two newest keys' entries), and the first boot of a key writes it and is slower
-  (README.md, "The gen cache: disk, first boot, off", has the measured times). A new key comes from a new image, a change
-  of `TUNE` between `quality` and `speed` or `context`, a different rank or a different release: each is a full 79.6 GB
-  rewrite and a slow first boot, so say so before the person changes `TUNE` between those kinds later. To turn it off,
-  put a `#` in front of that line in `.env` on all four boxes before the boot.
-- Any other `TUNE` value stops the boot. `EXACT` is the older name: the image refuses it and says that `EXACT=1` is
-  `TUNE=quality` and `EXACT=0` is `TUNE=speed`.
-
-Every knob:
-
-| knob | values | default |
-|---|---|---|
-| `PEERS` | the four boxes' 10G LAN addresses, comma-separated, head first, the same list on every box | none: required unless `MENTAT=1` |
-| `IPS`, `IPS2` | each box's ConnectX address on PCIe root 1 and root 2, in `PEERS` order | none |
-| `SHAPE` | `ring`: four boxes cabled in a ring, without `IPS` and `IPS2` | unset (a switch) |
-| `TUNE` | `speed`, `context`, `quality` | `speed` |
-| `CAP` | the longest chat in tokens, prompt and reply; every slot gets this much KV at boot; a request holds `CAP` less 10 | by `TUNE` (table above) |
-| `SESS` | chats at once: a whole number from 1 to 32, no leading zero | by `TUNE` (table above) |
-| `MENTAT` | `0`: the boxes in `PEERS`. `1`: find the boxes through the host's `mentat` daemon and register the API | `0` |
-| `GROUP` | the `mentat` group | `gr8-ds41-4x` |
-| `RELEASE_DIR`, `GR8_HOME_DIR` | compose only: host directories in place of the volumes `ds41-release` and `ds41-home`, owned by uid 1000 | the named volumes |
-| `IMAGE` | compose only: a pinned image, e.g. `ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:sha-<commit>` | `:latest` |
-| `RELEASE` | the release to fetch, `https://huggingface.co/<org>/<repo>@<commit>` | the commit README.md measured |
-| `FETCH_JOBS` | files the fetch, and the check before each boot, take at once | `8` |
-| `HF_TOKEN` | sent only to Hugging Face, for a gated or private repo | none |
-| `EXTRA_ENV` | more engine settings, `NAME=value` pairs separated by spaces | none |
-
-Any other gr8 launcher option works too (gr8/KNOBS.md).
+- Engram is always on (`GR8_DS_ENGRAM=1`, `GR8_DS_ENGRAM_PREFIX=/var/lib/gr8/home/engram/ds41`). On first boot, `gr8`
+  automatically generates and verifies `/var/lib/gr8/home/engram/ds41.engram.cmap` from `<release>/tokenizer.json`
+  against `kCmapSha256` via `bin/g6front-rs engram-cmap` (no PyTorch or manual cmap step needed).
+- `SESS` above 5 adds `GR8_DS_SESS_DRAFTS=1`.
+- Any explicit `CAP`, `SESS`, or `EXTRA_ENV` key in `.env` wins over `knobs.sh`'s default.
+- `.env.example` enables `EXTRA_ENV=GR8_GEN_CACHE=/var/lib/gr8/home/gen-cache` (~80 GB per cache key, keeps two keys).
+  Warn the person before switching `TUNE` between `quality` and `speed`/`context`, as that writes a new ~80 GB cache key.
+- `EXACT` set directly in `.env` is refused (exit 2) with a pointer to `TUNE=quality` / `TUNE=speed`.
 
 ## 3. Boot
 
-1. On every box, fetch the release: 604 files, 510.6 GB. It resumes if you run it again, checks every file's hash, and
-   fetches a wrong file again. Wait until it has finished on all four boxes: the container refuses to start while the
-   release on its box is not whole.
+1. On **every box**, fetch the 510.6 GB release (604 files) using the one-shot `fetch` service. Wait for all four boxes
+   to finish before starting `gr8`:
 
    ```bash
-   docker run --rm --read-only -v ds41-release:/var/lib/gr8/release \
-     ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest fetch
+   docker compose run --rm fetch
    ```
 
-   After you update the image, run the fetch once more on every box before you boot: it checks every file and
-   downloads only what is wrong or missing.
+   Re-running resumes and verifies every file's hash. If migrating an old pre-hash record fails on any file, run
+   `docker compose run --rm fetch --force` on that box.
 
-   A release fetched with an image older than `sha-fe21314` (such as `sha-661d148`) has a record without hashes. The
-   fetch, and the container at start, migrate it: only the file list is fetched, every file's blob id and size must
-   match the record, then every file is hashed once, check only (60 s a box on four boxes at once, local NVMe). The
-   migration deletes and downloads nothing. It names a file that does not match and stops: run the fetch with
-   `fetch --force` on that box to fetch that file again.
-
-2. Optional, on every box: print the settings the boot will use, and compare the `CAP`, `SESS` and `EXTRA_ENV` lines
-   with the `TUNE` table above. The output goes to stdout. With `mentat`, pass `-e MENTAT=1` in place of `PEERS`.
+2. Optional (no GPU needed): run `./check-config.sh` (or pass a `GR8_IMAGE` argument) to verify `compose.yaml`,
+   `seccomp-iouring.json`, `.env.example`, and `knobs.sh`, or inspect the resolved config:
 
    ```bash
-   docker run --rm -e PEERS=<head>,<box2>,<box3>,<box4> -e TUNE=speed \
-     ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest show-config --no-check
+   docker compose run --rm --no-deps gr8 show-config --no-check
    ```
 
-3. Start the container on all four boxes within 10 minutes of each other: the boxes wait for each other for 600 s
-   (gr8's `JOIN_TIMEOUT`). Replace each `<...>` with the real values, the same on every box:
+3. Start the container on all four boxes within 10 minutes (`JOIN_TIMEOUT=600` s):
 
    ```bash
-   docker run -d --name ds41-4x-spark --gpus all --network host --pid host --device /dev/infiniband \
-     --ulimit memlock=-1 --ulimit core=0 --cap-drop ALL --cap-add IPC_LOCK \
-     --security-opt no-new-privileges --security-opt seccomp=<dir>/seccomp-iouring.json --read-only --tmpfs /tmp:size=1g,mode=1777 --init --oom-score-adj 1000 \
-     -e PEERS=<head>,<box2>,<box3>,<box4> -e IPS=<four root-1 addresses> -e IPS2=<four root-2 addresses> \
-     -e TUNE=speed \
-     -v ds41-release:/var/lib/gr8/release -v ds41-home:/var/lib/gr8/home \
-     ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest
-   ```
-
-   With `mentat`, replace the `PEERS`, `IPS` and `IPS2` line with `-e MENTAT=1`. In a ring, replace it with
-   `-e PEERS=<the four, in cable order> -e SHAPE=ring`.
-
-   Or with compose, on every box:
-
-   ```bash
-   npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark && cd deepseek-v4.1-flash-exlr8-4x-spark
-   # the CLI already copied .env.example to .env; edit it: uncomment and set PEERS, IPS and IPS2 (or MENTAT=1), and TUNE: the same file on every box
-   docker compose run --rm gr8 fetch
-   ./install-seccomp.py
    docker compose up -d
+   docker compose logs -f
    ```
 
-4. To change `TUNE` or any other knob later: stop and remove the container on all four boxes, then start it again with
-   the new value on all four. The boxes refuse to join unless they all have the same options.
+   `compose.yaml` applies `./seccomp-iouring.json` automatically for Engram `io_uring`. If Docker rejects the profile on
+   an unusual host kernel, set `SECCOMP_PROFILE=builtin` in `.env` (Engram falls back to `pread` automatically).
+
+4. To change `TUNE` or any knob later: `docker compose down` on all four boxes, edit `.env` identically on all four,
+   and `docker compose up -d`.
 
 ## 4. Check that it serves
 
-- On the head, `docker logs -f ds41-4x-spark` (compose: `docker compose logs -f`) prints `serving: http://...` when the
-  cluster serves. In our run on 2026-11-09 the first boot (cold disk) of the image `sha-ad3efdf` printed it 212.7 s
-  after the four containers started, with the gen cache written; a switch from GLM-5.3 after that was ready in 37-39 s.
-  The first boot of a new cache key with the gen cache on (a new image, or a `TUNE` change between `quality` and `speed`
-  or `context`) writes the cache and takes longer (README.md, "The gen cache: disk, first boot, off", has the measured
-  times).
-- On every box, `docker exec ds41-4x-spark gr8 ds41 health` exits 0 when that box serves. With compose,
-  `docker compose ps` shows the container as `healthy` once this check passes.
-- `docker exec ds41-4x-spark gr8 ds41 status` shows every box's state, engine and free memory.
-- On the head, `docker exec ds41-4x-spark gr8 ds41 smoke` checks the API, tool calls included. It exits 0 when every
-  case passes.
-- The API is OpenAI-compatible, on the head's port 8100, with the model name `deepseek-v4.1-flash`. Send one chat:
+Wait for `serving:` in the head's log (`docker compose logs -f`), then verify:
+
+- On every box: `docker compose exec gr8 /opt/ds41-4x/entrypoint.sh health` exits 0, and `docker compose ps` shows
+  `healthy`.
+- `docker compose exec gr8 /opt/ds41-4x/entrypoint.sh status` shows all four boxes' state, engine, and free memory.
+- On the head: `docker compose exec gr8 /opt/ds41-4x/entrypoint.sh smoke` checks the API including tool calls (exits 0).
+- On the head: `curl -s localhost:8100/v1/models` lists `deepseek-v4.1-flash`, and one chat completion succeeds:
 
   ```bash
   curl -s localhost:8100/v1/chat/completions -H 'Content-Type: application/json' -d '{
@@ -189,62 +114,50 @@ Any other gr8 launcher option works too (gr8/KNOBS.md).
   }'
   ```
 
-  The reply is JSON with a `choices` list. A request that does not set a reasoning effort runs at effort `low`.
-- To stop, on every box: `docker stop ds41-4x-spark && docker rm ds41-4x-spark` (compose: `docker compose down`).
+## 5. Stop
 
-## 5. When a step fails
+On every box:
+
+```bash
+docker compose down
+```
+
+## 6. When a step fails
 
 | what you see | what to do |
 |---|---|
-| `PEERS=...: want the four boxes' LAN addresses, head first, the same on every box (or MENTAT=1)` | set `PEERS` to four addresses, the same list on every box, or `MENTAT=1` |
-| `ds41-4x: the release in ... is not whole: run the fetch first, on every box` | run the fetch (step 1) on that box. With compose, the container restarts and stops again until the fetch is done |
-| `fetch-release.sh: no record that ... holds ..., with each file's hash (run the fetch)` | the volume holds another release: run the fetch (step 1). It hashes the files that are there and fetches only the wrong or missing ones |
-| `ds41-4x: the fetch record beside ... is from an older image and was not migrated (above)` | the release was fetched with an image older than `sha-fe21314`, and the lines above name each file that differs from the release. Nothing was deleted. On that box, run the fetch (step 1) with `fetch --force` in place of `fetch`: it deletes those files and fetches them again |
-| `fetch-release.sh: ... holds files but there is no record of their release ...: empty it first` | the volume holds files the fetch did not put there: empty the volume and fetch (step 1) |
-| `MISMATCH <file>: ...` | that file has its full size but not the content the release lists (a sparse or damaged copy): run the fetch (step 1), which fetches it again |
-| `TUNE=...: want speed ..., context ... or quality ...` | use one of the three values |
-| `EXACT=...: EXACT is now TUNE ...` | remove `EXACT`; set `TUNE=quality` for the exact model |
-| `SESS=...: want a number of chats, 1 or more` | set `SESS` to a whole number from 1 to 32, no leading zero |
-| `gr8: memlock is limited ...` | `--ulimit memlock=-1` with `docker run`, `ulimits.memlock: -1` in compose |
-| `gr8: ... is not writable by uid 1000 ...` | `chown 1000:1000` the `GR8_HOME_DIR` directory |
-| the image does not pull | build it on the box from the recipe with its engine source: `npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark --engine` (or `tools/engine.sh deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` from the root of a monorepo clone) puts gr8 in `gr8/` at `engine.commit`, then `docker compose build` in the recipe folder (it tags the image `ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest`), or `docker buildx build --platform linux/arm64 -t ds41-4x-spark .` and use that tag |
-| a box never joins | start all four within 600 s; check that `PEERS` and every other knob are the same on every box, head first, and that ports 7340 and 7341 are open |
+| `PEERS=...: want the four boxes' LAN addresses ...` | set four addresses in `PEERS` (identical on all boxes) or `MENTAT=1` |
+| `ds41-4x: the release in ... is not whole: run the fetch first` | run `docker compose run --rm fetch` on that box |
+| `ds41-4x: the fetch record ... was not migrated` | run `docker compose run --rm fetch --force` on that box |
+| `MISMATCH <file>: ...` | run `docker compose run --rm fetch` to re-download the damaged file |
+| `engram: .../ds41.engram.cmap: sha256 ... != expected ...` | delete the corrupt `.engram.cmap` in `ds41-home/engram/` and restart so `gr8` regenerates and verifies it |
+| `TUNE=...: want speed ..., context ... or quality ...` | use `speed`, `context`, or `quality` |
+| `EXACT=...: EXACT is now TUNE ...` | remove `EXACT`; set `TUNE=quality` or `TUNE=speed` |
+| `SESS=...: want a number of chats, 1 or more` | set `SESS` to 1..32, no leading zero |
+| `gr8: memlock is limited ...` | keep `ulimits.memlock: -1` in `compose.yaml` |
+| `gr8: ... is not writable by uid 1000 ...` | `chown 1000:1000` on host `GR8_HOME_DIR` / `RELEASE_DIR` |
+| a box never joins | start all four within 600 s; verify identical `.env` and open ports 7340/7341 |
 
-The container's exit status is the launcher's: 0 after a stop, 1 when a rank failed, 2 for bad options, 4 when the
-boxes' handshake refused the boot. `docker inspect -f '{{.State.ExitCode}}' ds41-4x-spark` prints it. The logs are
-in the home volume: `out/supervisor.log`, `g6m4.r0.err`, `shim.log`, `front.log`.
+Exit codes: 0 clean stop, 1 rank failed / join timeout, 2 bad options or missing release, 4 handshake refused. Logs:
+`docker compose logs` or `docker compose exec gr8 /opt/ds41-4x/entrypoint.sh logs supervisor` (`shim` / `front`).
 
-On the box that failed, read its log:
+## 7. Not measured yet: tell the person
 
-- After the container exits: `docker logs ds41-4x-spark` (compose: `docker compose logs`). It has the launcher's
-  output, and it is there until you remove the container.
-- While the container runs: `docker exec ds41-4x-spark gr8 ds41 logs supervisor` (or `shim`, `front`, or no word for
-  the engine).
+- Confirmation on published `gr8 v1.3.0` (`kindlingai/gr8#630`: `DS41_MX=48` + first-boot `g6front-rs engram-cmap`):
+  `kindling.json` and `docs/card.png` are from 2026-11-11 on `gr8 c2220f2`, and the extended tables in `README.md` are
+  from `gr8 43cad38` / `0015fd0`.
+- `TUNE=context` 1M recall and multi-1M concurrency have not been re-measured on the current build.
+- `TUNE=quality` has not been measured on the `DS41_MX=48` build.
 
-If a step fails for a reason not listed here, ask on the KindlingAI Discord (the link is at the top of README.md).
+## Rules for changes to this recipe
 
-## 6. Not measured yet: tell the person
-
-- `kindling.json` and `docs/card.png` were measured on 2026-11-11 on the staged image built from gr8 `c2220f2`
-  (`TUNE=speed`: 12,288-row v2 prefill stack before `GR8_DS_PF_V2_BF16_TC=7` and the expert-log cursor fix,
-  `GR8_DS_CACHE_MIB=1024`, `GR8_DS_ENGRAM_CACHE_MIB=2048`, four GB10 boxes in a ring, one boot; at least 3.25 GiB of
-  host memory stayed free per box across ten distinct 128.9K cold prompts, 256K prefill, and 32-stream concurrency).
-  `GR8_DS_PF_V2_BF16_TC=7` was measured separately on four GB10 boxes at `W=12288` (cold prefill -2.27% at 32K and
-  -3.02% at 128K, decode -0.6% code / +0.5% prose); the full card has not been re-run on this image yet. In README.md "Results", the tables below the card are still from earlier
-  builds: the set A rows from 2026-11-09 on the published image `sha-7c2088a` (gr8 `43cad38`, 8,192-row v2 prefill
-  chunks without `GR8_DS_PF_V2_L20_TAIL=1` or `GR8_DS_PF_V2_SEND_FFN_OPT=3`), and the rows and columns marked "release
-  1 settings" (the decode right after each prefill, the set B many-stream rows, the first boot from a cold disk, the
-  switch rows) from gr8 `0015fd0` and the settings before that release. Those multi-series, closed-loop, boot, switch,
-  and 75-item quality rows have not been re-run on this image yet. The KV cache is always fp8, and the image's engine
-  is built with `DS41_MX=48`.
-- `TUNE=context` was measured on the image `sha-15b7eec` in one boot on 2026-11-07: a cold 1,031,542-token prompt read in 388.7 s (2,650 tok/s), the same prompt again in 1.19 s from
-  the prefix cache, replies after it at 91.9 tok/s, and 8.7-9.4 GiB free a box just after ready. Recall and output
-  quality at 1M, and three distinct cold 1M prompts at once, are not measured on that image.
-- Before that, gr8/docs/FIRST-BOOT.md Q2 ran `TUNE=context` on an earlier gr8 build, with 16 slots of 1M each, at most
-  three 1M chats at once, and only two of the six switches. On that build:
-  - a 1,031,542-token prompt took about 417 s to read;
-  - recall at 1M found all 3 hidden facts in only 2 of 7 prompts;
-  - at 2,048 MiB of prefix cache, only the last 1M chat stayed cached;
-  - free memory was 3.2-3.4 GiB a box after one full 1M chat, and at least 2.69 GiB while three ran at once. More
-    than three at once was not tested.
-- `TUNE=quality` has not been measured on this image's `DS41_MX=48` build. Its numbers are from older builds.
+- Every number in `README.md` and `kindling.json` comes from a measured run. Say the date, the box count, and the engine
+  build. Do not copy a number from another build without noting its source build.
+- `README.md`'s Results and `kindling.json` say the same thing. A change to one changes the other, and the card
+  (`docs/card.png`) is redrawn from `kindling.json`.
+- The engine pin is one exact commit and one image digest (`@sha256:...`). Never a moving tag alone once published,
+  never a local Dockerfile build. Engine changes go to `kindlingai/gr8` first; this recipe then moves its pin to the
+  published image.
+- From the monorepo root, run `python3 tools/check_pin.py deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` (with `--strict`
+  once `v1.3.0` is published), `python3 tools/lint_recipe.py deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8`, and
+  `./check-config.sh` inside this folder before you commit.

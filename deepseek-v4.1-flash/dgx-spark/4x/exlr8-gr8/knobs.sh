@@ -1,15 +1,15 @@
-# The recipe's knobs as gr8's options, sourced by entrypoint.sh and bin/gr8 so every gr8 command sees the same.
+# The recipe's knobs as gr8's options, sourced by entrypoint.sh so every gr8 command sees the same.
 #   MENTAT=0 (default): the four boxes from PEERS (their LAN addresses, head first) and, if set, IPS and IPS2 (each box's
 #             fabric address on the first and second ConnectX root, in PEERS order). Nothing is announced.
 #   MENTAT=1: find the other boxes through the host's mentat daemon (gr8's MENTAT=localhost) and announce the API in the
 #             mentat cluster, in group GROUP (gr8-ds41-4x by default).
 #   TUNE=speed (default): fast mode with gr8's default v2 release stack (12,288-row chunks, GR8_DS_PF_V2=1,
-#             GR8_DS_PF_V2_W16K=1, GR8_DS_PF_V2_L20_TAIL=1, GR8_DS_PF_V2_SEND_FFN_OPT=3, GR8_DS_PF_V2_BF16_TC=7,
+#             GR8_DS_PF_V2_W16K=1, GR8_DS_PF_V2_L20_TAIL=1, GR8_DS_PF_V2_SEND_FFN_OPT=3, GR8_DS_PF_V2_BF16_TC=0,
 #             GR8_DS_ATTN_TC_TILE=2, GR8_S2_ADMIT_HOLD=1 and GR8_S2_TAIL_FIRST=1; gr8/scripts/engine_args.sh), plus
 #             FIRST-BOOT.md Q3's two switches and Q4's output head, which change the output, the prefill setting
 #             GR8_DS_ATTN_TC_MF=2, GR8_DS_CACHE_MIB=1024 and GR8_DS_ENGRAM_CACHE_MIB=2048 (gr8/docs/ENV.md), and,
-#             unless set, SESS=32 and CAP=327680. The image's engine is built with DS41_MX=48 (Dockerfile), so a step
-#             holds 48 rows.
+#             unless set, SESS=32 and CAP=327680. gr8's published image (v1.3.0+) builds g6m4_ds41 with DS41_MX=48, so a
+#             step holds 48 rows.
 #   TUNE=context: FIRST-BOOT.md Q3 and Q4, GR8_DS_ATTN_TC_MF=2, GR8_DS_ATTN_TC_TILE=1, GR8_DS_MHC_ROW_SHARD=1,
 #             GR8_DS_CACHE_MIB=2048 and, unless set, SESS=16 and CAP=1048576 (FIRST-BOOT.md Q2). GR8_DS_MHC_ROW_SHARD=1
 #             selects gr8's old prefill path, not the release stack.

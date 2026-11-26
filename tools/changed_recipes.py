@@ -7,8 +7,8 @@
 
 Prints check=<json> and image=<json> lines (append them to $GITHUB_OUTPUT). check lists the folders of
 non-external recipes; image lists {dir, id, image, nvcc_cache} for recipes whose kindling.json has a build object.
-A change to tools/, schema/, hardware.json or recipes.yml selects every recipe for check, but none for image: image
-builds run for the recipe that changed, or for all through the workflow's dispatch input.
+A change to tools/, schema/, template/, hardware.json or recipes.yml selects every recipe for check, but none for
+image: image builds run for the recipe that changed, or for all through the workflow's dispatch input.
 """
 import argparse
 import json
@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARED = ('tools/', 'schema/', 'hardware.json', '.github/workflows/recipes.yml')
+SHARED = ('tools/', 'schema/', 'template/', 'hardware.json', '.github/workflows/recipes.yml')
 
 
 def recipes():

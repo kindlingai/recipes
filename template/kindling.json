@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "id": "<model>-<quant>[-<tag>]-<n>x-<hardware short name>",
+  "status": "stable",
+  "title": "<Model display name, e.g. GLM-5.3-Flash>",
+  "variant": "<quant>[-<tag>], <short differentiator, e.g. bit300, 256K context>",
+  "summary": "<One or two sentences: model on hardware with engine, headline tok/s, and the standout feature. The site card shows this.>",
+  "model": "<org>/<model>-<quant>",
+  "weights_commit": "<40-hex Hugging Face commit the recipe boots>",
+  "stack": ["<engine>", "<quant format>", "<headline features>"],
+  "engine": {
+    "repo": "kindlingai/<engine>",
+    "ref": "<release tag | stable | main>",
+    "commit": "<40-hex engine commit>",
+    "pin": "image",
+    "image": "ghcr.io/kindlingai/<engine>:<tag>",
+    "image_digest": "sha256:<64-hex digest of that tag>"
+  },
+  "default_config": "<id of the config shown first; its nodes must equal the folder's count>",
+  "configs": [
+    {
+      "id": "<tp><n>-<quant>",
+      "label": "<TP=n · quant>",
+      "nodes": 1,
+      "decode": { "code": 0, "prose": 0, "structured": 0 },
+      "decode_prompt_tokens": [0],
+      "prefill": [ { "context": 0, "tps": 0 } ],
+      "concurrency": [ { "streams": 0, "aggregate_tps": 0 } ],
+      "concurrency_prompt_tokens": [0],
+      "max_context": 0,
+      "kv_pool_tokens": 0,
+      "max_concurrent": 0,
+      "notes": "Measured <date> on <engine commit>. Only measured numbers go here; the conditions (settings, benchmark, run count) live in this note. Zero placeholders above are replaced with real measurements before the recipe lands."
+    }
+  ]
+}

@@ -9,15 +9,17 @@
    `configs`. `id` is permanent: it names the image, the site card, the CLI argument and the tags. For a new recipe use
    `<model>-<quant>[-<tag>]-<n>x-<hardware short name>`, like the existing ones. Only numbers you measured go in
    `configs`; put the conditions (date, settings, benchmark) in each config's `notes`.
-3. Put everything the recipe needs next to it: `README.md` with a quickstart that starts with
-   `npx @kindlingai/recipe <id> && cd <id>`, `compose.yaml` and `.env.example` (or the scripts it runs), `AGENTS.md`
-   if agents should boot it.
+3. Start from [`template/`](template/), which holds the standard files and README layout (["The recipe
+   standard"](#the-recipe-standard)): copy it into the folder, fill it in, and keep the launch contract — one
+   `compose.yaml` on the host network, the engine's published image pinned by digest, settings in `.env`, the OpenAI
+   API on port 8100, no Dockerfile. `AGENTS.md` if agents should boot it.
 4. Check it locally:
 
    ```bash
    pip install -r tools/requirements.txt
    python3 tools/build_index.py --check    # validates every recipe; "out of date" is expected, do not commit the result
    python3 tools/check_pin.py <path>
+   python3 tools/lint_recipe.py <path>     # the recipe standard; warn-only until the #2 conversions land
    ```
 
 5. Open a pull request. Do not commit `index.json` or the README tables: the Index workflow shows the tables your change
@@ -27,6 +29,28 @@
 `status`: `stable`; `experimental` or `wip` (the site tags the card Experimental); `external` (the recipe lives in its
 own repo, `source.repo`; the folder holds a copy of that repo's `kindling.json`, refreshed daily by
 `tools/sync_external.py`, and a pointer README); `retired` (kept, left off the site).
+
+## The recipe standard
+
+Every recipe looks and runs the same way. [`template/`](template/) is the skeleton: copy it to
+`<model>/<hardware>/<count>x/<variant>/`, replace every `<placeholder>`, delete the comments. `tools/lint_recipe.py`
+(CI: `recipes.yml`, on every changed recipe) checks the result:
+
+- Files: `README.md`, `AGENTS.md`, `kindling.json`, `compose.yaml`, `.env.example`, `docs/card.png`, `.gitignore`.
+- README section order: title line and card, Results, Quickstart, What you need, Settings, Other sizes, Help,
+  Engine pin, License. Recipe-specific sections go between Settings and Other sizes.
+- Launch contract: one `compose.yaml`, `network_mode: host`, the engine image pinned by digest, settings from
+  `.env`, the OpenAI API on port 8100, no `build:` key and no `Dockerfile`. Files the engine needs at run time
+  (presets, manifests, kv-store config) are bind-mounted read-only from the folder.
+- Every `${VAR}` that compose.yaml references is documented in `.env.example`.
+
+The lint runs warn-only while the conversions of #2 land; when they have, `recipes.yml` runs it with `--strict` and
+it fails CI. Run it yourself before you commit:
+
+```bash
+python3 tools/lint_recipe.py glm-5.3/dgx-spark/4x/exlr8-gr8   # one recipe
+python3 tools/lint_recipe.py                                  # every non-external recipe
+```
 
 ## Engine pins
 

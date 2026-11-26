@@ -54,8 +54,8 @@ On the head: `docker compose exec gr8 /opt/gr8/gr8 qw38 down`. Then `docker comp
   drawn again from a `gr8` checkout:
   - `python3 bench/gif.py card kindling.json --out docs/card.png`
   - `python3 bench/gif.py card kindling.json --config tp2-k4 --out docs/card-k4.png`
-- Once `gr8 v1.2.0` is published, the engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never
-  a moving tag alone, never a patched engine. An engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8)
-  as a pull request; this recipe then moves its pin to the merged commit or next release.
-- From the monorepo root, run `python3 tools/check_pin.py qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8` (add `--strict`
-  once `v1.2.0` is pinned) before you commit.
+- The engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never a moving tag alone, never a
+  patched engine. An engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8) as a pull request; this
+  recipe then moves its pin to the merged commit or next release.
+- From the monorepo root, run `python3 tools/check_pin.py --strict qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8` before
+  you commit.

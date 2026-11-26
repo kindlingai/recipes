@@ -1,5 +1,7 @@
 # KindlingAI: Qwen3.8-Flash-Next EXLR8 on one DGX Spark (K3 & K4)
 
+![Qwen3.8-Flash-Next K3 (bit300) on one DGX Spark: decode, prefill and concurrency](docs/card.png)
+
 If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first, then the Quickstart.
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
@@ -8,8 +10,6 @@ Qwen3.8-Flash-Next on **one DGX Spark** (GB10, 128 GB) at `TP=1`, served by [gr8
 [kindlingai/Qwen3.8-Flash-Next-exlr8](https://huggingface.co/kindlingai/Qwen3.8-Flash-Next-exlr8):
 both **`bit300` (K3, 3.00 bpw)** and **`bit400` (K4, 4.00 bpw)** run at the model's **full native 262,144-token context** on a single 128 GB box — **6 dedicated 262K chats** (`1,573,248` KV rows) on K3 or **4 dedicated 262K chats** (`1,048,832` KV rows; **5** with `NO_MTP=1`) on K4 — with auto-loaded **DFlash** + Layer-48 `MTP=3` hybrid speculative decoding, Blackwell MXFP8 dense kernels, async `O_DIRECT` NVMe streaming for the 102.4 GB Layer-1 PLE rowstore, a 32 GiB `O_DIRECT` SSD KV prefix cache (`0.56 s` 128K restore), and an opt-in BF16 vision tower (`GR8_QW38_VISION=1`).
 This recipe is the published `gr8` image and one `.env` file. Nothing is compiled.
-
-![Qwen3.8-Flash-Next K3 (bit300) on one DGX Spark: decode, prefill and concurrency](docs/card.png)
 
 **K3 (`bit300`, default, `6 × 262K`):** **114.2 tok/s** code · **58.5 tok/s** prose · **140.8 tok/s** structured · **147.7 tok/s** counting · **2,315 tok/s** 32K prefill (**0.56 s** 128K SSD restore) · **138.4 tok/s** at 6 streams · **246K needle recall PASS** · **RealMark RIPAL 1,780.7 A** · 28 s boot from local NVMe
 **K4 (`bit400`, `4 × 262K`):** **108.3 tok/s** code · **56.6 tok/s** prose · **130.8 tok/s** structured · **134.7 tok/s** counting · **2,285 tok/s** 32K prefill (**0.61 s** 128K SSD restore) · **105.7 tok/s** at 4 streams · **246K needle recall PASS** · near-lossless `0.0046` mean KL (`97.70%` top-1) · 28 s boot from local NVMe
@@ -138,6 +138,32 @@ docker compose exec gr8 /opt/gr8/gr8 qw38 down
 docker compose down
 ```
 
+## What you need
+
+- One DGX Spark or other GB10 box (128 GB unified memory), with no other model running on it.
+- Docker with the NVIDIA container toolkit (DGX OS has both).
+- **Local NVMe disk:** about **200 GB** free for `bit300` (`45.4 GB` experts + `15.1 GB` dense/vocab/MTP + `0.52 GB` DFlash drafter + `102.4 GB` Layer-1 PLE rowstore + `32 GB` SSD KV store) or **215 GB** for `bit400` (`60.5 GB` experts), plus `0.9 GB` if enabling vision. Keep Docker's storage (or `GR8_CACHE`) on fast local NVMe — both Layer-1 PLE and the SSD KV store stream over `O_DIRECT`.
+- Proactive memory compaction off:
+  `sudo sysctl -w vm.compaction_proactiveness=0` (`gr8`'s
+  [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md#before-you-start) has the permanent form).
+
+## Settings
+
+`cp .env.example .env` (the CLI already did). Every knob is documented in [.env.example](.env.example); the active
+lines are the exact settings the Results numbers for K3 (`bit300`) were measured with.
+
+| knob | default | what it does |
+|---|---|---|
+| `VARIANT` | `bit300` | Expert width profile (`bit300` K3 with `SESS=6`; `bit400` K4 with `SESS=4`) |
+| `CAP` / `MAX_MODEL_LEN` / `SESS` | `262208` / `262144` / `6` | Dedicated 262K KV slab per concurrent chat (`SESS=4` on `bit400`) |
+| `MTP` | `3` | Hybrid speculative decoding (auto-loaded DFlash solo + Layer-48 `MTP=3` multi-stream) |
+| `REUSE` / `KV_STORE` | `1` / `ssd:...,size=32G,keep=all` | Prefix reuse backed by a 32 GiB `O_DIRECT` SSD KV store |
+| `EXTRA_ENV` | `GR8_QW38_PLE_CACHE_MIB=1024` | 1 GiB PLE LRU cache; add `GR8_QW38_VISION=1`, `GR8_QW38_NO_MTP=1`, or `GR8_QW38_DFL=0` |
+| `GR8_CACHE` / `GR8_HOME` | named volumes | Optional local NVMe host directories (owned by uid 1000) for model cache and logs/state |
+| `GR8_STOP_GRACE` / `GR8_IMAGE` | unset | Optional shutdown grace (for `persist=on` KV store) or image override |
+
+`gr8`'s [Qwen3.8-Flash-Next page](https://github.com/kindlingai/gr8/blob/main/docs/QWEN38.md) explains the architecture and every `GR8_QW38_*` rollback knob, and [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md) explains the launcher options.
+
 ### Multimodal vision (opt-in)
 
 The weights include the unquantized 27-layer BF16 vision tower (`dense/vision-bf16.safetensors`, `898 MB`). To enable OpenAI `image_url` inputs, add `GR8_QW38_VISION=1` to `EXTRA_ENV` in `.env` (and reduce `SESS` by 1 to keep ~10+ GiB headroom: `SESS=5` on `bit300`, `SESS=3` on `bit400`):
@@ -149,18 +175,7 @@ EXTRA_ENV="GR8_QW38_PLE_CACHE_MIB=1024 GR8_QW38_VISION=1"
 
 Then restart (`docker compose up -d`) and verify with `docker compose exec -e GR8_QW38_VISION_SMOKE=1 gr8 /opt/gr8/gr8 qw38 smoke` (9/9 checks).
 
-## What you need
-
-- One DGX Spark or other GB10 box (128 GB unified memory), with no other model running on it.
-- Docker with the NVIDIA container toolkit (DGX OS has both).
-- **Local NVMe disk:** about **200 GB** free for `bit300` (`45.4 GB` experts + `15.1 GB` dense/vocab/MTP + `0.52 GB` DFlash drafter + `102.4 GB` Layer-1 PLE rowstore + `32 GB` SSD KV store) or **215 GB** for `bit400` (`60.5 GB` experts), plus `0.9 GB` if enabling vision. Keep Docker's storage (or `GR8_CACHE`) on fast local NVMe — both Layer-1 PLE and the SSD KV store stream over `O_DIRECT`.
-- Proactive memory compaction off:
-  `sudo sysctl -w vm.compaction_proactiveness=0` (`gr8`'s
-  [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md#before-you-start) has the permanent form).
-
-`gr8`'s [Qwen3.8-Flash-Next page](https://github.com/kindlingai/gr8/blob/main/docs/QWEN38.md) explains the architecture and every `GR8_QW38_*` rollback knob, and [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md) explains the launcher options.
-
-## Other box counts
+## Other sizes
 
 - **Two boxes (`TP=2`, full native 256K context/chat, 8 concurrent slots):** [qwen3.8-flash-next-exlr8-2x-spark](../../2x/exlr8-gr8)
 

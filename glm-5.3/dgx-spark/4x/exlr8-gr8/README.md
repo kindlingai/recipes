@@ -1,5 +1,7 @@
 # KindlingAI: GLM-5.3 EXLR8 on four DGX Sparks (1M context)
 
+![GLM-5.3 on four DGX Sparks: decode, prefill and concurrency](docs/card.png)
+
 If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first, then the Quickstart.
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
@@ -8,8 +10,6 @@ Full GLM-5.3 on four DGX Sparks (GB10, 128 GB each) at TP=4, served by [gr8](htt
 the `bit325` width profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/3e388b45b26ca4558351d22994afcfc85b99af74) (v0.6):
 a full **1,048,576-token** context window (1,130,496-token int4 KV pool), zero-copy shared prefix pages, DFlash2 + MTP=2 drafting,
 and up to 8 concurrent chats. This recipe is the published gr8 image, pinned by digest, and one `.env` file. Nothing is compiled.
-
-![GLM-5.3 on four DGX Sparks: decode, prefill and concurrency](docs/card.png)
 
 66.9 tok/s for one request writing code (74.6 tok/s in fast mode) · 1,577 tok/s prefill on a 32K prompt (1,455 tok/s at 128K) · 8 requests at once, 125.2 tok/s in total (149.1 tok/s in fast mode) · full 1M context (`1,130,496`-token KV pool) · live-proven at 3×300K, 4×153K, and 8×26K shared prefix · 5.4+ GiB free memory per box
 
@@ -142,15 +142,36 @@ reads what the volume holds at the commits pinned in `.env`, and fetches the res
   [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md#before-you-start) has the permanent form).
 
 gr8's [GLM-5.3 page](https://github.com/kindlingai/gr8/blob/main/docs/GLM-5.3.md) explains how the engine works, and
-[DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md) explains every setting.
+[DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md) explains deployment options.
 
-## Other box counts
+## Settings
 
-The same image and the same `compose.yaml` serve GLM-5.3 on three, five or six boxes. For five or six boxes with tuned
+`cp .env.example .env` (the CLI already did). Every knob is documented in [.env.example](.env.example); the active
+lines are the exact settings the Results numbers were measured with.
+
+| knob | default | what it does |
+|---|---|---|
+| `PEERS` | `192.0.2.1,...,192.0.2.4` | LAN addresses of the four boxes in rank order (head first) |
+| `SHAPE` | unset (`mesh`) | Uncomment `SHAPE=ring` for direct-cabled ring without a switch |
+| `DRAFTER` | `GLM-5.3-DFlash2` | Pinned DFlash2 drafter (TP=4 only; remove to draft with MTP only) |
+| `KV_FORMAT` / `CAP` / `MAX_MODEL_LEN` / `SESS` | `int4` / `1130496` / `1048576` / `8` | Mixed-precision int4 KV pool with full 1M context across up to 8 concurrent chats |
+| `MOE_UNION_CAP` | `48` | Decode speed/quality preset (`48` quality default, `32` fast, `0` uncapped exact) |
+| `KV_STORE` / `GR8_STOP_GRACE` | `ssd:...,size=200G` / `150s` | Persistent SSD KV store with matching shutdown grace |
+| `EXTRA_ENV` | shared pages + load caches | Enables `GR8_KV_SHARE_PAGES=1`, `GR8_GEN_CACHE`, `GR8_QUIT_FAST=1`, and compact TP=4 load cache |
+| `GR8_CACHE` / `GR8_HOME` | named volumes | Optional host directories (owned by uid 1000) for the model cache and logs/state |
+| `GR8_IMAGE` | pinned digest | Override the published `gr8` image from `compose.yaml` |
+
+gr8's [SETTINGS.md](https://github.com/kindlingai/gr8/blob/main/docs/SETTINGS.md) explains every launcher option.
+
+## Other sizes
+
+The same image and the same `compose.yaml` serve GLM-5.3 on three, five or six boxes. For other box counts with tuned
 settings and expanded context pools, use the dedicated recipes:
 
-- **Five boxes (`v1.1.0`, 983K context):** [glm-5.3-exlr8-5x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/5x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
-- **Six boxes (`v1.1.0`, 1M context / 2.18M KV pool):** [glm-5.3-exlr8-6x-spark](https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/6x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
+- **Three boxes (384K context, `bit273`):** [glm-5.3-exlr8-3x-spark](../../3x/exlr8-gr8)
+- **Four boxes K4 (`bit387`, uncapped routing):** [glm-5.3-exlr8-k4-4x-spark](../../4x/exlr8-k4-gr8)
+- **Five boxes (`v1.1.0`, 983K context):** [glm-5.3-exlr8-5x-spark](../../5x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
+- **Six boxes (`v1.1.0`, 1M context / 2.18M KV pool):** [glm-5.3-exlr8-6x-spark](../../6x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
 
 | | TP=3 (2026-10-24) | TP=5 (`v1.1.0`, 2026-11-20) | TP=6 (`v1.1.0`, 2026-11-20) |
 |---|---|---|---|

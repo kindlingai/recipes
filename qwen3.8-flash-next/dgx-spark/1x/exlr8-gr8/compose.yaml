@@ -12,7 +12,7 @@
 name: qw38-1x-spark
 services:
   gr8:
-    # The engine pin: gr8 main commit fa5d82d3 (PR #621); kindling.json "engine" names the same digest.
+    # The engine pin: kindlingai/gr8 main (fa5d82d3, PR #621); kindling.json "engine" names the same digest.
     image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:sha-fa5d82d@sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59}
     container_name: qw38-1x-spark
     # The launcher's options, from .env. Optional: options can also come on the command line of `run`.
@@ -63,9 +63,9 @@ services:
     stop_grace_period: ${GR8_STOP_GRACE:-30s}
     volumes:
       # The model release (~164 GB for bit300 or ~179 GB for bit400, including the 102.4 GB NVMe PLE rowstore and
-      # 524 MB DFlash drafter) plus the 32 GB O_DIRECT SSD KV prefix cache under /var/lib/gr8/cache/kv.
-      # Keep this on fast local NVMe: Layer-1 PLE rows and SSD KV blocks stream over O_DIRECT pread/pwrite.
-      # Unset, a named volume. Set GR8_CACHE to a local NVMe host directory, owned by uid 1000, to keep it outside docker.
+      # 524 MB DFlash drafter) plus the 32 GB O_DIRECT SSD KV prefix cache under /var/lib/gr8/cache/kv. Keep this on
+      # fast local NVMe: Layer-1 PLE rows and SSD KV blocks stream over O_DIRECT pread/pwrite. Unset, a named volume.
+      # Set GR8_CACHE to a local NVMe host directory, owned by uid 1000, to keep it outside docker.
       - ${GR8_CACHE:-cache}:/var/lib/gr8/cache
       # Logs and state: out/ (supervisor.log, g6m4.r<N>.err, shim.log, front.log, gr8.state), and the S2 request
       # directory. Unset, a named volume.

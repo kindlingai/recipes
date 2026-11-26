@@ -5,8 +5,8 @@ README and an `index.json` the website reads. Adding a recipe becomes: add a fol
 website change, no new repo.
 
 Survey date: 2026-11-25, from `gh repo list kindlingai` plus each repo's tree, `kindling.json`, workflows, submodules,
-open PRs and issues. **Status: built locally, not pushed.** Section 7 has what is done and the remote steps left;
-section 8 the decisions taken.
+open PRs and issues. **Status: live** (kindlingai/recipes, kindlingai.dev reads its index, old repos archived). Section 7
+has what is done; follow-up work is tracked in #2 and its sub-issues.
 
 ## 1. What exists today
 
@@ -335,29 +335,19 @@ the site shows them with no special case.
 
 ## 7. Status
 
-Done locally (this repo, branch `main`; nothing pushed):
+Done:
 
 | Phase | State |
 |---|---|
-| 0. Bootstrap | Root files, `hardware.json`, schemas, tools, workflows (`index.yml`, `recipes.yml`, `recipe-image.yml`, `cli.yml`; actionlint clean). |
-| 1-3. Waves | All 17 repos adopted with history (`tools/adopt.sh`); per-repo CI, submodules, `check.py` and duplicate licenses removed; `engine` pins backfilled; `smoke.sh` extracted from each image workflow; READMEs/AGENTS.md rewritten for the monorepo; `kindling.json` authored for the four recipes that had none. `build_index.py`: 19 recipes valid; `check_pin.py`: all pass. |
+| 0. Bootstrap | Root files, `hardware.json`, schemas, tools, workflows (`index.yml`, `recipes.yml`, `recipe-image.yml`, `cli.yml`). |
+| 1-3. Waves | All 17 repos adopted with history (`tools/adopt.sh`); per-repo CI, submodules, `check.py` and duplicate licenses removed; `engine` pins backfilled; `smoke.sh` extracted from each image workflow; READMEs/AGENTS.md rewritten for the monorepo; `kindling.json` authored for the four recipes that had none. |
 | 4. External | `glm-5.3-flash-gx10` and `glm-5.3-flash-exlr8-gx10` listed as `external` (`tools/sync_external.py`). |
-| 5. Site | `kindling-site` branch `recipes-index`: reads `index.json` once, bundled fallback, hardware names/units from the index. |
-| 6. gr8 | `gr8` branch `recipes-monorepo`: `recipes.json` by id, `docs/cards/make.sh` reads the index, doc links point at the monorepo. |
-| 7. CLI | `cli/`: `npx @kindlingai/recipe <id>` (sparse folder fetch, `.env` from `.env.example`), `--history` (filter-branch, grafted onto the old repo's history with original ids and tags), `--engine`, `--list`; `cli/smoke.sh` passes. |
-
-Remote steps left, in order:
-
-1. Create `kindlingai/recipes` (public), push `main` and the tags (`git push origin main --tags`; GitHub creates no
-   workflow events for more than three tags in one push, so the 150 adopted tags trigger nothing).
-2. `main` ruleset: done (`default`, like gr8's: PRs required, squash or merge commits, the `validate` check; bypass for
-   org admins and `kindling-release-bot`, which the Index workflow pushes as).
-3. GHCR: give `kindlingai/recipes` write access to the four built images (`glm-5.3-exlr8-k4-4x-spark`,
-   `glm-5.3-flash-exlr8-{1x,2x}-spark`, `deepseek-v4.1-flash-exlr8-4x-spark`).
-4. npm: create the `@kindlingai` scope, add `NPM_TOKEN`, push tag `cli/v0.1.0`.
-5. Push and merge `kindling-site` `recipes-index` and `gr8` `recipes-monorepo`.
-6. Per old repo: merge or close open PRs (`glm-5.3-exlr8-4x-spark` #2, `deepseek-v4.1-flash-exlr8-4x-spark` #39),
-   push a pointer README, archive.
+| 5. Repo | `kindlingai/recipes` public with all 150 adopted tags; `main` ruleset `default` (PRs, squash or merge commits, the `validate` check; bypass for org admins and `kindling-release-bot`, which the Index workflow pushes as). |
+| 6. Images | `kindlingai/recipes` has write access to the four recipe images; `recipe-image.yml` pushed `glm-5.3-flash-exlr8-1x-spark` from the monorepo. |
+| 7. Site | kindling-site #10 and #11 merged; kindlingai.dev (Cloudflare Workers static assets) renders every recipe from `index.json`. |
+| 8. gr8 | gr8 #616 merged: `recipes.json` by id, `docs/cards/make.sh` reads the index, doc links point at the monorepo. |
+| 9. Old repos | All 17 carry a pointer README and are archived; their two open PRs closed, heads kept here as tags. |
+| 10. CLI | `@kindlingai/recipe` exists on npm (a manually staged placeholder); `cli.yml` publishes with npm trusted publishing (OIDC, no token) on a `cli/v<version>` tag. |
 
 ## 8. Decisions taken
 

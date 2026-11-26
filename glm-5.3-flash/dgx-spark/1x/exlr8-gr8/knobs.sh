@@ -3,7 +3,7 @@
 #   TUNE=speed (default): the settings measured in README.md, requests up to 262,144 tokens (MAX_MODEL_LEN=262144).
 #   TUNE=context: one request up to 700,018 tokens (MAX_MODEL_LEN=700018: the 700,032-token pool less DFlash2's 14
 #             guard rows). With a smaller CAP, set MAX_MODEL_LEN too.
-#   TUNE=quality: the same as speed. K3 and K4 do not fit one box, and the image builds only the int4 KV engine.
+#   TUNE=quality: the same as speed. K3 and K4 do not fit one box, and this recipe runs the int4 KV engine.
 #   A MAX_MODEL_LEN set on its own keeps its value.
 #   MENTAT=0 (default): this box on its own, PEERS=127.0.0.1. Nothing is announced.
 #   MENTAT=1: find this box through the host's mentat daemon (gr8's MENTAT=localhost) and announce the API in the mentat

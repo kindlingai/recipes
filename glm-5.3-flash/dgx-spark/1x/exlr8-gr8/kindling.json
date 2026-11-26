@@ -6,17 +6,13 @@
  "variant": "exlr8 bit201, int4 KV",
  "summary": "GLM-5.3-Flash on one GB10 with gr8: the bit201 exlr8 manifest, int4 KV, DFlash2 for a request alone, four sessions sharing a 700K-token KV pool, and a prompt cache on disk.",
  "model": "kindlingai/glm-5.3-flash-exlr8-k2-k3-k4",
- "hardware": "ASUS GX10 / DGX Spark (GB10)",
+ "weights_commit": "901ad084f0afd2400820504910d3e684133ce183",
  "stack": [
   "gr8",
   "exlr8",
   "DFlash2",
   "int4 KV"
  ],
- "image": "ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark",
- "build": {
-  "nvcc_cache": "flash-int4-w1"
- },
  "default_config": "tp1",
  "configs": [
   {
@@ -72,13 +68,16 @@
      "name": "Needle recall",
      "value": "found at 128K (8 of 8 runs)"
     }
-   ]
+   ],
+   "notes": "Measured on prior gr8 main commit d598965 with TUNE=speed (bit201, int4 KV, CAP=700032, SESS=4, DFLASH=1); pending re-measurement on published gr8 v1.2.0 (ab2eb95)."
   }
  ],
  "engine": {
   "repo": "kindlingai/gr8",
-  "ref": "main",
-  "commit": "d598965a1bbf3cd220ad9ad856bfd63da2466424",
-  "pin": "source"
+  "ref": "v1.2.0",
+  "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+  "pin": "image",
+  "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+  "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
  }
 }

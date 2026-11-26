@@ -77,7 +77,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`qwen3.8-flash-next-exlr8-1x-spark`](qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, MTP=3, 139K | gr8 v1.2.0 | 83 | 2,258 | 139,200 | experimental |
+| [`qwen3.8-flash-next-exlr8-1x-spark`](qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash + MTP=3, 256K | gr8 main@fa5d82d | 114.2 | 2,204 | 262,144 | stable |
 | [`qwen3.8-flash-next-exlr8-2x-spark`](qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8, MTP=3, 256K | gr8 v1.2.0 | 126.8 | 3,027 | 262,144 | experimental |
 | [`qwen3.8-flash-next-exlr8-1x-gpu`](qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4 | gr8 main@5cedece | 171.1 | – | 40,960 | experimental |
 

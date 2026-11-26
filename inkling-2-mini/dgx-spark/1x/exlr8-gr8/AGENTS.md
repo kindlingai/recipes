@@ -1,4 +1,4 @@
-# For agents: boot Inkling-2-Mini on one DGX Spark (K4 / bit325 / K2)
+# For agents: boot Inkling-2-Mini on one DGX Spark (bit325 / K4 / bit225)
 
 You are booting this recipe for someone. Follow the steps in order and run each check. If a check fails, stop and
 tell the person what failed. If this file and `compose.yaml` or `.env.example` disagree, follow those two files and
@@ -26,17 +26,19 @@ hf download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 \
   --local-dir ./models/inkling-2-mini-exlr8-k2-k3-k4
 ```
 
-Copy `.env.example` to `.env` (the `npx @kindlingai/recipe` CLI already did). It is ready to boot `VARIANT=k4` at
-`TP=1` with `CAP=262144`, `SESSIONS=4` (`1M` total KV pool), `MTP=7` (DFlash auto-discovered). Ask the person before
-changing `VARIANT` (`bit325`, `bit250`, `k2`), `CAP`/`SESSIONS` (`131072x8` or `1048576x1`), or `GR8_INK2_PF_MX8_MOE`.
+Copy `.env.example` to `.env` (the `npx @kindlingai/recipe` CLI already did). It is ready to boot `VARIANT=bit325` at
+`TP=1` with `CAP=147456`, `SESSIONS=8` (`1.18M` total KV pool at max 8 concurrent streams, ~9.6 GiB free OS memory),
+`MTP=7` (DFlash auto-discovered). Ask the person before changing `VARIANT` (`k4` for higher quality / graduate-level
+science GPQA, `bit225` for fast 2.25-bit speed, `bit250`, or `k2`), `CAP`/`SESSIONS` (`163840x8`, `262144x5`,
+`196608x8` with `PF_MX8_MOE=1`, `262144x8` with `PF_MX8_MOE=0`, or `1048576x1`), or `GR8_INK2_PF_MX8_MOE`.
 
 ## 3. Boot
 
-Run `docker compose up -d`. Boot from local NVMe takes ~10–11 s. Follow with `docker compose logs -f`.
+Run `docker compose up -d`. Boot from local NVMe takes ~10 s. Follow with `docker compose logs -f`.
 
 ## 4. Check
 
-- `curl -s http://127.0.0.1:8100/v1/models` returns `200` and lists `inkling-2-mini` with `max_model_len` `262144`.
+- `curl -s http://127.0.0.1:8100/v1/models` returns `200` and lists `inkling-2-mini` with `max_model_len` `147456`.
 - Run one short chat completion against `http://127.0.0.1:8100/v1/chat/completions` and verify a coherent reply.
 
 ## 5. Stop
@@ -50,7 +52,7 @@ Run `docker compose down`.
 - `README.md`'s results and `kindling.json` say the same thing. A change to one changes the other, and the cards are
   drawn again from a `gr8` checkout:
   - `python3 bench/gif.py card kindling.json --out docs/card.png`
-  - `python3 bench/gif.py card kindling.json --config tp1-k2 --out docs/card-k2.png`
+  - `python3 bench/gif.py card kindling.json --config tp1-bit225 --out docs/card-bit225.png`
 - The engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never a moving tag alone.
 - From the monorepo root, run `python3 tools/check_pin.py --strict inkling-2-mini/dgx-spark/1x/exlr8-gr8` and
   `python3 tools/build_index.py --check` before you commit.

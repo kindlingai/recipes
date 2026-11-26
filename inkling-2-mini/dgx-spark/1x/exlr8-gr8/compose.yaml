@@ -23,9 +23,9 @@ services:
       - WORK_DIR=/tmp/ink2-gr8
       - ENGINE_ROOT=/opt/gr8
       - PY=/usr/bin/python3
-      - CAP=${CAP:-262144}
-      - SESSIONS=${SESSIONS:-4}
-      - VARIANT=${VARIANT:-k4}
+      - CAP=${CAP:-147456}
+      - SESSIONS=${SESSIONS:-8}
+      - VARIANT=${VARIANT:-bit325}
       - MTP=${MTP:-7}
       - PREFILL=${PREFILL:-4096}
       - PORT=${PORT:-8100}

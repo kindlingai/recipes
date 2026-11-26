@@ -1,5 +1,7 @@
 # KindlingAI: GLM-5.3 EXLR8 on five DGX Sparks (983K context)
 
+![GLM-5.3 on five DGX Sparks, 983K context: decode, prefill and limits](docs/card.png)
+
 If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first, then the Quickstart.
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
@@ -8,8 +10,6 @@ Full GLM-5.3 on five DGX Sparks (GB10, 128 GB each) at TP=5, served by [gr8](htt
 the `bit325` width profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/3e388b45b26ca4558351d22994afcfc85b99af74) (v0.6):
 a 983,040-token int4 KV pool, MTP=3 drafting with confidence stopping, up to 8 concurrent chats, 8.8+ GiB free RAM per box,
 and a QO cache for ~60 s boots. This recipe is the published gr8 image, pinned by digest, and one `.env` file. Nothing is compiled.
-
-![GLM-5.3 on five DGX Sparks, 983K context: decode, prefill and limits](docs/card.png)
 
 68.9 tok/s for one request writing code · 1,960 tok/s prefill on a 32K prompt (1,837 tok/s at 128K) · 8 requests at once, 141.5 tok/s in total (160.5 tok/s in fast mode) · 8.8+ GiB free memory per box · a 983,040-token KV pool · a fact hidden in a 128K prompt found · boot in 60 s
 
@@ -130,18 +130,27 @@ The head serves an OpenAI-compatible API on port 8100. Stop the cluster with
   `sudo sysctl -w vm.compaction_proactiveness=0` (gr8's
   [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md#before-you-start) has the permanent form).
 
-## The 983K-context settings
+## Settings
 
-Every line is in [.env.example](.env.example). Highlights over the `v1.0` recipe:
+`cp .env.example .env` (the CLI already did). Every knob is documented in [.env.example](.env.example); the active
+lines are the exact settings the Results numbers were measured with. Highlights over the `v1.0` recipe:
 
 - `gr8 v1.1.0` with `bit325` v0.6 weights, seven bit-exact decode/prefill kernels, `DEC_BK_MAX=2048`, and `MOE_UNION_CAP=48` (`32` for fast concurrency, `0` for uncapped exact).
 - `MTP=3` with solo (`MTP_KSTOP`) and shared-batch (`MTP_KSTOPB`) confidence stopping, `MTP_LASTROW=1`, `DRAFT_HEAD2=1`, `L2PF=31`, `MTP_L2PF=3`.
 - `KV_FORMAT=int4` with `KVB=bf16`, `KV4_FOLD=1`, `KV4_TC=1`, `CAP=983,040`, `SHARE_LIMIT=32,768`, `SESS=8`, and `REUSE_GRID=64`.
 - `PF_OWN=3` with `QO_CACHE` and `PF_GEMMF32=1`.
 
+| knob | default | what it does |
+|---|---|---|
+| `PEERS` | `192.0.2.1,...,192.0.2.5` | LAN addresses of the five boxes in rank order (head first; `SHAPE=mesh` on a switch) |
+| `KV_FORMAT` / `CAP` / `SESS` | `int4` / `983040` / `8` | Mixed-precision int4 KV pool (`983,034` max context) across up to 8 concurrent chats |
+| `MOE_UNION_CAP` | `48` | Decode speed/quality preset (`48` quality default, `32` fast, `0` uncapped exact) |
+| `QO_CACHE` / `GR8_CACHE` | `/var/lib/gr8/cache/qocache` / `/srv/gr8/cache` | Host cache directory holding the model and 13 GB QO cache for ~60 s boots |
+| `GR8_HOME` / `GR8_STOP_GRACE` / `GR8_IMAGE` | unset | Optional host state directory, shutdown grace, or image override |
+
 gr8's [SETTINGS.md](https://github.com/kindlingai/gr8/blob/main/docs/SETTINGS.md) explains each setting.
 
-## Option: remote KV on a sixth Spark (experimental)
+### Option: remote KV on a sixth Spark (experimental)
 
 The two commented lines at the end of `.env.example` (`KV_STORE=remote:...` and `KV_KEEP=sessions`) send the KV of
 evicted chats to a sixth Spark, which runs `gr8 kv up --gb 106` and keeps them in its RAM. A chat that comes back
@@ -155,6 +164,13 @@ This was measured on 2026-10-20 as test runs on a pre-release build. It was neve
   in 1.26-5.51 s. A full prefill takes about 67 s.
 - Limits: the sixth box locks 106 GiB of RAM; five boxes share its one 200G port; the store is empty after a
   restart.
+
+## Other sizes
+
+- **Three boxes (384K context, `bit273`):** [glm-5.3-exlr8-3x-spark](../../3x/exlr8-gr8)
+- **Four boxes (1M context, `bit325`, DFlash2):** [glm-5.3-exlr8-4x-spark](../../4x/exlr8-gr8)
+- **Four boxes K4 (`bit387`, uncapped routing):** [glm-5.3-exlr8-k4-4x-spark](../../4x/exlr8-k4-gr8)
+- **Six boxes (1M context / 2.18M KV pool, `bit325`):** [glm-5.3-exlr8-6x-spark](../../6x/exlr8-gr8)
 
 ## Help
 
@@ -180,9 +196,6 @@ This recipe has no engine code. It runs one published gr8 image, named by tag an
 `python3 tools/check_pin.py glm-5.3/dgx-spark/5x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and
 `kindling.json` name the same image; the root `.github/workflows/recipes.yml` runs it on every pull request that touches
 this folder.
-
-For four boxes, see [glm-5.3-exlr8-4x-spark](../../4x/exlr8-gr8).
-For six boxes, see [glm-5.3-exlr8-6x-spark](../../6x/exlr8-gr8).
 
 ## License
 

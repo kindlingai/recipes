@@ -1,5 +1,7 @@
 # KindlingAI: Qwen3.8-Flash-Next EXLR8 on two DGX Sparks (K3 & K4, 256K context)
 
+![Qwen3.8-Flash-Next K3 (bit300) on two DGX Sparks: decode, prefill and concurrency](docs/card.png)
+
 If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first, then the Quickstart.
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
@@ -8,8 +10,6 @@ Qwen3.8-Flash-Next on **two DGX Sparks** (GB10, 128 GB each) at `TP=2` over Conn
 [kindlingai/Qwen3.8-Flash-Next-exlr8](https://huggingface.co/kindlingai/Qwen3.8-Flash-Next-exlr8/tree/4943478fdd54d8a59f2f9824b2389799e79f564b) (`v0.2`):
 both **`bit300` (K3, 3.00 bpw)** and **`bit400` (K4, 4.00 bpw)** run with **8 dedicated full native 262,144-token** chats (`2,097,664` total KV rows), Layer-48 `MTP=3` speculative decoding, Blackwell MXFP8 dense kernels, single-step device-driven RDMA all-reduce (`GR8_QW38_FAST_AR=1`), async `O_DIRECT` NVMe streaming for the 102.4 GB Layer-1 PLE rowstore, and an opt-in BF16 vision tower (`GR8_QW38_VISION=1`).
 This recipe is the published `gr8` image and one `.env` file. Nothing is compiled.
-
-![Qwen3.8-Flash-Next K3 (bit300) on two DGX Sparks: decode, prefill and concurrency](docs/card.png)
 
 **K3 (`bit300`, default):** **126.8 tok/s** code · **89.2 tok/s** prose · **135.1 tok/s** structured · **135.8 tok/s** counting · **3,142 tok/s** 32K prefill (**2,973** at 128K) · **254.5 tok/s** at 8 streams · 128K needle recall PASS · 17 s boot from local NVMe
 **K4 (`bit400`, 1-line switch):** **122.1 tok/s** code · **86.9 tok/s** prose · **126.7 tok/s** structured · **128.6 tok/s** counting · **3,069 tok/s** 32K prefill (**2,915** at 128K) · **234.1 tok/s** at 8 streams · near-lossless `0.0046` mean KL (`97.70%` top-1) · 19 s boot from local NVMe
@@ -112,16 +112,6 @@ curl -s localhost:8100/v1/chat/completions -H 'Content-Type: application/json' -
 
 Stop the cluster cleanly with `docker compose exec gr8 /opt/gr8/gr8 qw38 down` on the head, then `docker compose down` on both boxes.
 
-### Multimodal vision (opt-in)
-
-The pinned `v0.2` weights include the unquantized 27-layer BF16 vision tower (`dense/vision-bf16.safetensors`, `898 MB`). To enable OpenAI `image_url` inputs, add `GR8_QW38_VISION=1` to `EXTRA_ENV` in `.env` on **both** boxes:
-
-```bash
-EXTRA_ENV="GR8_QW38_PLE_CACHE_MIB=4096 GR8_QW38_VISION=1"
-```
-
-Then restart both boxes (`docker compose up -d`) and verify on the head with `docker compose exec -e GR8_QW38_VISION_SMOKE=1 gr8 /opt/gr8/gr8 qw38 smoke` (9/9 checks).
-
 ## What you need
 
 - Two DGX Sparks or other GB10 boxes (128 GB unified memory each), with no other model running on them.
@@ -133,9 +123,36 @@ Then restart both boxes (`docker compose up -d`) and verify on the head with `do
   `sudo sysctl -w vm.compaction_proactiveness=0` (`gr8`'s
   [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md#before-you-start) has the permanent form).
 
+## Settings
+
+`cp .env.example .env` (the CLI already did). Every knob is documented in [.env.example](.env.example); the active
+lines are the exact settings the Results numbers for K3 (`bit300`) were measured with.
+
+| knob | default | what it does |
+|---|---|---|
+| `PEERS` | `192.0.2.1,192.0.2.2` | LAN addresses of both boxes in rank order (head first) |
+| `IPS` / `IPS2` | commented | Optional explicit dual-rail ConnectX-7 RoCE v2 addresses |
+| `VARIANT` | `bit300` | Expert width profile (`bit300` K3 default; `bit400` K4 1-line switch) |
+| `CAP` / `MAX_MODEL_LEN` / `SESS` | `262208` / `262144` / `8` | 8 dedicated full native 262K KV slabs (`2,097,664` total KV rows) |
+| `MTP` | `3` | Layer-48 MTP speculative drafting (`0..5`) |
+| `EXTRA_ENV` | `GR8_QW38_PLE_CACHE_MIB=4096` | 4 GiB PLE LRU cache; add `GR8_QW38_VISION=1` to enable vision |
+| `REUSE` / `KV_STORE` | commented | Optional prefix reuse and persistent SSD KV store (with `GR8_STOP_GRACE=150s`) |
+| `GR8_CACHE` / `GR8_HOME` | named volumes | Optional local NVMe host directories (owned by uid 1000) for model cache and logs/state |
+| `GR8_STOP_GRACE` / `GR8_IMAGE` | unset | Optional shutdown grace (for `persist=on` KV store) or image override |
+
 `gr8`'s [Qwen3.8-Flash-Next page](https://github.com/kindlingai/gr8/blob/main/docs/QWEN38.md) explains the architecture and every `GR8_QW38_*` rollback knob, and [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md) explains the launcher options.
 
-## Other box counts
+### Multimodal vision (opt-in)
+
+The pinned `v0.2` weights include the unquantized 27-layer BF16 vision tower (`dense/vision-bf16.safetensors`, `898 MB`). To enable OpenAI `image_url` inputs, add `GR8_QW38_VISION=1` to `EXTRA_ENV` in `.env` on **both** boxes:
+
+```bash
+EXTRA_ENV="GR8_QW38_PLE_CACHE_MIB=4096 GR8_QW38_VISION=1"
+```
+
+Then restart both boxes (`docker compose up -d`) and verify on the head with `docker compose exec -e GR8_QW38_VISION_SMOKE=1 gr8 /opt/gr8/gr8 qw38 smoke` (9/9 checks).
+
+## Other sizes
 
 - **One box (`TP=1`, 139K context/chat, 83.0 code / 61.5 prose / 155.2 at 8 streams on K3, 78.4 code / 55.1 prose on K4):** [qwen3.8-flash-next-exlr8-1x-spark](../../1x/exlr8-gr8)
 

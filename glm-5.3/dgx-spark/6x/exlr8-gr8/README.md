@@ -1,5 +1,7 @@
 # KindlingAI: GLM-5.3 EXLR8 on six DGX Sparks (1M context, 2.18M KV pool)
 
+![GLM-5.3 on six DGX Sparks, 1M context: decode, prefill and limits](docs/card.png)
+
 If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first, then the Quickstart.
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
@@ -9,8 +11,6 @@ the `bit325` width profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggin
 a full **1,048,576-token** context window backed by a **2,179,072-token** int4 KV pool (`SHARE_LIMIT=65,536`, keeping 32K–64K prompts 100% unsharded),
 zero-copy shared prefix pages, MTP=3 drafting with confidence stopping, up to 8 concurrent chats, 7.4+ GiB free RAM per box,
 and a QO cache for ~58 s boots. This recipe is the published gr8 image, pinned by digest, and one `.env` file. Nothing is compiled.
-
-![GLM-5.3 on six DGX Sparks, 1M context: decode, prefill and limits](docs/card.png)
 
 These TP=6 settings build on the TP=6 recipe
 [knapcio/GLM-5.3-gr8-6x-DGX-Spark-TP6](https://github.com/knapcio/GLM-5.3-gr8-6x-DGX-Spark-TP6). Thank you.
@@ -149,16 +149,32 @@ reads what the volume holds at the commits pinned in `.env`, and fetches the res
   `sudo sysctl -w vm.compaction_proactiveness=0` (gr8's
   [DEPLOY.md](https://github.com/kindlingai/gr8/blob/main/docs/DEPLOY.md#before-you-start) has the permanent form).
 
-## The 1M-context (2.18M-pool) settings
+## Settings
 
-Every line is in [.env.example](.env.example). Highlights over the `v1.0` recipe:
+`cp .env.example .env` (the CLI already did). Every knob is documented in [.env.example](.env.example); the active
+lines are the exact settings the Results numbers were measured with. Highlights over the `v1.0` recipe:
 
 - `gr8 v1.1.0` with `bit325` v0.6 weights, seven bit-exact decode/prefill kernels, `DEC_BK_MAX=2048`, and `MOE_UNION_CAP=48` (`32` for fast concurrency: 180.2 tok/s at 8 streams; `0` for uncapped exact).
 - `KV_FORMAT=int4` with `KVB=bf16`, `KV4_FOLD=1`, `KV4_TC=1`, `CAP=2,179,072` (6,528 physical pages/rank), `MAX_MODEL_LEN=1,048,576`, `SHARE_LIMIT=65,536`, `SESS=8`, `GR8_KV_SHARE_PAGES=1`, and `REUSE_GRID=64`.
 - `MTP=3` with solo (`MTP_KSTOP`) and shared-batch (`MTP_KSTOPB`) confidence stopping, `MTP_LASTROW=1`, `DRAFT_HEAD2=1`, `L2PF=31`, `MTP_L2PF=3`.
 - `PF_OWN=3` with `QO_CACHE` (~58 s boot) and `PF_GEMMF32=1`.
 
+| knob | default | what it does |
+|---|---|---|
+| `PEERS` | `192.0.2.1,...,192.0.2.6` | LAN addresses of the six boxes in rank order (head first; `SHAPE=mesh` on a switch) |
+| `KV_FORMAT` / `CAP` / `MAX_MODEL_LEN` / `SESS` | `int4` / `2179072` / `1048576` / `8` | Mixed-precision int4 KV pool (2.18M tokens, 1M max context, `SHARE_LIMIT=65536`) across up to 8 concurrent chats |
+| `MOE_UNION_CAP` | `48` | Decode speed/quality preset (`48` quality default, `32` fast, `0` uncapped exact) |
+| `QO_CACHE` / `GR8_CACHE` | `/var/lib/gr8/cache/qocache` / `/srv/gr8/cache` | Host cache directory holding the model and 13 GB QO cache for ~58 s boots |
+| `GR8_HOME` / `GR8_STOP_GRACE` / `GR8_IMAGE` | unset | Optional host state directory, shutdown grace, or image override |
+
 gr8's [SETTINGS.md](https://github.com/kindlingai/gr8/blob/main/docs/SETTINGS.md) explains each setting.
+
+## Other sizes
+
+- **Three boxes (384K context, `bit273`):** [glm-5.3-exlr8-3x-spark](../../3x/exlr8-gr8)
+- **Four boxes (1M context, `bit325`, DFlash2):** [glm-5.3-exlr8-4x-spark](../../4x/exlr8-gr8)
+- **Four boxes K4 (`bit387`, uncapped routing):** [glm-5.3-exlr8-k4-4x-spark](../../4x/exlr8-k4-gr8)
+- **Five boxes (983K context, `bit325`):** [glm-5.3-exlr8-5x-spark](../../5x/exlr8-gr8)
 
 ## Help
 
@@ -187,9 +203,6 @@ After v1.0, the pin moves to a newer gr8 release only after this recipe was boot
 `python3 tools/check_pin.py glm-5.3/dgx-spark/6x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and
 `kindling.json` name the same image; the root `.github/workflows/recipes.yml` runs it on every pull request that touches
 this folder.
-
-For four boxes, see [glm-5.3-exlr8-4x-spark](../../4x/exlr8-gr8).
-For five boxes, see [glm-5.3-exlr8-5x-spark](../../5x/exlr8-gr8).
 
 ## License
 

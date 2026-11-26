@@ -2,6 +2,7 @@
 # No engine is compiled here: the image has the engine for every TP width. Run the SAME file with the SAME .env
 # (.env.example) on all four boxes. The head (the first address in PEERS) serves the OpenAI API on port 8100.
 #
+#   cp .env.example .env && nano .env                     # PEERS: the four LAN addresses, head first
 #   docker compose up -d                                  # the first boot fetches this box's part of the model
 #   docker compose logs -f                                # this box's supervisor
 #   docker compose exec gr8 /opt/gr8/gr8 glm53 smoke      # on the head, once it serves
@@ -12,7 +13,7 @@
 name: glm53-4x-spark
 services:
   gr8:
-    # The engine pin: one gr8 image, by tag and digest (kindling.json "engine" names the same one).
+    # The engine pin: kindlingai/gr8 v1.1.1 (a3f44a0); kindling.json "engine" names the same digest.
     image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.1.1@sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96}
     container_name: glm53-4x-spark
     # The launcher's options, from .env. Optional: options can also come on the command line of `run`.
@@ -21,14 +22,14 @@ services:
         required: false
     environment:
       # The container's own paths (the volumes below, the image's python and front end). Set here so a MODEL_CACHE,
-      # GR8_WORK_DIR, PY or FRONT_BIN line in .env, meant for a bare-metal box, cannot point the launcher at a path that does
-      # not exist in the container.
+      # GR8_WORK_DIR, PY or FRONT_BIN line in .env, meant for a bare-metal box, cannot point the launcher at a path that
+      # does not exist in the container.
       - GR8_WORK_DIR=/var/lib/gr8/home
       - MODEL_CACHE=/var/lib/gr8/cache
       - PY=/usr/bin/python3
       - FRONT_BIN=/opt/gr8/bin/g6front-rs
     # The RoCE fabric and the front end need the box's real interfaces. The fabric bootstrap, the supervisors' control
-    # port (7340), the S2 control port (7341) and the API (8100) are host ports.
+    # port (7340), the S2 control port (7341) and the OpenAI API (8100) are host ports.
     network_mode: host
     # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only
     # in the host's process list.
@@ -61,21 +62,20 @@ services:
     oom_score_adj: 1000
     # tini as PID 1: it forwards docker's SIGTERM to the launcher and reaps the engine and the shims.
     init: true
-    # SIGTERM makes the supervisor quit its engine (10 s), then signal it (5 s more). A KV_STORE ssd store with
-    # persist=on and keep=sessions (or all) gives the quit 120 s, as it stores the pool's runs for the next boot: set
-    # GR8_STOP_GRACE=150s with one, or docker kills the engine mid-store (the next boot then keeps what serving stored).
+    # SIGTERM makes the supervisor quit its engine (10 s), then signal it (5 s more). With a persistent KV_STORE
+    # (persist=on), set GR8_STOP_GRACE=150s so docker does not kill the engine while flushing sessions.
     stop_grace_period: ${GR8_STOP_GRACE:-30s}
     volumes:
-      # This box's part of the model (prepare fills it, ~90 GB at TP=4). Unset, a named volume. Set GR8_CACHE to a
-      # host directory, owned by uid 1000, to keep it outside docker.
+      # This box's part of the model (prepare fills it, ~90 GB at TP=4). Unset, a named volume. Set GR8_CACHE to a host
+      # directory, owned by uid 1000, to keep it outside docker.
       - ${GR8_CACHE:-cache}:/var/lib/gr8/cache
       # Logs and state: out/ (supervisor.log, g6m4.r<N>.err, shim.log, front.log, gr8.state), and the S2 request
       # directory. Unset, a named volume.
       - ${GR8_HOME:-home}:/var/lib/gr8/home
     healthcheck:
       # Healthy once this box's supervisor reports the cluster serving (on the head, once its API's /health answers
-      # too): `gr8 <model> health`, the same check a Kubernetes exec probe runs. $$ leaves GR8_MODEL to the
-      # container's shell, which has the .env file's value, as the entrypoint does. A boot reads ~80 GB, so allow it time.
+      # too): `gr8 glm53 health`. $$ leaves GR8_MODEL to the container's shell, which has the .env file's value, as the
+      # entrypoint does. A boot reads ~80 GB, so allow it time.
       test: ["CMD-SHELL", "exec /opt/gr8/gr8 \"$${GR8_MODEL}\" health"]
       interval: 30s
       timeout: 5s

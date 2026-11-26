@@ -12,8 +12,9 @@ from inside the folder.
 - It is a DGX Spark or other GB10 box with 128 GB, and no other model runs on it: `docker ps` and `nvidia-smi` show
   none.
 - Docker has the NVIDIA runtime: `docker info | grep -i nvidia`.
-- Local NVMe disk: at least 165 GB free for `bit300` (K3) or 180 GB free for `bit400` (K4) — the release includes the
-  102.4 GB Layer-1 PLE NVMe rowstore, which must live on fast local NVMe (not NFS/HDD):
+- Local NVMe disk: at least 200 GB free for `bit300` (K3) or 215 GB free for `bit400` (K4) — the release includes the
+  102.4 GB Layer-1 PLE NVMe rowstore and uses a 32 GB `O_DIRECT` SSD KV prefix cache, both of which must live on fast
+  local NVMe (not NFS/HDD):
   `df -h "$(docker info --format '{{.DockerRootDir}}')"`, or the `GR8_CACHE` directory if you set one.
 - Hugging Face answers: `curl -sI https://huggingface.co`.
 - Proactive memory compaction is off: `sysctl vm.compaction_proactiveness` prints 0. If not, as root:
@@ -22,20 +23,21 @@ from inside the folder.
 ## 2. Write .env
 
 Copy `.env.example` to `.env` (the `npx @kindlingai/recipe` CLI already did). It is ready to boot `bit300` (K3) at
-`TP=1` with `CAP=139264`, `SESS=8`, `MTP=3` as-is. Ask the person before changing `VARIANT=bit400` (K4), `MTP=4`,
-`GR8_QW38_VISION=1`, `REUSE=1`, or `KV_STORE`.
+`TP=1` with `CAP=262208`, `MAX_MODEL_LEN=262144`, `SESS=6`, `MTP=3` (plus auto-loaded DFlash), `REUSE=1`, and the
+32 GiB `O_DIRECT` SSD KV store as-is. Ask the person before changing `VARIANT=bit400` (K4, requires `SESS=4`, or
+`SESS=5` with `MTP=0` and `GR8_QW38_NO_MTP=1`), `GR8_QW38_VISION=1` (reduce `SESS` by 1), or `GR8_QW38_DFL=0`.
 
 ## 3. Boot
 
-Run `docker compose up -d`. The first boot downloads the model (~163 GB for `bit300` or ~178 GB for `bit400`). Later
-boots from local NVMe take ~16-18 s. Follow it with `docker compose logs -f`.
+Run `docker compose up -d`. The first boot downloads the model (~164 GB for `bit300` or ~179 GB for `bit400`). Later
+boots from local NVMe take ~28 s. Follow it with `docker compose logs -f`.
 
 ## 4. Check
 
 - `docker compose exec gr8 /opt/gr8/gr8 qw38 health` exits 0.
 - `docker compose exec gr8 /opt/gr8/gr8 qw38 smoke` passes 8 of 8 (or 9 of 9 with `GR8_QW38_VISION=1` and
   `GR8_QW38_VISION_SMOKE=1`).
-- `curl -s localhost:8100/v1/models` lists `qwen3.8-flash-next` with `max_model_len` 139200.
+- `curl -s localhost:8100/v1/models` lists `qwen3.8-flash-next` with `max_model_len` 262144.
 
 ## 5. Stop
 
@@ -49,8 +51,8 @@ Run `docker compose exec gr8 /opt/gr8/gr8 qw38 down`, then `docker compose down`
   drawn again from a `gr8` checkout:
   - `python3 bench/gif.py card kindling.json --out docs/card.png`
   - `python3 bench/gif.py card kindling.json --config tp1-k4 --out docs/card-k4.png`
-- Once `gr8 v1.2.0` is published, the engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never
-  a moving tag alone, never a patched engine. An engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8)
-  as a pull request; this recipe then moves its pin to the merged commit or next release.
-- From the monorepo root, run `python3 tools/check_pin.py qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8` (add `--strict`
-  once `v1.2.0` is pinned) before you commit.
+- The engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never a moving tag alone, never a
+  patched engine. An engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8) as a pull request; this
+  recipe then moves its pin to the merged commit or next release.
+- From the monorepo root, run `python3 tools/check_pin.py --strict qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8` before
+  you commit.

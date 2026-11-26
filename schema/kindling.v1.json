@@ -82,32 +82,63 @@
           "nodes": { "type": "integer", "minimum": 1, "description": "Boxes or GPUs" },
           "decode": {
             "type": "object",
-            "description": "Single-stream decode tok/s by workload. code, prose and structured are shown in that order; other keys follow.",
+            "description": "Single-stream decode tok/s on the three standard bench/bench.py workloads (512 tokens, T=0, salted per-run tags): code, prose, structured. Put any other workload in decode_extra so headline bars compare like with like. Non-standard keys in decode are deprecated and will be disallowed once off-method recipes are re-measured.",
+            "properties": {
+              "code": { "type": "number", "description": "Standard code-generation prompt pool (512 tokens)" },
+              "prose": { "type": "number", "description": "Standard prose explanation prompt pool (512 tokens)" },
+              "structured": { "type": "number", "description": "Standard structured-sequence prompt pool (512 tokens)" }
+            },
             "additionalProperties": { "type": "number" }
           },
-          "decode_prompt_tokens": { "type": "array", "items": { "type": "integer" } },
+          "decode_extra": {
+            "type": "object",
+            "description": "Single-stream decode tok/s for extra workloads beyond the standard three (e.g. counting, math, long-prompt, or tool-call decode). Kept separate from decode so the site and card headlines compare like with like.",
+            "additionalProperties": { "type": "number" }
+          },
+          "decode_ci95": {
+            "type": "object",
+            "description": "Optional 95% confidence interval [low, high] in tok/s per decode workload (from bench/bench.py).",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "number" },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "decode_prompt_tokens": {
+            "type": "array",
+            "description": "Prompt length range [min, max] in tokens as counted by the server across single-stream decode runs.",
+            "items": { "type": "integer" }
+          },
           "prefill": {
             "type": "array",
-            "description": "Cold prefill tok/s at a prompt length",
+            "description": "Cold prefill tok/s (prompt_tokens / TTFT) at each prompt length. Standard bench/bench.py points: 8192, 32768, 131072 (skip any size where context + 1000 > max_context).",
             "items": {
               "type": "object", "required": ["context", "tps"],
-              "properties": { "context": { "type": "integer" }, "tps": { "type": "number" } }
+              "properties": {
+                "context": { "type": "integer", "minimum": 1 },
+                "tps": { "type": "number" }
+              }
             }
           },
           "concurrency": {
             "type": "array",
-            "description": "Aggregate tok/s across concurrent streams",
+            "description": "Aggregate tok/s across concurrent 512-token streams of mixed code/prose/structured prompts. Standard bench/bench.py stream counts: 1, 2, 4, 8 (up to max_concurrent).",
             "items": {
               "type": "object", "required": ["streams", "aggregate_tps"],
               "properties": {
-                "streams": { "type": "integer" },
+                "streams": { "type": "integer", "minimum": 1 },
                 "aggregate_tps": { "type": "number" },
                 "per_stream_tps": { "type": "number" },
                 "ttft_p50_s": { "type": "number" }
               }
             }
           },
-          "concurrency_prompt_tokens": { "type": "array", "items": { "type": "integer" } },
+          "concurrency_prompt_tokens": {
+            "type": "array",
+            "description": "Prompt length range [min, max] in tokens as counted by the server across concurrent-stream runs.",
+            "items": { "type": "integer" }
+          },
           "max_context": { "type": "integer", "description": "Longest request, in tokens" },
           "kv_pool_tokens": { "type": "integer" },
           "max_concurrent": { "type": "integer", "description": "Requests decoding at once" },
@@ -126,12 +157,16 @@
           "lowest_mem_available_gib": { "type": "number" },
           "quality": {
             "type": "array",
+            "description": "Correctness and quality checks shown on the card. Standard default-config line from bench/bench.py: {\"name\": \"Needle recall\", \"value\": \"found at 128K\"} (when max_context allows). Complementary checks such as RealMark (RIPAL) or GSM8K/HumanEval also live here.",
             "items": {
               "type": "object", "required": ["name", "value"],
               "properties": { "name": { "type": "string" }, "value": { "type": "string" } }
             }
           },
-          "notes": { "type": "string" }
+          "notes": {
+            "type": "string",
+            "description": "Measurement conditions: date, engine ref/commit, harness and flags (e.g. bench/bench.py default level), GPU clock state, and active settings."
+          }
         }
       }
     }

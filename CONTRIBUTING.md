@@ -8,7 +8,8 @@
 2. Write its `kindling.json` ([schema](schema/kindling.v1.json)). Required: `version` (1), `id`, `status`, `title`,
    `configs`. `id` is permanent: it names the image, the site card, the CLI argument and the tags. For a new recipe use
    `<model>-<quant>[-<tag>]-<n>x-<hardware short name>`, like the existing ones. Only numbers you measured go in
-   `configs`; put the conditions (date, settings, benchmark) in each config's `notes`.
+   `configs` (see ["Benchmarking"](#benchmarking)); put the conditions (date, engine commit, settings, benchmark) in
+   each config's `notes`.
 3. Start from [`template/`](template/), which holds the standard files and README layout (["The recipe
    standard"](#the-recipe-standard)): copy it into the folder, fill it in, and keep the launch contract — one
    `compose.yaml` on the host network, the engine's published image pinned by digest, settings in `.env`, the OpenAI
@@ -51,6 +52,99 @@ it fails CI. Run it yourself before you commit:
 python3 tools/lint_recipe.py glm-5.3/dgx-spark/4x/exlr8-gr8   # one recipe
 python3 tools/lint_recipe.py                                  # every non-external recipe
 ```
+
+## Benchmarking
+
+Every non-external recipe's default config is measured the same way so the README tables, the generated cards and
+[kindlingai.dev](https://www.kindlingai.dev) compare like with like.
+
+### Standard harness
+
+Use [`kindlingai/gr8`'s `bench/bench.py`](https://github.com/kindlingai/gr8/tree/main/bench). It uses only the Python 3
+standard library and talks standard OpenAI/vLLM HTTP endpoints (`/v1/models`, `/v1/chat/completions` with
+`stream_options.include_usage`, `/tokenize`, and `/metrics`), so the same harness runs against both **gr8** and
+**vLLM** (or any OpenAI-compatible server exposing those endpoints).
+
+- **Why `bench/bench.py` over [`kindlingai/realmark`](https://github.com/kindlingai/realmark):** `bench/bench.py`
+  directly produces the fixed-prompt single-stream decode workloads (`code`, `prose`, `structured`), cold prefill at
+  8K/32K/128K, concurrency 1/2/4/8, and 128K needle recall that the index and cards compare side by side, and its
+  `bench.py kindling` subcommand writes directly to `kindling.json`. RealMark (RIPAL) measures word-based interactive
+  agentic turnaround and letter-grade quality across C=1, 2, 4; run it as a complementary check and record its score
+  under `quality`.
+
+### Default level
+
+Measure every non-external recipe's default config at the default level:
+
+| Stage | What it measures | `kindling.json` field |
+|---|---|---|
+| Decode | Single-stream decode (`code`, `prose`, `structured`, 512 tokens, 1 warmup + 6 runs, T=0, salted per-run tags so runs never hit the prefix cache) | `decode`: `{"code", "prose", "structured"}` (optional `decode_ci95`, `decode_prompt_tokens`) |
+| Cold prefill | Salted synthetic code documents sized via `/tokenize` at `8192` (8K), `32768` (32K), `131072` (128K) (`prompt_tokens / TTFT`); sizes with `context + 1000 > max_context` are skipped | `prefill`: `[{"context", "tps"}, ...]` |
+| Concurrency | `1`, `2`, `4`, `8` concurrent 512-token streams (capped at `max_concurrent`), 2 batches each, rotating `code`/`prose`/`structured` prompts | `concurrency`: `[{"streams", "aggregate_tps", ...}]` (optional `per_stream_tps`, `ttft_p50_s`, `concurrency_prompt_tokens`) |
+| Needle recall | Passphrase at 15% depth of a salted 128K document, greedy, 1,024 max tokens (skipped when `131072 + 1000 > max_context`) | `quality`: `{"name": "Needle recall", "value": "found at 128K"}` |
+
+Extra single-stream workloads beyond `code`, `prose`, and `structured` — including `bench/bench.py`'s own `counting`
+stage, `math`, long-prompt decode, or multi-turn tool decode — go under `decode_extra`, not `decode`, so headline
+comparisons stay aligned across recipes. Always record the run conditions in `notes` (date, engine ref/commit, harness
+and flags, GPU clock state, and active knobs).
+
+### Running the benchmark
+
+Fetch `bench/` from `kindlingai/gr8` (or run from an existing `gr8` checkout):
+
+```bash
+git clone --filter=blob:none --sparse https://github.com/kindlingai/gr8.git /tmp/gr8-bench
+git -C /tmp/gr8-bench sparse-checkout set bench smoketest
+```
+
+Against a **gr8** server on port 8100:
+
+```bash
+# Single box or cluster with SSH + sudo thermal settling (stops sparkos-thermal, cools between timed stages):
+python3 /tmp/gr8-bench/bench/bench.py \
+  --url http://127.0.0.1:8100 \
+  --hosts local \
+  --json /tmp/bench-report.json
+
+# Multi-node cluster: pass --hosts box1,box2,...
+# Without thermal control (workstation / no passwordless sudo): omit --hosts
+```
+
+Against **vLLM or any non-gr8 OpenAI-compatible server**, skip gr8's local `smoke` shell scripts with `--stages` (and
+pass `--effort nothink` when the model or chat template does not accept `chat_template_kwargs.reasoning_effort`, plus
+`--streams` capped at `max_concurrent` when `max_concurrent < 8`):
+
+```bash
+python3 /tmp/gr8-bench/bench/bench.py \
+  --url http://127.0.0.1:8100 \
+  --stages info,decode,concurrency,prefill,correct \
+  --json /tmp/bench-report.json
+# Add --effort nothink for models without reasoning_effort
+# Add --streams 1,2,4 (or --streams 1) if max_concurrent < 8
+```
+
+Write the measured metrics into the recipe's `kindling.json`:
+
+```bash
+python3 /tmp/gr8-bench/bench/bench.py kindling /tmp/bench-report.json \
+  --out <recipe-path>/kindling.json \
+  --config-id <config-id> --label "<label>" --nodes <n> --default
+```
+
+`bench.py kindling` fills `decode` (`code`, `prose`, `structured`), `prefill`, `concurrency` (`streams`,
+`aggregate_tps`), `quality` (`Needle recall`), and `max_context` while preserving all other fields. Fill in
+`decode_extra`, `decode_ci95`, `decode_prompt_tokens`, `concurrency_prompt_tokens`, `per_stream_tps`/`ttft_p50_s`,
+`kv_pool_tokens`, `max_concurrent`, and `notes` from the JSON report and launch config.
+
+### Metric enforcement & migration
+
+`schema/kindling.v1.json` declares the standard `decode` keys (`code`, `prose`, `structured`) alongside `decode_extra`,
+and `tools/lint_recipe.py` checks every non-external recipe's default config for the standard decode keys, extra keys
+left in `decode`, cold prefill points (`8192`, `32768`, `131072` within `max_context`), concurrency points (`1`, `2`,
+`4`, `8` within `max_concurrent`), and `Needle recall` (when `max_context >= 132072`). `schema/kindling.v1.json` keeps
+`decode.additionalProperties` permissive while off-method recipes are re-measured (#9, #10, #11, #12, #13) and legacy
+extra workloads move to `decode_extra`; once those land, `schema/kindling.v1.json` will enforce the fixed `decode`
+keys strictly (`required: ["code", "prose", "structured"]`, `additionalProperties: false`).
 
 ## Engine pins
 

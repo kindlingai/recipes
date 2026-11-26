@@ -1,8 +1,10 @@
 # GLM 5.3 (full) EXL3 on DGX Spark: TP6 and TP4 builds
 
-> **Newer: [gr8](https://github.com/kindlingai/gr8)** serves the full GLM-5.3 on three to six DGX Sparks with its
-> own CUDA engine, without vLLM, and has the current numbers. This recipe is the earlier vLLM build, kept for
-> reference.
+> **Retired.** This vLLM/EXL3 recipe has been retired (`status: "retired"` in [`kindling.json`](kindling.json)) and is
+> kept here with its history and measured results for reference only. Use
+> [`glm-5.3/dgx-spark/6x/exlr8-gr8`](../exlr8-gr8/) instead: it runs the published `gr8` v1.1.1 image on the same six
+> DGX Sparks with no custom Docker builds and delivers **58.0 tok/s** prose decode (78.0 code, 81.0 structured) and
+> **1M context** (2.18M KV pool) vs. this recipe's 27.7 tok/s prose decode and 360K context.
 
 Two ways we serve the full GLM 5.3 model (MoE, 256 experts, MLA + sparse attention, one MTP layer) from the
 [davidsyoung/GLM-5.3-EXL3-TR3-3.25bpw](https://huggingface.co/davidsyoung/GLM-5.3-EXL3-TR3-3.25bpw) EXL3
@@ -20,8 +22,8 @@ quantization with vLLM on NVIDIA DGX Spark (GB10) nodes:
 Numbers are single-request, one boot each, on our cluster, measured 2026-09-26 to 2026-09-30. Read
 [RESULTS.md](RESULTS.md) for every step, the benchmark definitions and the caveats before comparing them with anything.
 
-[kindling.json](kindling.json) has these numbers in a form a program can read; the Kindling AI site shows this
-recipe from it. A change to this table changes kindling.json too. [AGENTS.md](AGENTS.md) has the rules.
+[kindling.json](kindling.json) has these numbers in a form a program can read; it is marked `retired` and left off
+the Kindling AI site. [AGENTS.md](AGENTS.md) has the rules.
 
 ## Hardware
 

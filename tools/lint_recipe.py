@@ -13,6 +13,9 @@ Checks:
   compose          one service on the host network running a published engine image pinned by digest, the OpenAI API
                    on port 8100, no `build:` key; every ${VAR} it references is documented in .env.example
   no builds        no Dockerfile in the folder, no `build` object in kindling.json
+  benchmarks       default config has standard decode keys (code, prose, structured; extra workloads in decode_extra),
+                   cold prefill points (8K/32K/128K within max_context), concurrency points (1/2/4/8 within
+                   max_concurrent), and Needle recall (when max_context >= 132072)
 """
 import json
 import re
@@ -23,8 +26,62 @@ ROOT = Path(__file__).resolve().parent.parent
 
 REQUIRED = ('README.md', 'AGENTS.md', 'kindling.json', 'compose.yaml', '.env.example', 'docs/card.png', '.gitignore')
 H2_ORDER = ('Results', 'Quickstart', 'What you need', 'Settings', 'Other sizes', 'Help', 'Engine pin', 'License')
+STD_DECODE = ('code', 'prose', 'structured')
+STD_PREFILL = (8192, 32768, 131072)
+STD_CONCURRENCY = (1, 2, 4, 8)
+NEEDLE_MIN_CONTEXT = 131072 + 1000
 DIGEST = re.compile(r'@sha256:[0-9a-f]{40,}')
 VAR = re.compile(r'\$(?!\$)\{([A-Za-z_][A-Za-z0-9_]*)(?::?[-=+?][^}]*)?\}')
+
+
+def _default_config(kindling):
+    configs = kindling.get('configs') or []
+    for c in configs:
+        if isinstance(c, dict) and c.get('id') == kindling.get('default_config'):
+            return c
+    return configs[0] if configs and isinstance(configs[0], dict) else None
+
+
+def _check_benchmarks(kindling, add):
+    if kindling.get('status') in ('external', 'retired'):
+        return
+    cfg = _default_config(kindling)
+    if not cfg:
+        return
+    cid = cfg.get('id', '(default)')
+
+    decode = cfg.get('decode') if isinstance(cfg.get('decode'), dict) else {}
+    missing_decode = [k for k in STD_DECODE if k not in decode]
+    if missing_decode:
+        add('kindling.json', f'default config `{cid}` decode is missing standard key(s): '
+                             f'{", ".join(missing_decode)} (measure with gr8 bench/bench.py)')
+    extra_decode = sorted(k for k in decode if k not in STD_DECODE)
+    if extra_decode:
+        add('kindling.json', f'default config `{cid}` decode has non-standard key(s): '
+                             f'{", ".join(extra_decode)} (move extra workloads to decode_extra)')
+
+    max_ctx = cfg.get('max_context') if isinstance(cfg.get('max_context'), int) else None
+    expected_pf = [s for s in STD_PREFILL if not max_ctx or s + 1000 <= max_ctx]
+    have_pf = {p.get('context') for p in (cfg.get('prefill') or []) if isinstance(p, dict)}
+    missing_pf = [f'{s // 1024}K ({s})' for s in expected_pf if s not in have_pf]
+    if missing_pf:
+        add('kindling.json', f'default config `{cid}` prefill is missing standard cold point(s): '
+                             f'{", ".join(missing_pf)}')
+
+    max_conc = cfg.get('max_concurrent') if isinstance(cfg.get('max_concurrent'), int) else None
+    expected_cc = [s for s in STD_CONCURRENCY if not max_conc or s <= max_conc]
+    have_cc = {c.get('streams') for c in (cfg.get('concurrency') or []) if isinstance(c, dict)}
+    missing_cc = [str(s) for s in expected_cc if s not in have_cc]
+    if missing_cc:
+        add('kindling.json', f'default config `{cid}` concurrency is missing standard stream count(s): '
+                             f'{", ".join(missing_cc)}')
+
+    if not max_ctx or max_ctx >= NEEDLE_MIN_CONTEXT:
+        qual = cfg.get('quality') or []
+        has_needle = any(isinstance(q, dict) and 'needle' in (q.get('name') or '').lower() for q in qual)
+        if not has_needle:
+            add('kindling.json', f'default config `{cid}` quality has no Needle recall entry '
+                                 '(bench/bench.py default level runs 128K needle)')
 
 
 def findings_for(rel):
@@ -46,6 +103,7 @@ def findings_for(rel):
             add('kindling.json', f'does not parse: {e}')
     if kindling.get('build') is not None:
         add('kindling.json', 'has a "build" object; the standard runs the published engine image, no local build')
+    _check_benchmarks(kindling, add)
 
     readme = (d / 'README.md')
     if readme.is_file():

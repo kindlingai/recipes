@@ -1,6 +1,6 @@
 import asyncio,aiohttp,random,sys,time
 import os
-URL=os.environ.get("URL","http://localhost:8000/v1/chat/completions"); N=int(sys.argv[1]); L=int(sys.argv[2])
+URL=os.environ.get("URL","http://localhost:8100/v1/chat/completions"); N=int(sys.argv[1]); L=int(sys.argv[2])
 w="alpha beta gamma delta river stone cloud paper metal glass".split()
 async def one(s,i):
     random.seed(1000+i); msg=" ".join(random.choice(w) for _ in range(L))+f"\nRequest {i}: say the word ok."

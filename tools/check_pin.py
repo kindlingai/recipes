@@ -4,12 +4,14 @@
   python3 tools/check_pin.py DIR...           exit 0 when every DIR agrees, 1 with the reasons when not
   python3 tools/check_pin.py --strict DIR...  also refuse a pending pin (no engine commit and digest yet)
 
-engine.pin image:  compose.yaml's ${GR8_IMAGE:-...} default is engine.image@engine.image_digest. A pin may be pending
-                   (commit and digest both empty) while its release is unpublished; --strict refuses that.
+engine.pin image:  every compose file's ${<ENGINE>_IMAGE:-...} default (e.g. GR8_IMAGE, VLLM_IMAGE, ENGINE_IMAGE) is
+                   engine.image@engine.image_digest. A pin may be pending (commit and digest both empty) while its
+                   release is unpublished; --strict refuses that.
 engine.pin source: the recipe builds the engine from engine.commit (its Dockerfile, with tools/engine.sh checking the
                    source out, or its own script); with a Dockerfile, compose.yaml's ${IMAGE:-...} default is the
                    recipe's own image; engine.image, when set, is the engine's image of that commit or ref.
-weights_commit:    when set and the Dockerfile pins MODEL=https://huggingface.co/<model>@<commit>, they agree.
+weights_commit:    when set, agrees with MODEL=https://huggingface.co/<model>@<commit> in the Dockerfile or
+                   MODEL_REVISION=<commit> in .env.example.
 A recipe without an engine pin passes with a note.
 """
 import json
@@ -19,7 +21,8 @@ from pathlib import Path
 
 SHA = re.compile(r'[0-9a-f]{40}')
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
-REF = re.compile(r'v\d+\.\d+(\.\d+)?|stable|main')
+REF = re.compile(r'v\d+\.\d+(\.\d+)?(?:[-.][A-Za-z0-9._-]+)?|nightly(?:-[0-9a-f]{7,40})?|stable|main')
+IMAGE_VAR = re.compile(r'\$\{([A-Z][A-Z0-9_]*IMAGE):-([^}\s]+)\}')
 
 
 def check(d, strict):
@@ -31,12 +34,13 @@ def check(d, strict):
         return [], 'no engine pin'
     compose = (d / 'compose.yaml').read_text() if (d / 'compose.yaml').exists() else ''
     dockerfile = (d / 'Dockerfile').read_text() if (d / 'Dockerfile').exists() else ''
+    env_example = (d / '.env.example').read_text() if (d / '.env.example').exists() else ''
     bad = []
     for f in ('repo', 'ref', 'pin'):
         if not e.get(f):
             bad.append(f'engine.{f} is missing')
     if e.get('ref') and not REF.fullmatch(e['ref']):
-        bad.append(f'engine.ref {e["ref"]} is not a release tag, stable or main')
+        bad.append(f'engine.ref {e["ref"]} is not a release tag, nightly, stable or main')
     commit, digest = e.get('commit') or '', e.get('image_digest') or ''
     if commit and not SHA.fullmatch(commit):
         bad.append('engine.commit is not a full commit hash')
@@ -57,12 +61,20 @@ def check(d, strict):
                 bad.append('engine.image_digest is missing')
         if not e.get('image'):
             bad.append('engine.image is missing')
-        m = re.search(r'image: \$\{GR8_IMAGE:-([^}\s]+)\}', compose)
         want = e.get('image') if pending else f'{e.get("image")}@{digest}'
-        if not m:
-            bad.append('compose.yaml has no ${GR8_IMAGE:-...} default image')
-        elif m.group(1) != want:
-            bad.append(f'compose.yaml pins {m.group(1)}, kindling.json says {want}')
+        compose_files = sorted(d.glob('compose.yaml')) + sorted(d.glob('compose.*.yaml'))
+        if not compose_files:
+            bad.append('compose.yaml is missing')
+        for cf in compose_files:
+            images = re.findall(r'^\s*image:\s*(.+?)\s*$', cf.read_text(), re.M)
+            if not images:
+                bad.append(f'{cf.name} has no ${"{<ENGINE>_IMAGE:-...}"} default image')
+            for img_expr in images:
+                m = IMAGE_VAR.fullmatch(img_expr)
+                if not m:
+                    bad.append(f'{cf.name} image `{img_expr}` is not a ${"{<ENGINE>_IMAGE:-...}"} default image')
+                elif m.group(2) != want:
+                    bad.append(f'{cf.name} pins {m.group(2)}, kindling.json says {want}')
     elif pin == 'source':
         if not commit:
             bad.append('engine.commit is missing: a source pin builds that commit')
@@ -89,6 +101,9 @@ def check(d, strict):
                 bad.append(f'the Dockerfile boots {m.group(1)}, kindling.json model is {k.get("model")}')
             if m.group(2) != k['weights_commit']:
                 bad.append(f'the Dockerfile pins weights {m.group(2)[:8]}, weights_commit is {k["weights_commit"][:8]}')
+        me = re.search(r'^MODEL_REVISION=([0-9a-f]{40})\s*$', env_example, re.M)
+        if me and me.group(1) != k['weights_commit']:
+            bad.append(f'.env.example pins MODEL_REVISION {me.group(1)[:8]}, weights_commit is {k["weights_commit"][:8]}')
     tag = f'{e.get("ref")} {commit[:7]}' if commit else f'{e.get("ref")} (pending)'
     return bad, f'engine {tag}, pin {pin}'
 

@@ -1,0 +1,132 @@
+# Nemotron 3.5 Bolt 74B-A9B (24GB) on 1× RTX 5090 (32 GB): published vLLM image, pinned by tag and digest, with
+# this recipe's .env. Nothing is compiled or installed at boot: vLLM v0.34.0 bundles flashinfer-python 0.7.3
+# (which ships b12x) and pre-installed FlashInfer kernels. Serves the OpenAI API on port 8100 (host network).
+#
+#   cp .env.example .env
+#   docker compose up -d          # pulls the pinned vLLM image; the first boot fetches the model
+#   docker compose logs -f        # ready when the OpenAI API answers on 127.0.0.1:8100
+name: nemotron-3.5-bolt-rtx5090
+services:
+  vllm:
+    # The engine pin: vllm-project/vllm v0.34.0 (62d4bc3c7e33b1b6c906e233e6af2d3506c482ca); kindling.json "engine"
+    # names the same digest. Never a movable tag alone, never a locally built image.
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.34.0@sha256:20fdb089454afbb324efa4110a2c025ff7b27cc1a086e07aa580b18df8ad1ce1}
+    container_name: nemotron-3.5-bolt-rtx5090
+    env_file:
+      - path: .env
+        required: false
+    # Host networking: the OpenAI API serves directly on 127.0.0.1:8100 with no port mapping.
+    network_mode: host
+    # PyTorch / vLLM shared memory for IPC and worker queues.
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      # Pinned host buffers for CUDA memory transfers.
+      memlock: -1
+      # Avoid huge core dumps holding NVIDIA driver locks on crash.
+      core: 0
+    # Note: stock vllm/vllm-openai runs as root and writes JIT caches (FlashInfer/Triton/b12x) under /root/.cache,
+    # /root/.triton, and /tmp, so read_only and cap_drop are omitted here.
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: ${STOP_GRACE:-30s}
+    volumes:
+      # Hugging Face model cache + vLLM/FlashInfer/b12x JIT kernel cache. Unset, a named docker volume; set CACHE_DIR
+      # in .env to a host directory to keep the cache outside docker.
+      - ${CACHE_DIR:-cache}:/root/.cache
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        PROFILE="$${PROFILE:-fast}"
+        case "$$PROFILE" in
+          fast)
+            : "$${MAX_MODEL_LEN:=262144}"
+            : "$${MAX_NUM_SEQS:=1}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.95}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=4096}"
+            : "$${DRAFTER:=nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-LiLiCorr}"
+            : "$${DRAFTER_REVISION:=449d24140160b8e51871bfc0f0a7338abf640aa1}"
+            : "$${NUM_SPECULATIVE_TOKENS:=5}"
+            : "$${VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS:=1}"
+            ;;
+          long)
+            : "$${MAX_MODEL_LEN:=262144}"
+            : "$${MAX_NUM_SEQS:=1}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.96}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=4096}"
+            : "$${DRAFTER:=}"
+            : "$${VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS:=1}"
+            ;;
+          multi)
+            : "$${MAX_MODEL_LEN:=32768}"
+            : "$${MAX_NUM_SEQS:=8}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.88}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=2048}"
+            : "$${DRAFTER:=}"
+            : "$${VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS:=0}"
+            ;;
+          *)
+            echo "Unknown PROFILE=$$PROFILE (expected: fast, long, multi)" >&2
+            exit 1
+            ;;
+        esac
+        export VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS
+
+        set -- "$${MODEL:-nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB}" \
+          --port "$${PORT:-8100}" \
+          --served-model-name "$${SERVED_MODEL_NAME:-nemotron-3.5-bolt}" \
+          --trust-remote-code \
+          --load-format auto \
+          --tensor-parallel-size 1 \
+          --max-model-len "$$MAX_MODEL_LEN" \
+          --max-num-seqs "$$MAX_NUM_SEQS" \
+          --gpu-memory-utilization "$$GPU_MEMORY_UTILIZATION" \
+          --max-num-batched-tokens "$$MAX_NUM_BATCHED_TOKENS" \
+          --enable-chunked-prefill \
+          --kv-cache-dtype fp8 \
+          --linear-backend b12x \
+          --moe-backend b12x \
+          --attention-backend FLASHINFER \
+          --mamba-backend flashinfer \
+          --mamba-ssm-cache-dtype bfloat16 \
+          --mamba-cache-dtype bfloat16 \
+          --mamba-cache-mode align \
+          --limit-mm-per-prompt '{"video":1,"image":1}' \
+          --video-pruning-rate 0.5 \
+          --media-io-kwargs '{"video":{"fps":2,"num_frames":256}}' \
+          --seed 42 \
+          --enable-auto-tool-choice \
+          --tool-call-parser qwen3_coder \
+          --reasoning-parser "$${REASONING_PARSER:-nemotron_v3}"
+
+        if [ -n "$${MODEL_REVISION:-}" ]; then
+          set -- "$$@" --revision "$$MODEL_REVISION"
+        fi
+        if [ -n "$${DRAFTER:-}" ]; then
+          SPEC_JSON="{\"method\":\"dflash\",\"model\":\"$${DRAFTER}\",\"num_speculative_tokens\":$${NUM_SPECULATIVE_TOKENS:-5},\"rejection_sample_method\":\"standard\",\"attention_backend\":\"FLASHINFER\",\"draft_load_config\":{\"load_format\":\"auto\"}"
+          if [ -n "$${DRAFTER_REVISION:-}" ]; then
+            SPEC_JSON="$$SPEC_JSON,\"revision\":\"$${DRAFTER_REVISION}\""
+          fi
+          SPEC_JSON="$$SPEC_JSON}"
+          set -- "$$@" --speculative-config "$$SPEC_JSON"
+        fi
+
+        # shellcheck disable=SC2086
+        exec vllm serve "$$@" $${EXTRA_ARGS:-}
+    healthcheck:
+      # Healthy once the OpenAI API answers on 127.0.0.1:8100. start_period covers the first model download.
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:$${PORT:-8100}/v1/models > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30m
+    restart: on-failure
+
+volumes:
+  cache:

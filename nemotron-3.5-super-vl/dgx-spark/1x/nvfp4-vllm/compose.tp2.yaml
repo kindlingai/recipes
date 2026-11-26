@@ -1,0 +1,161 @@
+# Nemotron 3.5 Super VL 120B-A12B NVFP4 across 2× DGX Spark (TP=2, no Ray): same digest-pinned vLLM v0.34.0 image
+# as compose.yaml. Nothing is compiled or installed at boot: v0.34.0 bundles flashinfer-python 0.7.3 (which ships b12x)
+# and pre-installed FlashInfer kernels. Rank 0 serves the OpenAI API on port 8100; rank 1 runs headless.
+#
+#   cp .env.example .env          # set HEAD, IFACE, NODE_RANK (0 on box A, 1 on box B), and TP2_PROFILE
+#   docker compose -f compose.tp2.yaml up -d
+#   docker compose -f compose.tp2.yaml logs -f
+name: nemotron-3.5-super-vl-tp2
+services:
+  vllm-tp2:
+    # The engine pin: vllm-project/vllm v0.34.0 (62d4bc3c7e33b1b6c906e233e6af2d3506c482ca); matches compose.yaml and
+    # kindling.json "engine".
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.34.0@sha256:20fdb089454afbb324efa4110a2c025ff7b27cc1a086e07aa580b18df8ad1ce1}
+    container_name: nemotron-3.5-super-vl-tp2
+    env_file:
+      - path: .env
+        required: false
+    # Host networking + RoCE RDMA devices for NCCL across the two DGX Sparks.
+    network_mode: host
+    ipc: host
+    devices:
+      - /dev/infiniband:/dev/infiniband
+    cap_add:
+      - IPC_LOCK
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1
+      core: 0
+    # Note: stock vllm/vllm-openai runs as root and writes JIT caches under /root/.cache, /root/.triton, and /tmp.
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: ${STOP_GRACE:-30s}
+    volumes:
+      - ${CACHE_DIR:-cache}:/root/.cache
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        : "$${HEAD:?set HEAD in .env to rank 0 IP on the fast link}"
+        : "$${IFACE:?set IFACE in .env to the fast-link network interface}"
+        NODE_RANK="$${NODE_RANK:-0}"
+        MASTER_PORT="$${MASTER_PORT:-29511}"
+
+        if [ -z "$${VLLM_HOST_IP:-}" ]; then
+          VLLM_HOST_IP="$$(python3 -c 'import fcntl, os, socket, struct; s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); print(socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack("256s", os.environ["IFACE"].encode()[:15]))[20:24]))')"
+        fi
+        export NCCL_SOCKET_IFNAME="$$IFACE"
+        export GLOO_SOCKET_IFNAME="$$IFACE"
+        export VLLM_HOST_IP
+        export NCCL_DEBUG="$${NCCL_DEBUG:-WARN}"
+
+        TP2_PROFILE="$${TP2_PROFILE:-balanced}"
+        case "$$TP2_PROFILE" in
+          balanced)
+            : "$${MAX_NUM_SEQS:=4}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.75}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=8192}"
+            : "$${DRAFTER:=nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4-LiLiCorr}"
+            : "$${DRAFTER_REVISION:=292bf1efc06ba39567da7351f2ad7a522afa3959}"
+            : "$${NUM_SPECULATIVE_TOKENS:=4}"
+            : "$${MOE_BACKEND:=b12x}"
+            : "$${LINEAR_BACKEND:=b12x}"
+            ;;
+          decode)
+            : "$${MAX_NUM_SEQS:=4}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.75}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=8192}"
+            : "$${DRAFTER:=nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4-LiLiCorr}"
+            : "$${DRAFTER_REVISION:=292bf1efc06ba39567da7351f2ad7a522afa3959}"
+            : "$${NUM_SPECULATIVE_TOKENS:=4}"
+            : "$${MOE_BACKEND:=marlin}"
+            : "$${LINEAR_BACKEND:=}"
+            ;;
+          prefill)
+            : "$${MAX_NUM_SEQS:=1}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.75}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=8192}"
+            : "$${DRAFTER:=nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4-LiLiCorr}"
+            : "$${DRAFTER_REVISION:=292bf1efc06ba39567da7351f2ad7a522afa3959}"
+            : "$${NUM_SPECULATIVE_TOKENS:=7}"
+            : "$${MOE_BACKEND:=}"
+            : "$${LINEAR_BACKEND:=}"
+            ;;
+          nospec)
+            : "$${MAX_NUM_SEQS:=4}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.75}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=8192}"
+            : "$${DRAFTER:=}"
+            : "$${MOE_BACKEND:=}"
+            : "$${LINEAR_BACKEND:=}"
+            ;;
+          *)
+            echo "Unknown TP2_PROFILE=$$TP2_PROFILE (expected: balanced, decode, prefill, nospec)" >&2
+            exit 1
+            ;;
+        esac
+
+        set -- "$${MODEL:-nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4}" \
+          --port "$${PORT:-8100}" \
+          --tensor-parallel-size 2 \
+          --nnodes 2 \
+          --node-rank "$$NODE_RANK" \
+          --master-addr "$$HEAD" \
+          --master-port "$$MASTER_PORT" \
+          --served-model-name "$${SERVED_MODEL_NAME:-nemotron-3.5-super-vl}" \
+          --trust-remote-code \
+          --max-num-seqs "$$MAX_NUM_SEQS" \
+          --gpu-memory-utilization "$$GPU_MEMORY_UTILIZATION" \
+          --max-num-batched-tokens "$$MAX_NUM_BATCHED_TOKENS" \
+          --mamba-backend flashinfer \
+          --mamba-ssm-cache-dtype float16 \
+          --enable-mamba-cache-stochastic-rounding \
+          --mamba-cache-philox-rounds 5 \
+          --enable-mamba-shared-prefix-checkpoint \
+          --video-pruning-rate 0.5 \
+          --media-io-kwargs '{"video": {"fps": 2, "num_frames": 256}}' \
+          --block-size 64 \
+          --prefix-match-unit 64 \
+          --enable-auto-tool-choice \
+          --tool-call-parser qwen3_coder \
+          --reasoning-parser nemotron_v3
+
+        if [ "$$NODE_RANK" != "0" ]; then
+          set -- "$$@" --headless
+        fi
+        if [ -n "$${MODEL_REVISION:-}" ]; then
+          set -- "$$@" --revision "$$MODEL_REVISION"
+        fi
+        if [ -n "$${MOE_BACKEND:-}" ]; then
+          set -- "$$@" --moe-backend "$$MOE_BACKEND"
+        fi
+        if [ -n "$${LINEAR_BACKEND:-}" ]; then
+          set -- "$$@" --linear-backend "$$LINEAR_BACKEND"
+        fi
+        if [ -n "$${DRAFTER:-}" ]; then
+          SPEC_JSON="{\"method\":\"dflash\",\"model\":\"$${DRAFTER}\",\"num_speculative_tokens\":$${NUM_SPECULATIVE_TOKENS:-4}"
+          if [ -n "$${DRAFTER_REVISION:-}" ]; then
+            SPEC_JSON="$$SPEC_JSON,\"revision\":\"$${DRAFTER_REVISION}\""
+          fi
+          SPEC_JSON="$$SPEC_JSON}"
+          set -- "$$@" --speculative-config "$$SPEC_JSON"
+        fi
+
+        # shellcheck disable=SC2086
+        exec vllm serve "$$@" $${EXTRA_ARGS:-}
+    healthcheck:
+      # Rank 0 serves the OpenAI API on 127.0.0.1:8100; rank 1 runs --headless without an HTTP port.
+      test: ["CMD-SHELL", "if [ \"$${NODE_RANK:-0}\" = \"0\" ]; then curl -sf http://127.0.0.1:$${PORT:-8100}/v1/models > /dev/null; else test -r /proc/1/cmdline; fi"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30m
+    restart: on-failure
+
+volumes:
+  cache:

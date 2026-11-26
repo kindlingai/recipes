@@ -1,6 +1,6 @@
 # Fire N streams at the same instant; report per-stream decode, aggregate, TTFT.
-import asyncio,json,sys,time,aiohttp
-URL=sys.argv[1] if len(sys.argv)>1 else "http://localhost:8000/v1/chat/completions"
+import asyncio,json,os,sys,time,aiohttp
+URL=sys.argv[1] if len(sys.argv)>1 else os.environ.get("URL","http://localhost:8100/v1/chat/completions")
 N=int(sys.argv[2]) if len(sys.argv)>2 else 4; TOK=512
 async def one(s,i,go):
     b={"model":"nemotron-3.5-bolt","messages":[{"role":"user","content":f"Write a long story about lighthouse #{i}."}],

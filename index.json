@@ -27,7 +27,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "deepseek-v4.1-flash-exlr8-4x-spark",
@@ -157,7 +157,7 @@
       "count": 3,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-3x-spark",
@@ -306,7 +306,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-4x-spark",
@@ -613,7 +613,7 @@
       "count": 4,
       "variant": "exlr8-k4-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-k4-4x-spark",
@@ -750,7 +750,7 @@
       "count": 5,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-5x-spark",
@@ -894,7 +894,7 @@
       "count": 6,
       "variant": "exl3-vllm",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-full-exl3-tp6",
@@ -991,7 +991,7 @@
       "count": 6,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-6x-spark",
@@ -1140,7 +1140,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-1x-spark",
@@ -1236,7 +1236,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-2x-spark",
@@ -1698,7 +1698,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T18:46:12-06:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-spark",
@@ -1906,7 +1906,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T18:46:12-06:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-rtx5090",
@@ -2164,7 +2164,7 @@
       "count": 1,
       "variant": "nvidia-24gb-vllm",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "nemotron-3.5-bolt-rtx5090",
@@ -2282,7 +2282,7 @@
       "count": 1,
       "variant": "nvfp4-vllm",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "nemotron-3.5-super-vl-dgx-spark",
@@ -2442,7 +2442,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T21:06:25-06:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-1x-spark",
@@ -2716,7 +2716,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "experimental",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-2x-spark",
@@ -2994,7 +2994,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "experimental",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-1x-gpu",
@@ -3054,7 +3054,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-2x-spark",
@@ -3162,7 +3162,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-4x-spark",
@@ -3279,7 +3279,7 @@
       "count": 4,
       "variant": "nvfp4-vllm",
       "status": "experimental",
-      "updated_at": "2026-11-25T12:26:11-05:00",
+      "updated_at": "2026-11-26T22:39:51Z",
       "kindling": {
         "version": 1,
         "id": "step5-tp4-gb10-recipe",

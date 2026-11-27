@@ -4,14 +4,24 @@
  "status": "stable",
  "title": "Nemotron 3.5 Super VL 120B-A12B",
  "variant": "NVFP4, DFlash LiLiCorr drafter",
- "summary": "The model card's vLLM recipe for Nemotron 3.5 Super VL NVFP4 on one DGX Spark, and tensor-parallel across two with vLLM's built-in multi-node options, plus two tuned TP2 profiles.",
+ "summary": "Nemotron 3.5 Super VL NVFP4 on one DGX Spark (compose.yaml) or tensor-parallel across two (compose.tp2.yaml, no Ray) on a digest-pinned vLLM v0.34.0 image with bundled b12x and FlashInfer kernels, nothing installed at boot.",
  "model": "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4",
+ "weights_commit": "ae1368329b1fc76b71534c5d04b87b35d9cc6e15",
  "hardware": "DGX Spark (GB10)",
  "stack": [
   "vLLM",
   "NVFP4",
-  "DFlash"
+  "DFlash",
+  "b12x"
  ],
+ "engine": {
+  "repo": "vllm-project/vllm",
+  "ref": "v0.34.0",
+  "commit": "62d4bc3c7e33b1b6c906e233e6af2d3506c482ca",
+  "pin": "image",
+  "image": "vllm/vllm-openai:v0.34.0",
+  "image_digest": "sha256:20fdb089454afbb324efa4110a2c025ff7b27cc1a086e07aa580b18df8ad1ce1"
+ },
  "default_config": "1spark",
  "configs": [
   {
@@ -35,7 +45,7 @@
      "tps": 2870
     }
    ],
-   "notes": "Card recipe: DFlash LiLiCorr drafter, 7 tokens, 1 sequence, 1M context, stock clocks for the 8K/32K prefill (512-token bench: 25-26 tok/s single-stream decode). tg128 and the 2048 prefill are llama-benchy pp2048 + tg128 at depth 0, mean of 3 runs, GPU clock capped at 2000 MHz."
+   "notes": "Card recipe: DFlash LiLiCorr drafter, 7 tokens, 1 sequence, 1M context, stock clocks for the 8K/32K prefill (512-token bench: 25-26 tok/s single-stream decode). tg128 and the 2048 prefill are llama-benchy pp2048 + tg128 at depth 0, mean of 3 runs, GPU clock capped at 2000 MHz. Originally measured on vllm/vllm-openai:nightly-3f1bcfd8; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
   },
   {
    "id": "1spark-nospec",
@@ -62,7 +72,7 @@
      "value": "not found (1 try)"
     }
    ],
-   "notes": "--max-num-seqs 4, 1M context, stock clocks, 512-token decode, warm runs."
+   "notes": "--max-num-seqs 4, 1M context, stock clocks, 512-token decode, warm runs. Originally measured on vllm/vllm-openai:nightly-3f1bcfd8; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
   },
   {
    "id": "tp2-balanced",
@@ -102,7 +112,7 @@
      "value": "found (first token after 102 s)"
     }
    ],
-   "notes": "b12x MoE + linear, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 3,314-3,372 tok/s at 8K and 3,300-3,314 at 32K; single-stream decode 43-44 tok/s prose, 59-74 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 4.2 s)."
+   "notes": "b12x MoE + linear, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 3,314-3,372 tok/s at 8K and 3,300-3,314 at 32K; single-stream decode 43-44 tok/s prose, 59-74 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 4.2 s). Originally measured on vllm/vllm-openai:nightly-3f1bcfd8 with b12x; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
   },
   {
    "id": "tp2-decode",
@@ -142,7 +152,7 @@
      "value": "found (first token after 113 s)"
     }
    ],
-   "notes": "marlin MoE, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 2,798-3,014 tok/s at 8K and 2,892-2,900 at 32K; single-stream decode 44-46 tok/s prose, 71-79 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 5.4 s)."
+   "notes": "marlin MoE, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 2,798-3,014 tok/s at 8K and 2,892-2,900 at 32K; single-stream decode 44-46 tok/s prose, 71-79 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 5.4 s). Originally measured on vllm/vllm-openai:nightly-3f1bcfd8; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
   }
  ]
 }

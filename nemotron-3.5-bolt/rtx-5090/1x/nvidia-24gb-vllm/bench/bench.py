@@ -1,5 +1,5 @@
-import json,time,sys,random,urllib.request,concurrent.futures as cf
-U="http://localhost:8000/v1/chat/completions"; M="nemotron-3.5-bolt"
+import json,os,time,sys,random,urllib.request,concurrent.futures as cf
+U=os.environ.get("URL","http://localhost:8100/v1/chat/completions"); M="nemotron-3.5-bolt"
 def req(msgs,max_tokens,stream=True,think=False,IE=True):
     b={"model":M,"messages":msgs,"max_tokens":max_tokens,"temperature":1.0,"top_p":0.95,"stream":stream,
        "chat_template_kwargs":{"enable_thinking":think},"ignore_eos":IE,"stream_options":{"include_usage":True}}

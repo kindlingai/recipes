@@ -1,1 +1,5 @@
+.env
+work/
+__pycache__/
+*.pyc
 ultra_v3_reasoning_parser.py

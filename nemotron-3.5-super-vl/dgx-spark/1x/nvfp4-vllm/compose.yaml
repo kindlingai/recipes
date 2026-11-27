@@ -1,0 +1,113 @@
+# Nemotron 3.5 Super VL 120B-A12B NVFP4 on 1× DGX Spark (GB10, 128 GB): published vLLM image, pinned by tag and
+# digest, with this recipe's .env. Nothing is compiled or installed at boot: vLLM v0.34.0 bundles
+# flashinfer-python 0.7.3 (which ships b12x) and pre-installed FlashInfer kernels. Serves the OpenAI API on port 8100
+# (host network). For 2× DGX Spark (TP=2), see compose.tp2.yaml.
+#
+#   cp .env.example .env
+#   docker compose up -d          # pulls the pinned vLLM image; the first boot fetches the model
+#   docker compose logs -f        # ready when the OpenAI API answers on 127.0.0.1:8100
+name: nemotron-3.5-super-vl-dgx-spark
+services:
+  vllm:
+    # The engine pin: vllm-project/vllm v0.34.0 (62d4bc3c7e33b1b6c906e233e6af2d3506c482ca); kindling.json "engine"
+    # names the same digest. Never a movable tag alone, never a locally built image.
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.34.0@sha256:20fdb089454afbb324efa4110a2c025ff7b27cc1a086e07aa580b18df8ad1ce1}
+    container_name: nemotron-3.5-super-vl-dgx-spark
+    env_file:
+      - path: .env
+        required: false
+    # Host networking: the OpenAI API serves directly on 127.0.0.1:8100 with no port mapping.
+    network_mode: host
+    # PyTorch / vLLM shared memory for IPC and worker queues.
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      # Pinned host buffers for CUDA memory transfers.
+      memlock: -1
+      # Avoid huge core dumps holding NVIDIA driver locks on crash.
+      core: 0
+    # Note: stock vllm/vllm-openai runs as root and writes JIT caches (FlashInfer/Triton/b12x) under /root/.cache,
+    # /root/.triton, and /tmp, so read_only and cap_drop are omitted here.
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: ${STOP_GRACE:-30s}
+    volumes:
+      # Hugging Face model cache + vLLM/FlashInfer/b12x JIT kernel cache. Unset, a named docker volume; set CACHE_DIR
+      # in .env to a host directory to keep the cache outside docker.
+      - ${CACHE_DIR:-cache}:/root/.cache
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        PROFILE="$${PROFILE:-1spark}"
+        case "$$PROFILE" in
+          1spark)
+            : "$${MAX_NUM_SEQS:=1}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.75}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=8192}"
+            : "$${DRAFTER:=nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4-LiLiCorr}"
+            : "$${DRAFTER_REVISION:=292bf1efc06ba39567da7351f2ad7a522afa3959}"
+            : "$${NUM_SPECULATIVE_TOKENS:=7}"
+            ;;
+          1spark-nospec)
+            : "$${MAX_NUM_SEQS:=4}"
+            : "$${GPU_MEMORY_UTILIZATION:=0.75}"
+            : "$${MAX_NUM_BATCHED_TOKENS:=8192}"
+            : "$${DRAFTER:=}"
+            ;;
+          *)
+            echo "Unknown PROFILE=$$PROFILE (expected: 1spark, 1spark-nospec)" >&2
+            exit 1
+            ;;
+        esac
+
+        set -- "$${MODEL:-nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4}" \
+          --port "$${PORT:-8100}" \
+          --served-model-name "$${SERVED_MODEL_NAME:-nemotron-3.5-super-vl}" \
+          --trust-remote-code \
+          --max-num-seqs "$$MAX_NUM_SEQS" \
+          --gpu-memory-utilization "$$GPU_MEMORY_UTILIZATION" \
+          --max-num-batched-tokens "$$MAX_NUM_BATCHED_TOKENS" \
+          --mamba-backend flashinfer \
+          --mamba-ssm-cache-dtype float16 \
+          --enable-mamba-cache-stochastic-rounding \
+          --mamba-cache-philox-rounds 5 \
+          --enable-mamba-shared-prefix-checkpoint \
+          --video-pruning-rate 0.5 \
+          --media-io-kwargs '{"video": {"fps": 2, "num_frames": 256}}' \
+          --block-size 64 \
+          --prefix-match-unit 64 \
+          --enable-auto-tool-choice \
+          --tool-call-parser qwen3_coder \
+          --reasoning-parser nemotron_v3
+
+        if [ -n "$${MODEL_REVISION:-}" ]; then
+          set -- "$$@" --revision "$$MODEL_REVISION"
+        fi
+        if [ -n "$${DRAFTER:-}" ]; then
+          SPEC_JSON="{\"method\":\"dflash\",\"model\":\"$${DRAFTER}\",\"num_speculative_tokens\":$${NUM_SPECULATIVE_TOKENS:-7}"
+          if [ -n "$${DRAFTER_REVISION:-}" ]; then
+            SPEC_JSON="$$SPEC_JSON,\"revision\":\"$${DRAFTER_REVISION}\""
+          fi
+          SPEC_JSON="$$SPEC_JSON}"
+          set -- "$$@" --speculative-config "$$SPEC_JSON"
+        fi
+
+        # shellcheck disable=SC2086
+        exec vllm serve "$$@" $${EXTRA_ARGS:-}
+    healthcheck:
+      # Healthy once the OpenAI API answers on 127.0.0.1:8100. start_period covers first download and JIT compile.
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:$${PORT:-8100}/v1/models > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30m
+    restart: on-failure
+
+volumes:
+  cache:

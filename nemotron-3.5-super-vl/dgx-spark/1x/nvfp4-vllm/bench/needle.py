@@ -1,9 +1,9 @@
-import json,sys,time,random,urllib.request
+import json,os,sys,time,random,urllib.request
 W=int(sys.argv[1]); random.seed(W); w="alpha beta gamma delta river stone cloud paper metal glass".split()
 body=[random.choice(w) for _ in range(W)]; body.insert(int(W*0.6)," The secret code is PURPLE-4419. ")
 p=" ".join(body)+"\nWhat is the secret code? Answer with the code only."
 b={"model":"nemotron-3.5-super-vl","messages":[{"role":"user","content":p}],"max_tokens":30,"stream":True,"stream_options":{"include_usage":True},"chat_template_kwargs":{"enable_thinking":False}}
-r=urllib.request.Request("http://localhost:8000/v1/chat/completions",json.dumps(b).encode(),{"Content-Type":"application/json"})
+r=urllib.request.Request(os.environ.get("URL","http://localhost:8100/v1/chat/completions"),json.dumps(b).encode(),{"Content-Type":"application/json"})
 t0=time.time();first=None;txt="";u=None
 with urllib.request.urlopen(r,timeout=7200) as f:
     for line in f:

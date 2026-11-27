@@ -1,0 +1,35 @@
+{
+  "deepseek-v4.1-flash": {
+    "params": "763B"
+  },
+  "glm-5.3": {
+    "params": "744B"
+  },
+  "glm-5.3-flash": {
+    "params": "320B-A18B"
+  },
+  "inkling-2-mini": {
+    "params": "26.4B-A3.4B"
+  },
+  "nemotron-3.5-bolt": {
+    "params": "74B-A9B"
+  },
+  "nemotron-3.5-super-vl": {
+    "params": "120B-A12B"
+  },
+  "qwen3-vl-embedding-2b": {
+    "params": "2B"
+  },
+  "qwen3-vl-embedding-8b": {
+    "params": "8B"
+  },
+  "qwen3.8-flash-next": {
+    "params": "180B-A6B"
+  },
+  "sage-s2.1-flash": {
+    "params": "320B-A18B"
+  },
+  "step-5-preview": {
+    "params": "600B-A27B"
+  }
+}

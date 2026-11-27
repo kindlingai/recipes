@@ -146,45 +146,109 @@ def engine_label(e):
     return f'{name} {eng["ref"]}'
 
 
-def row(e, unit_names):
-    k = e['kindling']
-    c = default_config(k)
+def load_models():
+    path = ROOT / 'models.json'
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
+def fmt_ctx_label(ctx):
+    if ctx >= 1024 and ctx % 1024 == 0:
+        return f'{ctx // 1024}K'
+    return fmt_int(ctx)
+
+
+def fmt_c1(e, c):
     decode = c.get('decode') or {}
     if 'code' in decode:
-        dec = fmt_tps(decode['code'])
-    elif decode:
+        return fmt_tps(decode['code'])
+    if decode:
         key = next(iter(decode))
-        dec = f'{fmt_tps(decode[key])} ({key})'
-    else:
-        dec = '–'
+        return f'{fmt_tps(decode[key])} ({key})'
+    conc = c.get('concurrency') or []
+    c1 = next((x for x in conc if x.get('streams') == 1), None)
+    if c1:
+        val = fmt_tps(c1.get('per_stream_tps') or c1.get('aggregate_tps'))
+        return f'{val} (embed)' if 'embedding' in e['model'] else val
+    return '–'
+
+
+def fmt_c4(e, c):
+    conc = c.get('concurrency') or []
+    is_embed = 'embedding' in e['model']
+    c4 = next((x for x in conc if x.get('streams') == 4), None)
+    if c4:
+        agg = fmt_tps(c4.get('aggregate_tps'))
+        ps = c4.get('per_stream_tps')
+        if ps is not None:
+            return f'{agg} ({fmt_tps(ps)}/s)'
+        return f'{agg} (embed)' if is_embed else agg
+    multi = [x for x in conc if (x.get('streams') or 0) > 1]
+    if multi:
+        pick = min(multi, key=lambda x: abs(x['streams'] - 4))
+        agg = fmt_tps(pick.get('aggregate_tps'))
+        tag = f'C{pick["streams"]} embed' if is_embed else f'C{pick["streams"]}'
+        return f'{agg} ({tag})'
+    return '–'
+
+
+def fmt_prefill(c):
     prefill = c.get('prefill') or []
+    if not prefill:
+        return '–'
     p8k = next((p for p in prefill if p['context'] == 8192), None)
+    if p8k:
+        return fmt_tps(p8k['tps'])
+    first = min(prefill, key=lambda p: p['context'])
+    return f'{fmt_tps(first["tps"])} ({fmt_ctx_label(first["context"])})'
+
+
+def model_size(e, models):
+    k = e['kindling']
+    if k.get('model_size'):
+        return str(k['model_size'])
+    return (models.get(e['model']) or {}).get('params', '–')
+
+
+def row(e, unit_names, models):
+    k = e['kindling']
+    c = default_config(k)
     hw = f'{e["count"]}× {unit_names[e["hardware"]]}'
-    cells = [f'[`{e["id"]}`]({e["path"]})', hw, (k.get('variant') or '').replace('|', '\\|'), engine_label(e), dec,
-             fmt_tps(p8k['tps']) if p8k else '–', fmt_int(c.get('max_context')), e['status']]
+    cells = [
+        f'[**{k["title"]}**]({e["path"]})',
+        model_size(e, models),
+        hw,
+        fmt_c1(e, c),
+        fmt_c4(e, c),
+        fmt_prefill(c),
+        fmt_int(c.get('max_context')),
+        engine_label(e),
+        (k.get('variant') or '').replace('|', '\\|'),
+        f'[`{e["id"]}`]({e["path"]})',
+        e['status'],
+    ]
     return '| ' + ' | '.join(cells) + ' |'
 
 
 def render(hardware, entries):
     unit_names = {k: v['name'] for k, v in hardware.items()}
-    shown = [e for e in entries if e['status'] != 'retired']
-    lines = [START,
-             '<!-- Written by tools/build_index.py from each recipe\'s kindling.json. Edits here are overwritten. -->',
-             '',
-             f'{len(shown)} recipes. Numbers are the default config\'s: single-request decode on code, cold prefill of an '
-             '8K prompt (tok/s), longest request (tokens).',
-             '']
-    by_model = {}
-    for e in sorted(shown, key=place):
-        by_model.setdefault(e['model'], []).append(e)
-    for model, es in by_model.items():
-        title = Counter(e['kindling']['title'] for e in es).most_common(1)[0][0]
-        lines += [f'### {title}', '',
-                  '| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |',
-                  '|---|---|---|---|---|---|---|---|']
-        lines += [row(e, unit_names) for e in es]
-        lines.append('')
-    lines.append(END)
+    models = load_models()
+    shown = sorted((e for e in entries if e['status'] != 'retired'), key=place)
+    model_count = len({e['model'] for e in shown})
+    hw_count = len({e['hardware'] for e in shown})
+    lines = [
+        START,
+        "<!-- Written by tools/build_index.py from each recipe's kindling.json and models.json. Edits here are overwritten. -->",
+        '',
+        f'{len(shown)} recipes across {model_count} models and {hw_count} hardware targets. '
+        'Default config per recipe, all speeds in tok/s: **C1 Decode** is single-session decode (code workload), '
+        '**C4 Decode** is 4-session aggregate decode (per-stream in parentheses when measured, or closest measured concurrency), '
+        '**Prefill** is cold prefill at 8K (other prompt length noted), and **Max context** is the longest request (tokens).',
+        '',
+        '| Model | Size | Hardware | C1 Decode | C4 Decode | Prefill | Max context | Engine | Build | Recipe | Status |',
+        '|---|---|---|---|---|---|---|---|---|---|---|',
+    ]
+    lines += [row(e, unit_names, models) for e in shown]
+    lines += ['', END]
     return '\n'.join(lines)
 
 

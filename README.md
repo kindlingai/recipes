@@ -26,7 +26,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 <!-- recipes:index:start -->
 <!-- Written by tools/build_index.py from each recipe's kindling.json. Edits here are overwritten. -->
 
-24 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
+25 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
 
 ### DeepSeek-V4.1-Flash
 
@@ -38,6 +38,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
+| [`glm-5.3-exlr8-2x-spark`](glm-5.3/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 bit225, 4-bit MLA latent KV, INT4 DFlash + 48 GB SSD KV | gr8 main@fa5d82d | – | – | 131,072 | stable |
 | [`glm-5.3-exlr8-3x-spark`](glm-5.3/dgx-spark/3x/exlr8-gr8) | 3× DGX Spark (GB10) | exlr8 bit273, int4 KV, 384K context | gr8 v1.1.1 | 51.6 | 764 | 393,210 | stable |
 | [`glm-5.3-exlr8-fp8kv-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8) | 4× DGX Spark (GB10) | exlr8 bit325, pure FP8 KV, 640K pool, uncapped exact MoE | gr8 v1.2.0 | 67.5 | 1,686 | 655,346 | stable |
 | [`glm-5.3-exlr8-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 bit325, int4 KV, 1M context, DFlash2 drafter | gr8 v1.1.1 | 66.9 | 1,534 | 1,048,576 | stable |

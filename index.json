@@ -149,6 +149,103 @@
       }
     },
     {
+      "id": "glm-5.3-exlr8-2x-spark",
+      "path": "glm-5.3/dgx-spark/2x/exlr8-gr8",
+      "url": "https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/2x/exlr8-gr8",
+      "model": "glm-5.3",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 2,
+      "variant": "exlr8-gr8",
+      "status": "stable",
+      "updated_at": "2026-11-27T14:37:41-06:00",
+      "kindling": {
+        "version": 1,
+        "id": "glm-5.3-exlr8-2x-spark",
+        "status": "stable",
+        "title": "GLM-5.3",
+        "variant": "exlr8 bit225, 4-bit MLA latent KV, INT4 DFlash + 48 GB SSD KV",
+        "summary": "Full GLM-5.3 (743B) on just two DGX Sparks (256 GB unified memory total) at TP=2 with upstream gr8: EXLR8 bit225 mixed-precision weights, 4-bit MLA latent KV (416 B/layer/tok excl. indexer), native INT4 DFlash + MTP=1, and built-in 48 GB NVMe SSD KV store. Live-verified at RealMark 800.4 Grade A (98.4 tok/s C=4 aggregate decode, 99.2% cache hit across 293K active C=4 context), 140/200 (70.0%) on 200 coding/math/science tasks (86.25% HumanEval+), and 21/24 (87.5%) on 32K-128K hard long-context (100% needle & doc-QA recall to 128K).",
+        "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+        "weights_commit": "501d259894bf0de607ee4aa6f8a564a14d0c6b63",
+        "hardware": "DGX Spark (GB10)",
+        "stack": [
+          "gr8",
+          "exlr8",
+          "DFlash",
+          "MTP",
+          "4-bit MLA latent KV",
+          "SSD KV"
+        ],
+        "engine": {
+          "repo": "kindlingai/gr8",
+          "ref": "main",
+          "commit": "fa5d82d37751d8c71703e3d1e6f4c010427357d2",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:main",
+          "image_digest": "sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59"
+        },
+        "default_config": "tp2",
+        "configs": [
+          {
+            "id": "tp2",
+            "label": "TP=2 · SSD KV",
+            "nodes": 2,
+            "prefill": [
+              {
+                "context": 32768,
+                "tps": 323
+              },
+              {
+                "context": 65536,
+                "tps": 378
+              },
+              {
+                "context": 131072,
+                "tps": 344
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 1,
+                "aggregate_tps": 24.1,
+                "per_stream_tps": 24.1
+              },
+              {
+                "streams": 2,
+                "aggregate_tps": 50.3,
+                "per_stream_tps": 25.1
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 98.4,
+                "per_stream_tps": 24.6
+              }
+            ],
+            "max_context": 131072,
+            "kv_pool_tokens": 131072,
+            "max_concurrent": 4,
+            "lowest_mem_available_gib": 0.064,
+            "quality": [
+              {
+                "name": "RealMark RIPAL (C=1/2/4)",
+                "value": "800.4 Grade A (99.2% cache hit, 0/102 buffered)"
+              },
+              {
+                "name": "200-Task Thinking-ON (4K cap)",
+                "value": "140/200 (70.0%, 100% stopped; HumanEval+ 86.25%)"
+              },
+              {
+                "name": "Needle & Long-Ctx (32K-128K)",
+                "value": "21/24 (87.5%, 100% stopped; 100% needle & QA to 128K)"
+              }
+            ],
+            "notes": "Measured 2026-11-27 on upstream ghcr.io/kindlingai/gr8:main@sha256:494c44b2 (fa5d82d3) across 2 DGX Sparks (256 GB unified memory total), bit225 EXLR8 weights (501d2598), native INT4 DFlash (incoai/GLM-5.3-DFlash2 @ 425aa615, tp2-int4) + MTP=1, 4-bit MLA latent KV (416 B/layer/tok excl. indexer), and 48 GB NVMe SSD KV_STORE with GR8_MEM_MIN=1. RealMark ran with --stage-prefill-rate 300 (Thinking OFF, C=1 16/16 801.1, C=2 10/16 810.5, C=4 8/16 789.7; 293K active C=4 context; 5/34 word flags). Cold prefill points measured from 24-task deterministic 32K/64K/128K long-context suite at CAP=135168 SESS=2 (Thinking ON; 38.7 tok/s decode at 128K). Warm boot 87-88 s; MemAvailable floor 0.064-0.088 GiB; 0 API errors; 0 OOMs."
+          }
+        ]
+      }
+    },
+    {
       "id": "glm-5.3-exlr8-3x-spark",
       "path": "glm-5.3/dgx-spark/3x/exlr8-gr8",
       "url": "https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/3x/exlr8-gr8",

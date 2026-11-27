@@ -27,7 +27,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T07:59:41-05:00",
       "kindling": {
         "version": 1,
         "id": "deepseek-v4.1-flash-exlr8-4x-spark",
@@ -36,15 +36,13 @@
         "variant": "exlr8 native, fp8 KV, fast mode",
         "summary": "DeepSeek-V4.1-Flash on four GB10 boxes with gr8 at TP=4: the exlr8 native release, fp8 KV, Engram, 32 chats at once, fast mode (not exact), measured 2026-11-11 on the staged image built from gr8 c2220f2 (one boot).",
         "model": "kindlingai/deepseek-v4.1-flash-exlr8-native",
-        "hardware": "DGX Spark (GB10)",
+        "weights_commit": "98076325aaa2c8dfec6095536d69c47bfcfbb3dc",
         "stack": [
           "gr8",
           "exlr8",
           "Engram",
           "fp8 KV"
         ],
-        "image": "ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark",
-        "build": {},
         "default_config": "tp4",
         "configs": [
           {
@@ -136,14 +134,17 @@
                 "name": "Needle recall",
                 "value": "found at 128K"
               }
-            ]
+            ],
+            "notes": "Measured 2026-11-11 on four GB10 boxes in a ring (one boot, TUNE=speed, gr8 c2220f2, bench/bench.py); pending 4-box DGX Spark hardware re-confirmation on published gr8 v1.3.1 (kindlingai/gr8#630: DS41_MX=48 + first-boot engram-cmap)."
           }
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "933c8853a1657e48d868e28a43fae4a40d3ddb3d",
-          "pin": "source"
+          "ref": "v1.3.1",
+          "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.3.1",
+          "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
         }
       }
     },
@@ -613,7 +614,7 @@
       "count": 4,
       "variant": "exlr8-k4-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T07:58:46-05:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-k4-4x-spark",
@@ -630,15 +631,11 @@
           "MTP",
           "int4 KV"
         ],
-        "image": "ghcr.io/kindlingai/glm-5.3-exlr8-k4-4x-spark",
-        "build": {
-          "nvcc_cache": "glm-int4-w4"
-        },
         "engine": {
           "repo": "kindlingai/gr8",
           "ref": "v1.1.1",
           "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
-          "pin": "source",
+          "pin": "image",
           "image": "ghcr.io/kindlingai/gr8:v1.1.1",
           "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
         },
@@ -1140,7 +1137,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:00:04Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-1x-spark",
@@ -1149,17 +1146,13 @@
         "variant": "exlr8 bit201, int4 KV",
         "summary": "GLM-5.3-Flash on one GB10 with gr8: the bit201 exlr8 manifest, int4 KV, DFlash2 for a request alone, four sessions sharing a 700K-token KV pool, and a prompt cache on disk.",
         "model": "kindlingai/glm-5.3-flash-exlr8-k2-k3-k4",
-        "hardware": "ASUS GX10 / DGX Spark (GB10)",
+        "weights_commit": "901ad084f0afd2400820504910d3e684133ce183",
         "stack": [
           "gr8",
           "exlr8",
           "DFlash2",
           "int4 KV"
         ],
-        "image": "ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark",
-        "build": {
-          "nvcc_cache": "flash-int4-w1"
-        },
         "default_config": "tp1",
         "configs": [
           {
@@ -1215,14 +1208,17 @@
                 "name": "Needle recall",
                 "value": "found at 128K (8 of 8 runs)"
               }
-            ]
+            ],
+            "notes": "Measured on prior gr8 main commit d598965 with TUNE=speed (bit201, int4 KV, CAP=700032, SESS=4, DFLASH=1); pending re-measurement on published gr8 v1.2.0 (ab2eb95)."
           }
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "d598965a1bbf3cd220ad9ad856bfd63da2466424",
-          "pin": "source"
+          "ref": "v1.2.0",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
         }
       }
     },
@@ -1236,7 +1232,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:00:04Z",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-2x-spark",
@@ -1245,17 +1241,13 @@
         "variant": "exlr8 bit349, int4 KV",
         "summary": "GLM-5.3-Flash on two GB10s at TP=2 with gr8: the exlr8 release at its bit349 manifest (K3 with K4 where it lowers KL most, about 3.49 bits a routed weight), int4 KV, DFlash2 speculative decoding, four sessions (SESS=4, max concurrent 4; TUNE=context serves 8) sharing a 2,097,152-token KV pool, shared waterfill MTP=3 drafting, a prompt cache on disk, and image input.",
         "model": "kindlingai/glm-5.3-flash-exlr8-k2-k3-k4",
-        "hardware": "ASUS GX10 / DGX Spark (GB10)",
+        "weights_commit": "901ad084f0afd2400820504910d3e684133ce183",
         "stack": [
           "gr8",
           "exlr8",
           "DFlash2",
           "int4 KV"
         ],
-        "image": "ghcr.io/kindlingai/glm-5.3-flash-exlr8-2x-spark",
-        "build": {
-          "nvcc_cache": "flash-int4-w2"
-        },
         "default_config": "tp2",
         "configs": [
           {
@@ -1325,14 +1317,17 @@
                 "name": "Needle recall",
                 "value": "found at 128K"
               }
-            ]
+            ],
+            "notes": "Measured on prior gr8 main commit 4057009 with TUNE=speed (bit349, int4 KV, CAP=2097152, SESS=4, DFLASH=1); pending re-measurement on published gr8 v1.2.0 (ab2eb95)."
           }
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "405700981e2aa6172481486b74d3c48ee23ec9e2",
-          "pin": "source"
+          "ref": "v1.2.0",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
         }
       }
     },
@@ -2164,21 +2159,31 @@
       "count": 1,
       "variant": "nvidia-24gb-vllm",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:00:04Z",
       "kindling": {
         "version": 1,
         "id": "nemotron-3.5-bolt-rtx5090",
         "status": "stable",
         "title": "Nemotron 3.5 Bolt 74B-A9B",
         "variant": "NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter",
-        "summary": "The model card's vLLM command for Nemotron 3.5 Bolt 74B-A9B (24GB) on one 32 GB RTX 5090, changed only where a 32 GB card needs it, with three profiles: fast, long and multi.",
+        "summary": "Nemotron 3.5 Bolt 74B-A9B (24GB) on one 32 GB RTX 5090 with a digest-pinned vLLM v0.34.0 image (bundled b12x and FlashInfer kernels, nothing installed at boot) and three .env profiles: fast, long and multi.",
         "model": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+        "weights_commit": "e0590ed2f3a564fd99725d9d891cb09deb7cc201",
         "hardware": "RTX 5090 32 GB",
         "stack": [
           "vLLM",
           "fp8 KV",
-          "DFlash"
+          "DFlash",
+          "b12x"
         ],
+        "engine": {
+          "repo": "vllm-project/vllm",
+          "ref": "v0.34.0",
+          "commit": "62d4bc3c7e33b1b6c906e233e6af2d3506c482ca",
+          "pin": "image",
+          "image": "vllm/vllm-openai:v0.34.0",
+          "image_digest": "sha256:20fdb089454afbb324efa4110a2c025ff7b27cc1a086e07aa580b18df8ad1ce1"
+        },
         "default_config": "fast",
         "configs": [
           {
@@ -2210,7 +2215,7 @@
                 "value": "passed"
               }
             ],
-            "notes": "DFlash LiLiCorr drafter, 5 tokens, GPU mem util 0.95. Power limit 408 W, stock clocks, fp8 KV, warm runs. Decode is about 218 tok/s: medians of 8 runs on 3 boots were 226, 213, 217."
+            "notes": "DFlash LiLiCorr drafter, 5 tokens, GPU mem util 0.95, max_num_batched_tokens 4096. Power limit 408 W, stock clocks, fp8 KV, warm runs. Decode is about 218 tok/s: medians of 8 runs on 3 boots were 226, 213, 217. Originally measured on vllm/vllm-openai:nightly-77154ca6 with b12x; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending RTX 5090 hardware access."
           },
           {
             "id": "long",
@@ -2234,7 +2239,7 @@
                 "value": "passed"
               }
             ],
-            "notes": "No drafter, GPU mem util 0.96. Power limit 408 W, stock clocks, fp8 KV, warm runs. 196K prefill 4,460-4,490 tok/s."
+            "notes": "No drafter, GPU mem util 0.96, max_num_batched_tokens 4096. Power limit 408 W, stock clocks, fp8 KV, warm runs. 196K prefill 4,460-4,490 tok/s. Originally measured on vllm/vllm-openai:nightly-77154ca6 with b12x; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending RTX 5090 hardware access."
           },
           {
             "id": "multi",
@@ -2267,7 +2272,7 @@
             ],
             "max_context": 32768,
             "max_concurrent": 8,
-            "notes": "No drafter, 8 sequences, GPU mem util 0.88 with VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0. Power limit 408 W, stock clocks, fp8 KV, warm runs, 512-token decode, all requests started at once. The 4-request figures were measured with 4 sequences; with 8 sequences 4 requests give 429-434 tok/s total."
+            "notes": "No drafter, 8 sequences, GPU mem util 0.88 with VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0. Power limit 408 W, stock clocks, fp8 KV, warm runs, 512-token decode, all requests started at once. The 4-request figures were measured with 4 sequences; with 8 sequences 4 requests give 429-434 tok/s total. Originally measured on vllm/vllm-openai:nightly-77154ca6 with b12x; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending RTX 5090 hardware access."
           }
         ]
       }
@@ -2282,21 +2287,31 @@
       "count": 1,
       "variant": "nvfp4-vllm",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:00:04Z",
       "kindling": {
         "version": 1,
         "id": "nemotron-3.5-super-vl-dgx-spark",
         "status": "stable",
         "title": "Nemotron 3.5 Super VL 120B-A12B",
         "variant": "NVFP4, DFlash LiLiCorr drafter",
-        "summary": "The model card's vLLM recipe for Nemotron 3.5 Super VL NVFP4 on one DGX Spark, and tensor-parallel across two with vLLM's built-in multi-node options, plus two tuned TP2 profiles.",
+        "summary": "Nemotron 3.5 Super VL NVFP4 on one DGX Spark (compose.yaml) or tensor-parallel across two (compose.tp2.yaml, no Ray) on a digest-pinned vLLM v0.34.0 image with bundled b12x and FlashInfer kernels, nothing installed at boot.",
         "model": "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4",
+        "weights_commit": "ae1368329b1fc76b71534c5d04b87b35d9cc6e15",
         "hardware": "DGX Spark (GB10)",
         "stack": [
           "vLLM",
           "NVFP4",
-          "DFlash"
+          "DFlash",
+          "b12x"
         ],
+        "engine": {
+          "repo": "vllm-project/vllm",
+          "ref": "v0.34.0",
+          "commit": "62d4bc3c7e33b1b6c906e233e6af2d3506c482ca",
+          "pin": "image",
+          "image": "vllm/vllm-openai:v0.34.0",
+          "image_digest": "sha256:20fdb089454afbb324efa4110a2c025ff7b27cc1a086e07aa580b18df8ad1ce1"
+        },
         "default_config": "1spark",
         "configs": [
           {
@@ -2320,7 +2335,7 @@
                 "tps": 2870
               }
             ],
-            "notes": "Card recipe: DFlash LiLiCorr drafter, 7 tokens, 1 sequence, 1M context, stock clocks for the 8K/32K prefill (512-token bench: 25-26 tok/s single-stream decode). tg128 and the 2048 prefill are llama-benchy pp2048 + tg128 at depth 0, mean of 3 runs, GPU clock capped at 2000 MHz."
+            "notes": "Card recipe: DFlash LiLiCorr drafter, 7 tokens, 1 sequence, 1M context, stock clocks for the 8K/32K prefill (512-token bench: 25-26 tok/s single-stream decode). tg128 and the 2048 prefill are llama-benchy pp2048 + tg128 at depth 0, mean of 3 runs, GPU clock capped at 2000 MHz. Originally measured on vllm/vllm-openai:nightly-3f1bcfd8; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
           },
           {
             "id": "1spark-nospec",
@@ -2347,7 +2362,7 @@
                 "value": "not found (1 try)"
               }
             ],
-            "notes": "--max-num-seqs 4, 1M context, stock clocks, 512-token decode, warm runs."
+            "notes": "--max-num-seqs 4, 1M context, stock clocks, 512-token decode, warm runs. Originally measured on vllm/vllm-openai:nightly-3f1bcfd8; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
           },
           {
             "id": "tp2-balanced",
@@ -2387,7 +2402,7 @@
                 "value": "found (first token after 102 s)"
               }
             ],
-            "notes": "b12x MoE + linear, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 3,314-3,372 tok/s at 8K and 3,300-3,314 at 32K; single-stream decode 43-44 tok/s prose, 59-74 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 4.2 s)."
+            "notes": "b12x MoE + linear, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 3,314-3,372 tok/s at 8K and 3,300-3,314 at 32K; single-stream decode 43-44 tok/s prose, 59-74 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 4.2 s). Originally measured on vllm/vllm-openai:nightly-3f1bcfd8 with b12x; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
           },
           {
             "id": "tp2-decode",
@@ -2427,7 +2442,7 @@
                 "value": "found (first token after 113 s)"
               }
             ],
-            "notes": "marlin MoE, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 2,798-3,014 tok/s at 8K and 2,892-2,900 at 32K; single-stream decode 44-46 tok/s prose, 71-79 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 5.4 s)."
+            "notes": "marlin MoE, drafter 4 tokens, both Sparks capped at 2000 MHz. 512-token bench: prefill 2,798-3,014 tok/s at 8K and 2,892-2,900 at 32K; single-stream decode 44-46 tok/s prose, 71-79 code. tg128, 2048 prefill and concurrency are llama-benchy pp2048 + tg128 at depth 0 (concurrency with --max-num-seqs 16; mean TTFT at 10 requests 5.4 s). Originally measured on vllm/vllm-openai:nightly-3f1bcfd8; re-confirmation on pinned vllm/vllm-openai:v0.34.0 pending DGX Spark hardware access."
           }
         ]
       }
@@ -2715,12 +2730,12 @@
       "hardware_name": "DGX Spark (GB10)",
       "count": 2,
       "variant": "exlr8-gr8",
-      "status": "experimental",
-      "updated_at": "2026-11-26T17:40:46-05:00",
+      "status": "stable",
+      "updated_at": "2026-11-27T07:58:37-05:00",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-2x-spark",
-        "status": "experimental",
+        "status": "stable",
         "title": "Qwen3.8-Flash-Next",
         "variant": "exlr8, MTP=3, 256K",
         "summary": "Qwen3.8-Flash-Next on two DGX Sparks (GB10, 128 GB each) at TP=2 over dual-rail ConnectX-7 RoCE v2 with gr8 v1.2.0: exlr8 pmcgx K3 (bit300, 126.8 tok/s code, 89.2 prose, 254.5 at 8 streams, 3,142 prefill) or K4 (bit400, 122.1 tok/s code, 86.9 prose, 234.1 at 8 streams, 3,069 prefill, 0.0046 mean KL), Layer-48 MTP=3 speculative decoding, async O_DIRECT NVMe PLE rowstore with 4 GiB host LRU cache, opt-in BF16 vision tower, and 8 dedicated 262,144-token KV slots (2,097,664 total KV rows).",
@@ -2738,10 +2753,10 @@
         "engine": {
           "repo": "kindlingai/gr8",
           "ref": "v1.2.0",
-          "commit": "",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
           "pin": "image",
           "image": "ghcr.io/kindlingai/gr8:v1.2.0",
-          "image_digest": ""
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
         },
         "default_config": "tp2-k3",
         "configs": [
@@ -3054,15 +3069,16 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:00:04Z",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-2x-spark",
         "status": "stable",
         "title": "Sage-S2.1-Flash",
         "variant": "exlr8 k4, int4 KV",
-        "summary": "Sage-S2.1-Flash on two GB10s at TP=2 with gr8: the exlr8 k4 manifest, int4 KV, four sessions (SESS=4, max concurrent 4; TUNE=context serves 8) sharing a 262,208-token KV pool, bit-exact shared waterfill MTP=2 drafting (DFLASH=0), a prompt cache on disk (FLASH_CACHE=aligned), and text-only default.",
+        "summary": "Sage-S2.1-Flash on two GB10s at TP=2 with gr8: the exlr8 k4 manifest, int4 KV, four sessions (SESS=4, max concurrent 4; SESS=8 with GR8_CP=1) sharing a 262,208-token KV pool, bit-exact shared waterfill MTP=2 drafting (DFLASH=0), a prompt cache on disk (FLASH_CACHE=aligned), and text-only default.",
         "model": "kindlingai/sage-s2.1-flash-exlr8-k4",
+        "weights_commit": "e55da4682c090821efcac7f5fb85622cb06d1c54",
         "hardware": "ASUS GX10 / DGX Spark (GB10)",
         "stack": [
           "gr8",
@@ -3070,13 +3086,13 @@
           "MTP=2",
           "int4 KV"
         ],
-        "image": "ghcr.io/kindlingai/sage-s2.1-flash-exlr8-2x-spark",
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "ca7e8745bfed31d4417d263ff1bc14dd59919f9c",
-          "pin": "source",
-          "image": "ghcr.io/kindlingai/gr8:sha-ca7e874"
+          "ref": "v1.2.0",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
         },
         "default_config": "tp2",
         "configs": [
@@ -3137,17 +3153,18 @@
                 "source": "computed"
               }
             ],
-            "max_tokens_per_chat_note": "8 chats 32,768 with TUNE=context (computed)",
+            "max_tokens_per_chat_note": "8 chats 32,768 with SESS=8 and GR8_CP=1 (computed)",
             "quality": [
               {
                 "name": "Default sessions",
-                "value": "SESS=4 (8 with TUNE=context)"
+                "value": "SESS=4 (8 with GR8_CP=1)"
               },
               {
                 "name": "Needle recall",
                 "value": "found at 128K"
               }
-            ]
+            ],
+            "notes": "Measured 2026-11-18 on gr8 ca7e874 (TP=2, k4 @ e55da468, int4 KV, SESS=4, CAP=262208, MAX_MODEL_LEN=262144, MTP=2, S2_SHARED_WATERFILL=1, DFLASH=0, FLASH_CACHE=aligned); hardware re-verification on gr8 v1.2.0 (ab2eb95) pending."
           }
         ]
       }
@@ -3162,15 +3179,16 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:00:04Z",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-4x-spark",
         "status": "stable",
         "title": "Sage-S2.1-Flash",
         "variant": "exlr8 k4, int4 KV",
-        "summary": "Sage-S2.1-Flash on four GB10s at TP=4 with gr8: the exlr8 k4 manifest, int4 KV, eight sessions (SESS=8) sharing a 262,208-token KV pool (2,097,152 with TUNE=context), bit-exact shared waterfill MTP=2 drafting (DFLASH=0), a prompt cache on disk (FLASH_CACHE=aligned), and text-only default.",
+        "summary": "Sage-S2.1-Flash on four GB10s at TP=4 with gr8: the exlr8 k4 manifest, int4 KV, eight sessions (SESS=8) sharing a 262,208-token KV pool (2,097,152 with GR8_CP=1), bit-exact shared waterfill MTP=2 drafting (DFLASH=0), a prompt cache on disk (FLASH_CACHE=aligned), and text-only default.",
         "model": "kindlingai/sage-s2.1-flash-exlr8-k4",
+        "weights_commit": "e55da4682c090821efcac7f5fb85622cb06d1c54",
         "hardware": "ASUS GX10 / DGX Spark (GB10)",
         "stack": [
           "gr8",
@@ -3178,13 +3196,13 @@
           "MTP=2",
           "int4 KV"
         ],
-        "image": "ghcr.io/kindlingai/sage-s2.1-flash-exlr8-4x-spark",
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "ca7e8745bfed31d4417d263ff1bc14dd59919f9c",
-          "pin": "source",
-          "image": "ghcr.io/kindlingai/gr8:sha-ca7e874"
+          "ref": "v1.2.0",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
         },
         "default_config": "tp4",
         "configs": [
@@ -3254,7 +3272,7 @@
                 "source": "computed"
               }
             ],
-            "max_tokens_per_chat_note": "TUNE=context boots at 1M max_model_len (CAP=2,097,152), tested to a 128K needle (not yet tested at 1M)",
+            "max_tokens_per_chat_note": "Context preset (CAP=2,097,152, MAX_MODEL_LEN=1,048,576, GR8_CP=1) boots at 1M max_model_len, tested to a 128K needle (not yet tested at 1M)",
             "quality": [
               {
                 "name": "Default sessions",
@@ -3264,7 +3282,8 @@
                 "name": "Needle recall",
                 "value": "found at 128K"
               }
-            ]
+            ],
+            "notes": "Measured 2026-11-18 on gr8 ca7e874 (TP=4, k4 @ e55da468, int4 KV, SESS=8, CAP=262208, MAX_MODEL_LEN=262144, MTP=2, S2_SHARED_WATERFILL=1, DFLASH=0, FLASH_CACHE=aligned); hardware re-verification on gr8 v1.2.0 (ab2eb95) pending."
           }
         ]
       }

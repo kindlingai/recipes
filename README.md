@@ -32,7 +32,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`deepseek-v4.1-flash-exlr8-4x-spark`](deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 native, fp8 KV, fast mode | gr8 main@933c885 | 137.5 | – | 327,670 | stable |
+| [`deepseek-v4.1-flash-exlr8-4x-spark`](deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 native, fp8 KV, fast mode | gr8 v1.3.1 | 137.5 | – | 327,670 | stable |
 
 ### GLM-5.3
 
@@ -48,8 +48,8 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`glm-5.3-flash-exlr8-1x-spark`](glm-5.3-flash/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 bit201, int4 KV | gr8 main@d598965 | 53.8 | 995 | 262,144 | stable |
-| [`glm-5.3-flash-exlr8-2x-spark`](glm-5.3-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 bit349, int4 KV | gr8 main@4057009 | 76.5 | 1,670 | 262,144 | stable |
+| [`glm-5.3-flash-exlr8-1x-spark`](glm-5.3-flash/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 bit201, int4 KV | gr8 v1.2.0 | 53.8 | 995 | 262,144 | stable |
+| [`glm-5.3-flash-exlr8-2x-spark`](glm-5.3-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 bit349, int4 KV | gr8 v1.2.0 | 76.5 | 1,670 | 262,144 | stable |
 | [`glm-5.3-flash-exlr8-gx10`](glm-5.3-flash/dgx-spark/4x/exlr8-vllm) | 4× DGX Spark (GB10) | NVFP4 | vllm | 117.3 | – | 524,288 | external |
 | [`glm-5.3-flash-gx10`](glm-5.3-flash/dgx-spark/4x/nvfp4-vllm) | 4× DGX Spark (GB10) | NVFP4 | vllm | 117.3 | – | 524,288 | external |
 
@@ -64,28 +64,28 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`nemotron-3.5-bolt-rtx5090`](nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm) | 1× RTX 5090 | NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter | vllm | 218 (512 tokens) | 6,277 | 262,144 | stable |
+| [`nemotron-3.5-bolt-rtx5090`](nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm) | 1× RTX 5090 | NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter | vllm v0.34.0 | 218 (512 tokens) | 6,277 | 262,144 | stable |
 
 ### Nemotron 3.5 Super VL 120B-A12B
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`nemotron-3.5-super-vl-dgx-spark`](nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm) | 1× DGX Spark (GB10) | NVFP4, DFlash LiLiCorr drafter | vllm | 40.9 (tg128) | 3,058 | – | stable |
+| [`nemotron-3.5-super-vl-dgx-spark`](nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm) | 1× DGX Spark (GB10) | NVFP4, DFlash LiLiCorr drafter | vllm v0.34.0 | 40.9 (tg128) | 3,058 | – | stable |
 
 ### Qwen3.8-Flash-Next
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
 | [`qwen3.8-flash-next-exlr8-1x-spark`](qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash + MTP=3, 256K | gr8 main@fa5d82d | 114.2 | 2,204 | 262,144 | stable |
-| [`qwen3.8-flash-next-exlr8-2x-spark`](qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8, MTP=3, 256K | gr8 v1.2.0 | 126.8 | 3,027 | 262,144 | experimental |
+| [`qwen3.8-flash-next-exlr8-2x-spark`](qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8, MTP=3, 256K | gr8 v1.2.0 | 126.8 | 3,027 | 262,144 | stable |
 | [`qwen3.8-flash-next-exlr8-1x-gpu`](qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4 | gr8 main@5cedece | 171.1 | – | 40,960 | experimental |
 
 ### Sage-S2.1-Flash
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`sage-s2.1-flash-exlr8-2x-spark`](sage-s2.1-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 k4, int4 KV | gr8 main@ca7e874 | 55.1 | 1,832 | 262,144 | stable |
-| [`sage-s2.1-flash-exlr8-4x-spark`](sage-s2.1-flash/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 k4, int4 KV | gr8 main@ca7e874 | 88 | 2,999 | 262,144 | stable |
+| [`sage-s2.1-flash-exlr8-2x-spark`](sage-s2.1-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 k4, int4 KV | gr8 v1.2.0 | 55.1 | 1,832 | 262,144 | stable |
+| [`sage-s2.1-flash-exlr8-4x-spark`](sage-s2.1-flash/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 k4, int4 KV | gr8 v1.2.0 | 88 | 2,999 | 262,144 | stable |
 
 ### Step-5 Preview
 

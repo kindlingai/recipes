@@ -1,32 +1,39 @@
-# GLM-5.3 on four GB10 boxes (ASUS GX10 / DGX Spark) at K4: gr8, the exlr8 release's bit387 profile, int4 KV.
-# Run the SAME file with the SAME .env (.env.example) on all four boxes. The head (the first address in PEERS) serves
-# the OpenAI API on port 8100.
+# GLM-5.3 on four DGX Sparks (GB10) at K4 (bit387, pure quality): gr8's published image, pinned by tag and digest,
+# with this recipe's .env and read-only bit387 manifest mount. No engine is compiled here and there is no Dockerfile:
+# the image runs exactly as published. Run the SAME file with the SAME .env (.env.example) on all four boxes. The head
+# (the first address in PEERS, or the head elected by mentat) serves the OpenAI API on port 8100 (host network).
 #
-#   docker compose up -d                                  # pulls the image (CI publishes it), fetches this box's part
-#   docker compose up -d --build                          # or builds the image here from gr8/ (--engine or tools/engine.sh)
+#   cp .env.example .env
+#   docker compose up -d                                  # pulls the pinned image; first boot fetches this box's part
 #   docker compose logs -f                                # this box's supervisor
 #   docker compose exec gr8 /opt/gr8/gr8 glm53 smoke      # on the head, once it serves
 #   docker compose exec gr8 /opt/gr8/gr8 glm53 down       # on the head: stops every rank
+#
+# RULE (gr8's): no option default lives here. The launcher in the image owns every default, and .env carries this
+# recipe's settings. The only values set below are the container's own paths.
 name: glm53-k4-4x-spark
 services:
   gr8:
-    build:
-      context: .
-    image: ${IMAGE:-ghcr.io/kindlingai/glm-5.3-exlr8-k4-4x-spark:latest}
+    # The engine pin: kindlingai/gr8 v1.1.1 (a3f44a0); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.1.1@sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96}
     container_name: glm53-k4-4x-spark
-    # Options from .env. Unset, the image's settings (Dockerfile) and gr8's launcher defaults apply.
+    # The launcher's options, from .env. Optional: options can also come on the command line of `run`.
     env_file:
       - path: .env
         required: false
     environment:
-      # the container's own paths, so a line in .env cannot point the launcher outside the volumes
+      # The container's own paths (the volumes below, the image's python and front end). Set here so a MODEL_CACHE,
+      # GR8_WORK_DIR, PY or FRONT_BIN line in .env, meant for a bare-metal box, cannot point the launcher at a path
+      # that does not exist in the container.
       - GR8_WORK_DIR=/var/lib/gr8/home
       - MODEL_CACHE=/var/lib/gr8/cache
+      - PY=/usr/bin/python3
+      - FRONT_BIN=/opt/gr8/bin/g6front-rs
     # The RoCE fabric and the front end need the box's real interfaces. The fabric bootstrap, the supervisors' control
-    # port (7340), the S2 control port (7341) and the API (8100) are host ports.
+    # port (7340), the S2 control port (7341) and the OpenAI API (8100) are host ports.
     network_mode: host
-    # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only in
-    # the host's process list.
+    # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only
+    # in the host's process list.
     pid: host
     devices:
       - /dev/infiniband:/dev/infiniband
@@ -40,9 +47,11 @@ services:
     ulimits:
       # The fabric registers its pinned buffers with the NIC.
       memlock: -1
-      # A crash must not dump core: a rank maps ~100 GB, and the dumping thread holds the NVIDIA driver's lock the whole
-      # time it writes, which can leave the box unreachable until a power cycle.
+      # A crash must not dump core: a rank maps ~100 GB, and the dumping thread holds the NVIDIA driver's lock the
+      # whole time it writes, which can leave the box unreachable until a power cycle.
       core: 0
+    # The engine runs with no more rights than it needs: the image's uid 1000, no capabilities but IPC_LOCK (pinned
+    # memory), no privilege escalation, a read-only image with a private /tmp.
     cap_drop: [ALL]
     cap_add: [IPC_LOCK]
     security_opt:
@@ -54,24 +63,31 @@ services:
     oom_score_adj: 1000
     # tini as PID 1: it forwards docker's SIGTERM to the launcher and reaps the engine and the shims.
     init: true
-    stop_grace_period: 30s
+    # Match stop grace to shutdown: set GR8_STOP_GRACE=150s in .env when a persistent SSD KV_STORE is enabled.
+    stop_grace_period: ${GR8_STOP_GRACE:-30s}
     volumes:
-      # This box's part of the model: the K4 release at TP=4, fetched from Hugging Face on the first boot. Set
-      # MODEL_CACHE_DIR to a host directory owned by uid 1000 to keep it outside docker.
-      - ${MODEL_CACHE_DIR:-cache}:/var/lib/gr8/cache
-      # Logs and state: out/supervisor.log, g6m4.r<N>.err, shim.log, front.log, gr8.state.
-      - ${GR8_HOME_DIR:-home}:/var/lib/gr8/home
-      # Kindling OS's dispramd socket (DISPRAM=1, Dockerfile). On a box without it the directory is empty and the engine
+      # This box's part of the model: the K4 release at TP=4 (~100 GB), fetched from Hugging Face on the first boot.
+      # Unset, a named volume; set GR8_CACHE to a host directory owned by uid 1000 to keep it outside docker.
+      - ${GR8_CACHE:-cache}:/var/lib/gr8/cache
+      # Logs and state: out/supervisor.log, g6m4.r<N>.err, shim.log, front.log, gr8.state. Unset, a named volume; set
+      # GR8_HOME to a host directory owned by uid 1000 to keep it outside docker.
+      - ${GR8_HOME:-home}:/var/lib/gr8/home
+      # The bit387 width manifest, bind-mounted read-only so gr8 v1.1.1 boots it by path
+      # (VARIANT=/etc/gr8/exlr8-manifest-bit387.json). Although bit387 is in the Hugging Face release at 9e25c28a,
+      # gr8 v1.1.1's built-in variant table does not yet list bit387 by name.
+      - ./manifests:/etc/gr8:ro
+      # Kindling OS's dispramd socket (DISPRAM=1 in .env). On a box without it the directory is empty and the engine
       # allocates as usual.
       - /run/dispram:/run/dispram
     healthcheck:
-      # healthy once this box's supervisor reports the cluster serving (on the head, once its API's /health answers too)
-      test: ["CMD", "/opt/gr8/gr8", "glm53", "health"]
+      # Healthy once this box's supervisor reports the cluster serving (on the head, once its API's /health answers
+      # too). $$ leaves GR8_MODEL to the container's shell, which has .env's value, as the entrypoint does.
+      test: ["CMD-SHELL", "exec /opt/gr8/gr8 \"$${GR8_MODEL}\" health"]
       interval: 30s
       timeout: 5s
       start_period: 60m
-    # `gr8 glm53 down` exits 0 on every box, and the cluster stays down. Any other exit restarts the container: a failed
-    # rank rejoins, and a refused handshake or bad options retry, with docker's delay doubling up to a minute.
+    # `gr8 glm53 down` exits 0 on every box, and the cluster stays down. Any other exit restarts the container: a
+    # failed rank rejoins, and a refused handshake or bad options retry, with docker's delay doubling up to a minute.
     restart: on-failure
 
 volumes:

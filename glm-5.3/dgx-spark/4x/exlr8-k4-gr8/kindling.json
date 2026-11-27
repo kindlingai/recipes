@@ -14,15 +14,11 @@
     "MTP",
     "int4 KV"
   ],
-  "image": "ghcr.io/kindlingai/glm-5.3-exlr8-k4-4x-spark",
-  "build": {
-    "nvcc_cache": "glm-int4-w4"
-  },
   "engine": {
     "repo": "kindlingai/gr8",
     "ref": "v1.1.1",
     "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
-    "pin": "source",
+    "pin": "image",
     "image": "ghcr.io/kindlingai/gr8:v1.1.1",
     "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
   },

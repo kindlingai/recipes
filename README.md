@@ -57,7 +57,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
-| [`inkling-2-mini-exlr8-1x-spark`](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash, 144K x 8 (1.18M KV) | gr8 main@6b87480 | 90.6 | 3,484 | 147,456 | stable |
+| [`inkling-2-mini-exlr8-1x-spark`](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash, 144K x 8 (1.18M KV) | gr8 main@2c221e9 | 90.6 | 3,484 | 147,456 | stable |
 | [`inkling-2-mini-exlr8-1x-rtx5090`](inkling-2-mini/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8, DFlash, 262K KV | gr8 v1.3.1 | 328.1 | 3,427 | 65,536 | stable |
 
 ### Nemotron 3.5 Bolt 74B-A9B

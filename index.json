@@ -1693,7 +1693,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:28:18-06:00",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-spark",
@@ -1713,10 +1713,10 @@
         "engine": {
           "repo": "kindlingai/gr8",
           "ref": "main",
-          "commit": "6b8748038bc74cd746c2f83075b0fbb6ba5aa99e",
+          "commit": "2c221e984112e9f1081b4f5a9555600239072f19",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:sha-6b87480",
-          "image_digest": "sha256:63465222330e8b938da2a5b6543912e2ddcd0fbb280b932eb5e7485df16b991c"
+          "image": "ghcr.io/kindlingai/gr8:sha-2c221e9",
+          "image_digest": "sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1"
         },
         "default_config": "tp1-bit325",
         "configs": [

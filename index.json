@@ -1901,7 +1901,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T22:39:51Z",
+      "updated_at": "2026-11-27T13:53:28Z",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-rtx5090",
@@ -1920,9 +1920,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "6b8748038bc74cd746c2f83075b0fbb6ba5aa99e",
-          "pin": "source"
+          "ref": "v1.3.1",
+          "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.3.1",
+          "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
         },
         "default_config": "1gpu-bit325",
         "configs": [
@@ -1997,7 +1999,7 @@
                 "source": "computed"
               }
             ],
-            "max_tokens_per_chat_note": "4 x 65,536 slabs (262K pool, 29.71 GiB); ./serve.sh long fits 303K x 1",
+            "max_tokens_per_chat_note": "4 x 65,536 slabs (262K pool, 29.71 GiB); PROFILE=long fits 303K x 1",
             "quality": [
               {
                 "name": "DFlash K=7 vs MTP=0 greedy parity",
@@ -2078,7 +2080,7 @@
                 "value": "93.54% (1274/1362) · ties Official W4A4 (McNemar p=0.6655)"
               }
             ],
-            "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled DFlash (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Run ./serve.sh k4 (4 x 49,152 = 196K KV pool at PREFILL=512, 29.74 GiB; or ./serve.sh long with VARIANT=k4 for 245,760 x 1 at PREFILL=256). Measured 2026-11-25 on 1x RTX 5090 32 GB (4.76 s boot from NVMe)."
+            "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled DFlash (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Set VARIANT=k4 (or PROFILE=k4) in .env (4 x 49,152 = 196K KV pool at PREFILL=512, 29.74 GiB; or PROFILE=long with VARIANT=k4 for 245,760 x 1 at PREFILL=256). Measured 2026-11-25 on 1x RTX 5090 32 GB (4.76 s boot from NVMe)."
           },
           {
             "id": "1gpu-bit225",
@@ -2144,7 +2146,7 @@
                 "value": "528.1 agg tok/s (89.9 tok/s per user)"
               }
             ],
-            "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (./serve.sh bit225-fast: GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1). Dedicated 32 GB RTX 5090 fits 4 x 81,920 = 327K KV pool in fast mode (29.40 GiB) or 4 x 90,112 = 360K in standard mode (./serve.sh bit225: 436.3 Math / 384.1 JSON / 604.8 Counting tok/s, 385K x 1 long). Prefill sweep measured at PREFILL=512 (k2, identical dense/attention/loop prefill path). Measured 2026-11-25 on 1x RTX 5090 32 GB (3.76 s boot from NVMe)."
+            "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (PROFILE=bit225-fast: GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1). Dedicated 32 GB RTX 5090 fits 4 x 81,920 = 327K KV pool in fast mode (29.40 GiB) or 4 x 90,112 = 360K in standard mode (VARIANT=bit225: 436.3 Math / 384.1 JSON / 604.8 Counting tok/s, 385K x 1 long). Prefill sweep measured at PREFILL=512 (k2, identical dense/attention/loop prefill path). Measured 2026-11-25 on 1x RTX 5090 32 GB (3.76 s boot from NVMe)."
           }
         ]
       }

@@ -2,9 +2,13 @@
 set -euo pipefail
 RECIPE_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 if [[ -n ${STEP5_CONFIG:-} ]]; then
-  # The configuration is a trusted shell file. Export values to the bench client.
+  # The configuration is a trusted shell file. Export values to the scripts.
   set -a
   source "$STEP5_CONFIG"
+  set +a
+elif [[ -z ${STEP5_CONFIG+x} && -f $RECIPE_DIR/.env ]]; then
+  set -a
+  source "$RECIPE_DIR/.env"
   set +a
 fi
 NODE0=${NODE0:-192.168.50.11}; NODE1=${NODE1:-192.168.50.12}

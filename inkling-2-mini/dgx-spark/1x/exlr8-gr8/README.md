@@ -146,9 +146,9 @@ This recipe has no engine code. It runs one published `gr8` image, named in [com
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`6b874803`](https://github.com/kindlingai/gr8/commit/6b8748038bc74cd746c2f83075b0fbb6ba5aa99e) ([PR #615](https://github.com/kindlingai/gr8/pull/615)) |
-| image | `ghcr.io/kindlingai/gr8:sha-6b87480` |
-| digest | `sha256:63465222330e8b938da2a5b6543912e2ddcd0fbb280b932eb5e7485df16b991c` |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`2c221e98`](https://github.com/kindlingai/gr8/commit/2c221e984112e9f1081b4f5a9555600239072f19) ([PR #640](https://github.com/kindlingai/gr8/pull/640) — 19× smaller prefill workspace + `GR8_INK2_PF_MX8_MOE=3\|4` streaming FP8 MoE prefill for co-resident / low-RAM setups) |
+| image | `ghcr.io/kindlingai/gr8:sha-2c221e9` |
+| digest | `sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1` |
 
 `python3 tools/check_pin.py --strict inkling-2-mini/dgx-spark/1x/exlr8-gr8`, run from the monorepo root, verifies that `compose.yaml` and `kindling.json` agree on the immutable image digest.
 

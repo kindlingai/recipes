@@ -26,7 +26,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 <!-- recipes:index:start -->
 <!-- Written by tools/build_index.py from each recipe's kindling.json. Edits here are overwritten. -->
 
-20 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
+22 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
 
 ### DeepSeek-V4.1-Flash
 
@@ -71,6 +71,18 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
 | [`nemotron-3.5-super-vl-dgx-spark`](nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm) | 1× DGX Spark (GB10) | NVFP4, DFlash LiLiCorr drafter | vllm v0.34.0 | 40.9 (tg128) | 3,058 | – | stable |
+
+### Qwen3-VL-Embedding-2B
+
+| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
+|---|---|---|---|---|---|---|---|
+| [`qwen3-vl-embedding-2b-exlr8-1x-spark`](qwen3-vl-embedding-2b/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 K4, multimodal embeddings | gr8 v1.5.0 | – | – | 16,384 | stable |
+
+### Qwen3-VL-Embedding-8B
+
+| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
+|---|---|---|---|---|---|---|---|
+| [`qwen3-vl-embedding-8b-exlr8-1x-spark`](qwen3-vl-embedding-8b/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 K4, multimodal embeddings | gr8 v1.5.0 | – | – | 16,384 | stable |
 
 ### Qwen3.8-Flash-Next
 

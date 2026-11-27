@@ -1,34 +1,42 @@
-# Sage-S2.1-Flash on four GB10 boxes (DGX Spark) at TP=4: gr8, the exlr8 k4 release, int4 KV, a prompt cache on disk.
-# Run this file on all four boxes with the same .env (PEERS: the four LAN addresses, head first). The head serves on port 8100.
+# Sage-S2.1-Flash on four DGX Sparks (GB10) at TP=4: gr8's published image, pinned by tag and digest, with this
+# recipe's .env and read-only kv-store.yaml. No engine is compiled here and there is no Dockerfile: the image runs
+# exactly as published. Run the SAME file with the SAME .env (.env.example) on all four boxes. The head (the first
+# address in PEERS, or the head elected by mentat) serves the OpenAI API on port 8100 (host network).
 #
-#   docker compose up -d                # pulls the image (CI publishes it), fetches this box's part, joins the others
-#   docker compose up -d --build        # or builds the image here from the engine source in gr8/ (kindling.json pins it)
-#   docker compose logs -f              # the supervisor, ready when it prints that the cluster serves
-#   docker compose exec gr8 gr8 glm53f smoke
+#   cp .env.example .env
+#   docker compose up -d                                   # pulls the pinned image; first boot fetches this box's part
+#   docker compose logs -f                                 # this box's supervisor
+#   docker compose exec gr8 /opt/gr8/gr8 glm53f smoke      # on the head, once it serves
+#   docker compose exec gr8 /opt/gr8/gr8 glm53f down       # on the head: stops every rank
 #
-# .env (optional, .env.example) overrides the settings below. Compose reads it from this file's directory.
+# RULE (gr8's): no option default lives here. The launcher in the image owns every default, and .env carries this
+# recipe's settings. The only values set below are the container's own paths.
 name: sage-4x-spark
 services:
   gr8:
-    build:
-      context: .
-    image: ${IMAGE:-ghcr.io/kindlingai/sage-s2.1-flash-exlr8-4x-spark:latest}
+    # The engine pin: kindlingai/gr8 v1.2.0 (ab2eb95); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.2.0@sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd}
     container_name: sage-4x-spark
-    # The knobs (TUNE, CAP, DFLASH, MENTAT; README.md) and any other gr8 option come from .env. Unset, the image's
-    # defaults (Dockerfile) and TUNE's (knobs.sh) apply.
+    # The launcher's options, from .env. Optional: options can also come on the command line of `run`.
     env_file:
       - path: .env
         required: false
     environment:
-      # the container's own paths, so a line in .env cannot point the launcher outside the volumes
+      # The container's own paths (the volumes below, the image's python and front end). Set here so a MODEL_CACHE,
+      # GR8_WORK_DIR, PY or FRONT_BIN line in .env, meant for a bare-metal box, cannot point the launcher at a path
+      # that does not exist in the container.
       - GR8_WORK_DIR=/var/lib/gr8/home
       - MODEL_CACHE=/var/lib/gr8/cache
-    # The front end (8100), the supervisor's and engine's control ports (7340, 7341) and the ConnectX fabric on the box's
-    # own interfaces.
+      - PY=/usr/bin/python3
+      - FRONT_BIN=/opt/gr8/bin/g6front-rs
+    # The RoCE fabric and the front end need the box's real interfaces. The fabric bootstrap, the supervisors' control
+    # port (7340), the S2 control port (7341) and the OpenAI API (8100) are host ports.
     network_mode: host
-    # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only in
-    # the host's process list.
+    # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only
+    # in the host's process list.
     pid: host
+    devices:
+      - /dev/infiniband:/dev/infiniband
     deploy:
       resources:
         reservations:
@@ -36,14 +44,14 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    # The ConnectX ports: the four engines exchange activations over RDMA.
-    devices:
-      - /dev/infiniband:/dev/infiniband
     ulimits:
+      # The fabric registers its pinned buffers with the NIC.
       memlock: -1
-      # A crash must not dump core: the engine maps ~50+ GB, and the dumping thread holds the NVIDIA driver's lock the
+      # A crash must not dump core: a rank maps ~50+ GB, and the dumping thread holds the NVIDIA driver's lock the
       # whole time it writes, which can leave the box unreachable until a power cycle.
       core: 0
+    # The engine runs with no more rights than it needs: the image's uid 1000, no capabilities but IPC_LOCK (pinned
+    # memory), no privilege escalation, a read-only image with a private /tmp.
     cap_drop: [ALL]
     cap_add: [IPC_LOCK]
     security_opt:
@@ -51,25 +59,31 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=1g,mode=1777
+    # Under memory pressure the kernel ends the engine before sshd or the rest of the box.
     oom_score_adj: 1000
+    # tini as PID 1: it forwards docker's SIGTERM to the launcher and reaps the engine and the shims.
     init: true
-    stop_grace_period: 30s
+    # Match stop grace to shutdown: set GR8_STOP_GRACE=150s in .env when flushing large persistent KV state.
+    stop_grace_period: ${GR8_STOP_GRACE:-30s}
     volumes:
-      # This box's part of the release, fetched from Hugging Face on the first boot. Set
-      # MODEL_CACHE_DIR to a host directory owned by uid 1000 to keep it outside docker.
-      - ${MODEL_CACHE_DIR:-cache}:/var/lib/gr8/cache
-      # The prompt cache (kv-store.yaml): checkpoints of prompts the box has prefilled, kept across restarts.
-      - ${PROMPT_CACHE_DIR:-prompts}:/var/lib/gr8/prompts
-      # Logs and state: out/supervisor.log, g6m4.r0.err, shim.log, front.log.
-      - ${GR8_HOME_DIR:-home}:/var/lib/gr8/home
+      # This box's part of the model (~47 GB at TP=4) and prompt checkpoint cache (/var/lib/gr8/cache/prompts, up to
+      # 64 GB). Unset, a named volume; set GR8_CACHE to a host directory owned by uid 1000 to keep it outside docker.
+      - ${GR8_CACHE:-cache}:/var/lib/gr8/cache
+      # Logs and state: out/supervisor.log, g6m4_flash.r<N>.err, shim.log, front.log, gr8.state. Unset, a named volume;
+      # set GR8_HOME to a host directory owned by uid 1000 to keep it outside docker.
+      - ${GR8_HOME:-home}:/var/lib/gr8/home
+      # Prompt checkpoint store configuration (KV_STORE=@/etc/gr8/kv-store.yaml in .env), bind-mounted read-only.
+      - ./kv-store.yaml:/etc/gr8/kv-store.yaml:ro
     healthcheck:
-      test: ["CMD", "/opt/sage-4x/bin/gr8", "glm53f", "health"]
+      # Healthy once this box's supervisor reports the cluster serving (on the head, once its API's /health answers
+      # too). $$ leaves GR8_MODEL to the container's shell, which has .env's value, as the entrypoint does.
+      test: ["CMD-SHELL", "exec /opt/gr8/gr8 \"$${GR8_MODEL}\" health"]
       interval: 30s
       timeout: 5s
       start_period: 60m
+    # `gr8 glm53f down` exits 0 on every box, and the cluster stays down. Any other exit restarts the container.
     restart: on-failure
 
 volumes:
   cache:
-  prompts:
   home:

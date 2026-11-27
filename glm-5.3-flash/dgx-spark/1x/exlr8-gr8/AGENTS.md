@@ -1,10 +1,14 @@
-# For agents: boot GLM-5.3-Flash on one DGX Spark
+# For agents: boot GLM-5.3-Flash on 1× DGX Spark
 
-You are booting this recipe for someone. This file has the steps, every knob, and how to check each step. It is taken
-from README.md, `knobs.sh`, `.env.example`, `compose.yaml`, the `Dockerfile` and gr8 (in `gr8/` after `--engine`, at the
-`engine.commit` that `kindling.json` pins). Paths here are relative to the recipe folder. If this
-file and `knobs.sh` or `compose.yaml` disagree, follow `knobs.sh` and `compose.yaml`, and tell the person. If you
-cannot run a check yourself, ask the person to run it and paste the output. Do not skip it.
+You are booting this recipe for someone. Follow the steps in order and run each check. If a check fails, stop and tell
+the person what failed. If this file and `knobs.sh`, `compose.yaml` or `.env.example` disagree, follow those files and
+tell the person. If you cannot run a check yourself, ask the person to run it and paste the output. Do not skip it.
+
+This recipe is the folder `glm-5.3-flash/dgx-spark/1x/exlr8-gr8` of
+[kindlingai/recipes](https://github.com/kindlingai/recipes); paths below are relative to it. Get it with
+`npx @kindlingai/recipe glm-5.3-flash-exlr8-1x-spark` (or a sparse clone of the monorepo) and run the commands from
+inside the folder. This recipe runs `gr8`'s published image (`ghcr.io/kindlingai/gr8:v1.2.0@sha256:3de05aab...`)
+directly with read-only mounts for `entrypoint.sh`, `knobs.sh`, `bin/gr8` and `kv-store.yaml`; nothing is built.
 
 ## 1. Check the box
 
@@ -12,136 +16,103 @@ cannot run a check yourself, ask the person to run it and paste the output. Do n
 - Docker and the NVIDIA container toolkit are installed (both come with DGX OS): `docker info | grep -i nvidia` shows
   the `nvidia` runtime.
 - Free disk where Docker keeps volumes: at least 87 GB for the download (the model and the drafter), plus up to 64 GB
-  for the prompt cache. Check with `df -h "$(docker info --format '{{.DockerRootDir}}')"`. With compose, you can set
-  `MODEL_CACHE_DIR` and `PROMPT_CACHE_DIR` to host directories owned by uid 1000 instead.
+  for the prompt cache (`/var/lib/gr8/cache/prompts` inside the cache volume). Check with
+  `df -h "$(docker info --format '{{.DockerRootDir}}')"`. You can set `GR8_CACHE` in `.env` to a host directory owned
+  by uid 1000 instead.
 - The box can reach Hugging Face for the download: `curl -sI https://huggingface.co` answers.
 - No other model runs on the box: `docker ps` shows no other model container, and `nvidia-smi` shows no GPU process.
   The weights take about 93 GB of memory (measured with the K2 manifest; `bit201` takes about 0.4 GB more), and gr8 does
   not start while another gr8 engine runs on the box.
 - Optional: gr8 logs a warning at boot when proactive memory compaction is on. `sysctl vm.compaction_proactiveness`
-  prints 0 when it is off. To turn it off, as root, once (gr8/docs/DEPLOY.md):
+  prints 0 when it is off. To turn it off, as root, once:
 
   ```bash
   echo 'vm.compaction_proactiveness = 0' > /etc/sysctl.d/90-gr8-no-proactive-compaction.conf
   sysctl -w vm.compaction_proactiveness=0
   ```
 
-## 2. Pick the settings
+## 2. Write .env and pick settings
 
-Set the values in `.env` (compose) or with `docker run -e`.
+Copy `.env.example` to `.env` (the `npx @kindlingai/recipe` CLI already did). It is ready to boot `TUNE=speed` as-is.
 
 `TUNE` picks what to prioritize. Ask the person whether they need one request longer than 262,144 tokens: then use
-`context`. Otherwise, or if you cannot ask, use the default.
+`TUNE=context`. Otherwise, or if you cannot ask, keep `TUNE=speed`.
 
-| `TUNE` | the settings it sets (`knobs.sh`) | what it gives |
+| `TUNE` | what `knobs.sh` sets | what it gives |
 |---|---|---|
-| `speed` (default) | `MAX_MODEL_LEN=262144` | the settings README.md's numbers were measured with: requests up to 262,144 tokens |
-| `context` | `MAX_MODEL_LEN=700018` | one request up to 700,018 tokens: the 700,032-token pool less DFlash2's 14 guard rows. A request that long leaves little room in the pool, and other requests wait |
-| `quality` | `MAX_MODEL_LEN=262144` | the same as `speed`: K3 and K4 do not fit one box, and the image builds only the int4 KV engine |
+| `speed` (default) | `MAX_MODEL_LEN=262144` | requests up to 262,144 tokens |
+| `context` | `MAX_MODEL_LEN=700018` | one request up to 700,018 tokens (`CAP=700032` less DFlash2's 14 guard rows); other requests wait when the pool is full |
+| `quality` | `MAX_MODEL_LEN=262144` | same as `speed`: K3 and K4 do not fit one box, and this recipe runs the int4 KV engine |
 
 What else `knobs.sh` does:
 
-- If you set `MAX_MODEL_LEN` yourself, `TUNE` leaves it alone.
+- If you uncomment and set `MAX_MODEL_LEN` yourself in `.env`, `TUNE` leaves it alone.
 - With `TUNE=context` and a `CAP` below 700,032, set `MAX_MODEL_LEN` too, to at most `CAP` less 14. When
   `MAX_MODEL_LEN` is more than `CAP`, the boot stops.
-- Any other `TUNE` value stops the boot.
+- Any other `TUNE` value stops the boot (exit 2).
 
-Every knob:
+Key knobs in `.env.example`:
 
 | knob | values | default |
 |---|---|---|
 | `TUNE` | `speed`, `context`, `quality` | `speed` |
-| `CAP` | the KV pool in tokens, shared by the sessions, a multiple of 64; about 5 KB of memory a token. It was tuned on DGX OS. README.md says Kindling Spark OS may allow `1000000`; that is not measured (section 6) | `700032` |
-| `MAX_MODEL_LEN` | the longest single request, prompt and output together: at most `CAP` less the guard rows (14 with DFlash2), and at most 1,048,576 | by `TUNE` (table above) |
-| `VARIANT` | the release's manifest: `bit201` (K2, with 124 routed experts at K3), or `k2` (every expert at K2, about 0.4 GB smaller). A name other than `k2`, `k3` or `k4` needs `MODEL` pinned to a commit (`knobs.sh`); the default is. `k3` and `k4` do not fit one box | `bit201` |
-| `DFLASH` | `1`: a request alone drafts with the DFlash2 drafter (licence CC BY-NC-ND 4.0), downloaded and converted on the first boot. `0`: MTP only, nothing downloaded | `1` |
-| `MENTAT` | `0`: this box alone. `1`: register with the [`mentat`](https://github.com/kindlingai/mentat) cluster through the host's `mentat` daemon, in group `GROUP` | `0` |
-| `GROUP` | the `mentat` group to register in, with `MENTAT=1` | `gr8-glm53f-1x` |
-| `DEFAULT_PRESENCE_PENALTY` | inside the think block 0.5 for every request; on the reply 0.2 for greedy requests only. The format is in gr8/KNOBS.md; `0` turns it off | `greedy=0.2,greedy.thinking=0.5,nongreedy.thinking=0.5` |
-| `UNDECLARED_TOOL_CALLS` | `emit`: a call to an undeclared tool name comes back in `tool_calls` (the client answers it with its own error); `text`: it stays in `content`, `finish_reason: stop` | `emit` |
-| `DEFAULT_MAX_TOKENS` | `max_tokens` for a chat request that names none. With `0`, gr8 gives such a request the larger of 8,192 and 32,704 less the prompt, so a long agent prompt gets 8,192 and runs out of tokens while thinking. Setting it drops the launcher's `--share-tokens`. Four long sessions at 32,768 still decoded together | `32768` |
-| `DEFAULT_THINK_END_BOOST` | the `</think>` logit gains `per1k` a thousand thinking tokens past `start`, up to `max` (gr8 frontend/README.md, soft thinking budget). `start` is a token count, or a share of the request's `max_tokens` such as `0.5x`. Empty turns it off | `start=16384,per1k=4,max=10` |
-| `DEFAULT_THINKING_BUDGET` | the hard thinking budget in tokens for a request that sets none; `0` = no limit. Keep it below `DEFAULT_MAX_TOKENS` so the reply has room to answer. A request with `logprobs` gets none | `28672` |
-| `MODEL_CACHE_DIR`, `PROMPT_CACHE_DIR`, `GR8_HOME_DIR` | compose only: host directories in place of compose's volumes, owned by uid 1000 | compose's volumes |
-| `IMAGE` | compose only: a pinned image, e.g. `ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:sha-<commit>` | `:latest` |
-| `MODEL` | the release, `https://huggingface.co/<org>/<repo>@<commit>` | the commit README.md's numbers were measured with |
-| `DRAFTER` | the drafter, `https://huggingface.co/<org>/<repo>@<commit>` | the commit README.md's numbers were measured with |
-| `HF_TOKEN` | sent only to Hugging Face, for a gated or private repo | none |
-
-Any other gr8 launcher option works too (gr8/KNOBS.md).
+| `CAP` | KV pool in tokens, multiple of 64 (~5 KB/token). Tuned on DGX OS; Kindling Spark OS may allow `1000000` (not measured) | `700032` |
+| `MAX_MODEL_LEN` | longest single request, prompt + output: at most `CAP` less guard rows (14 with DFlash2), max 1,048,576 | by `TUNE` |
+| `VARIANT` | `bit201` (K2 with 124 routed experts at K3) or `k2` (~0.4 GB smaller). Non-`k2`/`k3`/`k4` names require `MODEL` pinned to a commit | `bit201` |
+| `DFLASH` | `1`: DFlash2 drafter (CC BY-NC-ND 4.0) for solo requests. `0`: MTP only, drafter not downloaded | `1` |
+| `MENTAT` | `0`: this box alone (`PEERS=127.0.0.1`). `1`: register with host `mentat` daemon in group `GROUP` | `0` |
+| `GROUP` | `mentat` group when `MENTAT=1` | `gr8-glm53f-1x` |
+| `DEFAULT_PRESENCE_PENALTY` | thinking 0.5 for all requests, reply 0.2 for greedy only; `0` disables | `greedy=0.2,greedy.thinking=0.5,nongreedy.thinking=0.5` |
+| `UNDECLARED_TOOL_CALLS` | `emit` (return in `tool_calls`) or `text` (leave in `content`) | `emit` |
+| `DEFAULT_MAX_TOKENS` | default `max_tokens` when omitted | `32768` |
+| `DEFAULT_THINK_END_BOOST` | soft thinking budget boost (`</think>` logit) | `start=16384,per1k=4,max=10` |
+| `DEFAULT_THINKING_BUDGET` | hard thinking token cap (`0` = no limit) | `28672` |
+| `GR8_CACHE`, `GR8_HOME` | compose only: host dirs (owned by uid 1000) in place of named volumes | named volumes |
+| `GR8_STOP_GRACE` | compose only: `docker stop` grace period | `30s` |
+| `GR8_IMAGE` | compose only: override the pinned `gr8` image | pinned `v1.2.0` digest |
+| `MODEL`, `DRAFTER` | Hugging Face repo URLs pinned with `@<commit>` | measured commits |
+| `HF_TOKEN` | Hugging Face token for gated/private repos | none |
 
 ## 3. Boot
 
-The commands below use `TUNE=speed`: put in the value you picked.
-
-1. Optional: print the settings the boot will use. Compare the `MAX_MODEL_LEN=` and `CAP=` lines under
-   "cluster options" with the `TUNE` table above.
+1. Optional (no GPU needed): run `./check-config.sh` to verify `compose.yaml`, `.env.example`, and `knobs.sh` against
+   the pinned gr8 image, or print the resolved config with:
 
    ```bash
-   docker run --rm -e TUNE=speed ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:latest show-config --no-check
+   docker compose run --rm --no-deps gr8 show-config --no-check
    ```
 
-2. Optional: `check` runs the boot's own checks on the box without booting: the model's files in the cache, no other
-   engine running, free memory. It prints a `FAIL` line for each problem, ends with `check: N failed`, and exits 1 if
-   N is not 0. Before the first boot it lists the model as not in the cache yet and the drafter as not converted yet:
-   the first boot downloads and converts them. Any other `FAIL` line is a problem to fix before step 3. Tell the
-   person what it says before you change anything on the box.
+2. Optional: `check` runs the boot's own checks on the box without booting (model cache, no other engine running, free
+   memory). Before the first boot it reports the model and drafter as not cached yet; any other `FAIL` line must be
+   fixed before starting.
 
    ```bash
-   docker run --rm --gpus all --network host --pid host -e TUNE=speed \
-     -v glm53f-cache:/var/lib/gr8/cache -v glm53f-prompts:/var/lib/gr8/prompts -v glm53f-home:/var/lib/gr8/home \
-     ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:latest check
+   docker compose run --rm gr8 check
    ```
 
 3. Start the container:
 
    ```bash
-   docker run -d --name glm53f-1x-spark --gpus all --network host --pid host \
-     --ulimit memlock=-1 --ulimit core=0 --cap-drop ALL --cap-add IPC_LOCK \
-     --security-opt no-new-privileges --read-only --tmpfs /tmp:size=1g,mode=1777 --init --oom-score-adj 1000 \
-     -e TUNE=speed \
-     -v glm53f-cache:/var/lib/gr8/cache -v glm53f-prompts:/var/lib/gr8/prompts -v glm53f-home:/var/lib/gr8/home \
-     ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:latest
-   ```
-
-   The first boot downloads 87 GB from Hugging Face into the `glm53f-cache` volume (the model and the drafter) and
-   converts the drafter: README.md gives about 10 minutes in all, and about 45 s for later boots (measured with the K2
-   manifest, before `bit201`; not measured again). With `mentat`, add `-e MENTAT=1`.
-
-   Or with compose:
-
-   ```bash
-   npx @kindlingai/recipe glm-5.3-flash-exlr8-1x-spark --engine && cd glm-5.3-flash-exlr8-1x-spark
-   # the CLI already copied .env.example to .env; optional: uncomment TUNE, or any other knob, and set it
    docker compose up -d
+   docker compose logs -f
    ```
 
-   Compose keeps the model in its own volumes, not in the `glm53f-*` volumes of `docker run`, so the first compose
-   boot downloads the model even after a `docker run` boot.
+   The first boot pulls `ghcr.io/kindlingai/gr8:v1.2.0`, downloads 87 GB from Hugging Face into the cache volume, and
+   converts the drafter (~10 minutes total; later boots ~45 s when measured on K2).
 
-4. To change `TUNE` or any other knob later: stop and remove the container, then start it again with the new value,
-   the same way as before (compose: `docker compose down`, edit `.env`, `docker compose up -d`). A change of `TUNE` or
-   `MAX_MODEL_LEN` alone downloads nothing: the model and the drafter stay in the cache volume. A new `MODEL` or
-   `DRAFTER` commit, or `DFLASH=1` after boots with `DFLASH=0`, downloads what the cache does not have yet.
+4. To change `TUNE` or any knob later: `docker compose down`, edit `.env`, `docker compose up -d`. Changing `TUNE` or
+   `MAX_MODEL_LEN` alone downloads nothing.
 
 ## 4. Check that it serves
 
-Wait for `serving:` in the log first; the checks after it confirm it.
+Wait for `serving:` in `docker compose logs -f`, then verify:
 
-- `docker logs -f glm53f-1x-spark` (compose: `docker compose logs -f`) prints `serving: http://...` when the box
-  serves.
-- `docker exec glm53f-1x-spark gr8 glm53f health` exits 0 when the box serves. With compose, `docker compose ps`
-  shows the container as `healthy` once this check passes.
-- The API's `/health` answers 200 once the box serves. Before that it answers another code, or does not answer:
-  `curl -s -o /dev/null -w '%{http_code}\n' localhost:8100/health`.
-- `docker exec glm53f-1x-spark gr8 glm53f status` shows the box's state, engine and free memory.
-- `docker exec glm53f-1x-spark gr8 glm53f smoke` runs gr8's smoke test, 14 checks against the API. It ends with
-  `14/14 passed` and exits 0 when every check passes.
-- `docker exec glm53f-1x-spark gr8 glm53f bench --hosts ''` runs gr8's bench against the API. Without `--hosts ''` it
-  stops with `FileNotFoundError: 'ssh'`. The bench reaches the box over ssh to cool and sample its GPU, and the image
-  has no ssh. With `--hosts ''` the bench does not cool the GPU between stages.
-- The API is OpenAI-compatible, on port 8100, with the model name `glm-5.3-flash` (`glm53f` also works). Send one
-  chat:
+- `docker compose exec gr8 /opt/glm53f-1x/bin/gr8 glm53f health` exits 0, and `docker compose ps` shows `healthy`.
+- `curl -s -o /dev/null -w '%{http_code}\n' localhost:8100/health` returns `200`, and `curl -s localhost:8100/v1/models`
+  lists `glm-5.3-flash` with the expected `max_model_len`.
+- `docker compose exec gr8 /opt/glm53f-1x/bin/gr8 glm53f status` shows box state, engine, and free memory.
+- `docker compose exec gr8 /opt/glm53f-1x/bin/gr8 glm53f smoke` runs 14 checks against the API (`14/14 passed`).
+- Send one chat completion:
 
   ```bash
   curl -s localhost:8100/v1/chat/completions -H 'Content-Type: application/json' -d '{
@@ -151,42 +122,45 @@ Wait for `serving:` in the log first; the checks after it confirm it.
   }'
   ```
 
-  The reply is JSON with a `choices` list. The model thinks before it answers: the thinking comes back in
-  `message.reasoning` and counts toward `max_tokens`. This request took about 1,700 tokens. With a small `max_tokens`,
-  the reply can stop during the thinking, with `message.content` empty.
-- To stop: `docker stop glm53f-1x-spark && docker rm glm53f-1x-spark` (compose: `docker compose down`).
+  Thinking comes back in `message.reasoning` and counts toward `max_tokens`.
 
-## 5. When a step fails
+## 5. Stop
+
+```bash
+docker compose down
+```
+
+## 6. When a step fails
 
 | what you see | what to do |
 |---|---|
-| `TUNE=...: want speed (the default), context or quality ...` | use one of the three values |
-| `gr8: --max-model-len ...: more than CAP ..., the KV pool a request comes from` | set `MAX_MODEL_LEN` to at most `CAP` less 14, or raise `CAP` |
-| `MENTAT=...: want 0 (this box alone) or 1 (register with the mentat cluster)` | use `MENTAT=0` or `MENTAT=1` |
-| `gr8: memlock is limited ...` | `--ulimit memlock=-1` with `docker run`, `ulimits.memlock: -1` in compose |
-| `gr8: ... is not writable by uid 1000 ...` | run `chown 1000:1000` on the host directory you set as `GR8_HOME_DIR` |
-| `an engine is already running` or `a g6m4 --rank process is running` | ask the person, then stop the other model (README.md, Run another model) |
-| the image does not pull | build the image on the box, in a copy fetched with `--engine` (or `tools/engine.sh glm-5.3-flash/dgx-spark/1x/exlr8-gr8` from a monorepo clone's root), so `gr8/` holds the pinned engine source. `docker compose build` (about 30 minutes cold) tags it `ghcr.io/kindlingai/glm-5.3-flash-exlr8-1x-spark:latest`. Without compose, `docker buildx build --platform linux/arm64 -t glm53f-1x-spark .`, then use the tag `glm53f-1x-spark` |
+| `TUNE=...: want speed (the default), context or quality ...` | use `speed`, `context`, or `quality` |
+| `gr8: --max-model-len ...: more than CAP ...` | set `MAX_MODEL_LEN` to at most `CAP` less 14, or raise `CAP` |
+| `MENTAT=...: want 0 (this box alone) or 1 ...` | use `MENTAT=0` or `MENTAT=1` |
+| `gr8: memlock is limited ...` | keep `ulimits.memlock: -1` in `compose.yaml` (`--ulimit memlock=-1` with `docker run`) |
+| `gr8: ... is not writable by uid 1000 ...` | run `chown 1000:1000` on your host `GR8_HOME` / `GR8_CACHE` directory |
+| `an engine is already running` or `a g6m4 --rank process is running` | ask the person, then stop the other model |
 
-The container exits with 0 after a stop, 1 when the engine failed, and 2 for bad options.
-`docker inspect -f '{{.State.ExitCode}}' glm53f-1x-spark` prints it.
+Exit codes: 0 after clean stop, 1 engine failed, 2 bad options. Read logs via `docker compose logs` or
+`docker compose exec gr8 /opt/glm53f-1x/bin/gr8 glm53f logs supervisor` (or `shim` / `front`).
 
-Read the log:
+## 7. Not measured yet: tell the person
 
-- After the container exits: `docker logs glm53f-1x-spark` (compose: `docker compose logs`). It has the launcher's
-  output, and it is there until you remove the container.
-- While the container runs: `docker exec glm53f-1x-spark gr8 glm53f logs supervisor` (or `shim` or `front`; with no
-  name after `logs`, the engine's log).
+- Re-measurement on published `gr8 v1.2.0` (`ab2eb95`): existing Results numbers are from prior `gr8` commit `d598965`.
+- `TUNE=context` was measured once (one 672K-token prompt; lowest free memory 3.9 GiB on Kindling Spark OS, ~2 GiB less
+  on DGX OS).
+- The K2 width has not been scored against BF16 on this recipe.
+- `CAP` above `700032` on Kindling Spark OS has no measurement yet.
 
-If a step fails for a reason not listed here, ask on the KindlingAI Discord (the link is at the top of README.md).
+## Rules for changes to this recipe
 
-## 6. Not measured yet: tell the person
-
-This list is the recipe's checklist of what is still to be measured. If the person measures one of these, ask them to
-post the numbers on Discord or in an issue (https://github.com/kindlingai/recipes/issues, with `glm-5.3-flash-exlr8-1x-spark` in the title).
-
-- `TUNE=context` was measured once, on the box of README.md's benchmark card, with `MAX_MODEL_LEN` raised: one
-  672K-token prompt. The lowest free memory was 3.9 GiB on Kindling Spark OS, and about 2 GiB less on DGX OS.
-- The K2 width that every `TUNE` value runs has not been scored against BF16: the release card scores K4 only, and
-  says to measure K2 on your own workload before relying on it.
-- A `CAP` above 700,032: README.md says Kindling Spark OS may allow `1000000`. This recipe has no measurement there.
+- Every number in `README.md` and `kindling.json` comes from a measured run. Say the date, the box count, and the engine
+  build. Do not copy a number from another build without noting its source build.
+- `README.md`'s Results and `kindling.json` say the same thing. A change to one changes the other, and the card
+  (`docs/card.png`) is redrawn from `kindling.json`.
+- The engine pin is one exact commit and one image digest (`@sha256:...`). Never a moving tag alone, never a local
+  Dockerfile build. An engine change goes to `kindlingai/gr8` first; this recipe then moves its pin to the published
+  image.
+- From the monorepo root, run `python3 tools/check_pin.py --strict glm-5.3-flash/dgx-spark/1x/exlr8-gr8`,
+  `python3 tools/lint_recipe.py --strict glm-5.3-flash/dgx-spark/1x/exlr8-gr8`, and `./check-config.sh` inside this
+  folder before you commit.

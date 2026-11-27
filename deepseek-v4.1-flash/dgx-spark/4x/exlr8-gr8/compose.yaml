@@ -1,33 +1,39 @@
-# DeepSeek-V4.1-Flash on four GB10 boxes (DGX Spark) at TP=4: gr8, the exlr8 native release, Engram, fp8 KV.
-# Run this file on all four boxes with the same .env (PEERS: the four LAN addresses, head first). The head serves on
-# port 8100.
+# DeepSeek-V4.1-Flash on four DGX Sparks (GB10) at TP=4: gr8's published image (v1.3.1), pinned by tag and digest,
+# with this recipe's .env, shipped io_uring seccomp profile, and read-only script mounts. No engine is compiled here
+# and there is no Dockerfile. Run the SAME file with the SAME .env (.env.example) on all four boxes (PEERS: the four
+# LAN addresses, head first). The head serves the OpenAI API on port 8100 (host network).
 #
-#   docker compose run --rm gr8 fetch   # once on every box: the whole release, 510.6 GB, into the release volume
-#   ./install-seccomp.py                # local Docker default plus io_uring (warning + builtin on failure)
-#   docker compose up -d                # pulls the image (CI publishes it) and joins the other three boxes
-#   docker compose up -d --build        # or builds the image here from the engine source in gr8/ (kindling.json pins it)
-#   docker compose logs -f              # the supervisor, ready when it prints that the cluster serves
-#   docker compose exec gr8 gr8 ds41 smoke    # on the head
+#   cp .env.example .env                                             # edit PEERS, IPS and IPS2 on all 4 boxes (or MENTAT=1)
+#   docker compose run --rm fetch                                    # once on every box: 510.6 GB into ds41-release
+#   docker compose up -d                                             # pulls gr8 and joins the other three boxes
+#   docker compose logs -f                                           # ready on the head when it prints "serving: ..."
+#   docker compose exec gr8 /opt/ds41-4x/entrypoint.sh smoke         # on the head
+#   docker compose down                                              # on every box
 #
-# .env (.env.example) sets PEERS and overrides the settings below. Compose reads it from this file's directory.
+# RULE (gr8's): no option default lives here. The launcher in the image (plus knobs.sh for TUNE/MENTAT) owns every
+# default, and .env carries this recipe's settings. The only values set below are the container's own paths.
 name: ds41-4x-spark
 services:
   gr8:
-    build:
-      context: .
-    image: ${IMAGE:-ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark:latest}
+    # The engine pin: kindlingai/gr8 v1.3.1 (9f4f9c4, includes kindlingai/gr8#630: DS41_MX=48 + first-boot engram-cmap).
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863}
     container_name: ds41-4x-spark
-    # The knobs (TUNE, CAP, SESS, MENTAT; README.md) and any other gr8 option come from .env. Unset, the image's
-    # defaults apply (Dockerfile, and knobs.sh for CAP and SESS).
+    entrypoint: ["/opt/ds41-4x/entrypoint.sh"]
+    # The recipe's settings (PEERS, IPS, IPS2, TUNE, CAP, SESS, MENTAT, RELEASE, EXTRA_ENV, ...) come from .env.
     env_file:
       - path: .env
         required: false
     environment:
-      # the container's own paths, so a line in .env cannot point the launcher outside the volumes
+      # The container's own paths (the volumes below, the image's python and front end). Set here so a path meant for
+      # a bare-metal box in .env cannot point the launcher somewhere that does not exist in the container.
       - GR8_WORK_DIR=/var/lib/gr8/home
-      - MODEL=/var/lib/gr8/release/deepseek-v4.1-flash-exlr8-native
-    # The front end (8100), the supervisor's and engine's control ports (7340, 7341) and the ConnectX fabric on the box's
-    # own interfaces.
+      - MODEL_CACHE=/var/lib/gr8/cache
+      - MODEL=/var/lib/gr8/cache/deepseek-v4.1-flash-exlr8-native
+      - ENGRAM_PREFIX=/var/lib/gr8/home/engram/ds41
+      - PY=/usr/bin/python3
+      - FRONT_BIN=/opt/gr8/bin/g6front-rs
+    # The front end (8100), the supervisor's and engine's control ports (7340, 7341) and the ConnectX fabric on the
+    # box's own interfaces.
     network_mode: host
     # The launcher refuses to start next to another g6m4 on the box, and sees one started outside the container only in
     # the host's process list.
@@ -43,38 +49,67 @@ services:
     devices:
       - /dev/infiniband:/dev/infiniband
     ulimits:
+      # The fabric registers its pinned buffers with the NIC.
       memlock: -1
       # A crash must not dump core: the engine maps ~90 GB, and the dumping thread holds the NVIDIA driver's lock the
       # whole time it writes, which can leave the box unreachable until a power cycle.
       core: 0
+    # The engine runs with no more rights than it needs: the image's uid 1000, no capabilities but IPC_LOCK (pinned
+    # memory), no privilege escalation, a read-only image with a private /tmp, and Docker's default seccomp profile
+    # plus the three io_uring syscalls for Engram (set SECCOMP_PROFILE=builtin in .env to fall back to pread).
     cap_drop: [ALL]
     cap_add: [IPC_LOCK]
     security_opt:
       - no-new-privileges:true
-      # Written by install-seccomp.py; builtin is the safe fallback when no local profile was installed.
-      - seccomp=${SECCOMP_PROFILE:-builtin}
+      - seccomp=${SECCOMP_PROFILE:-./seccomp-iouring.json}
     read_only: true
     tmpfs:
       - /tmp:size=1g,mode=1777
+    # Under memory pressure the kernel ends the engine before sshd or the rest of the box.
     oom_score_adj: 1000
+    # tini as PID 1: it forwards docker's SIGTERM to the launcher and reaps the engine and its shims.
     init: true
-    # SIGTERM makes the supervisor quit its engine. A KV_STORE ssd store with persist=on and keep=sessions (or all)
-    # gives the quit up to 120 s, as it stores the open chats for the next boot: set GR8_STOP_GRACE=150s with one, or
-    # docker kills the engine mid-store (gr8/docker/compose.yaml).
+    # SIGTERM makes the supervisor quit its engine. With a persistent KV_STORE, set GR8_STOP_GRACE=150s in .env.
     stop_grace_period: ${GR8_STOP_GRACE:-30s}
     volumes:
-      # The release, 510.6 GB, read in place: every box holds all of it (fetch-release.sh). Set RELEASE_DIR to a host
-      # directory owned by uid 1000 on local NVMe to keep it outside docker.
-      - ${RELEASE_DIR:-release}:/var/lib/gr8/release
-      # Logs and state: out/supervisor.log, g6m4.r0.err, shim.log, front.log, and Engram's token map (engram/). With
-      # GR8_GEN_CACHE set (.env.example does), the gen cache too: gen-cache/, about 80 GB.
+      # The release, 510.6 GB, read in place: every box holds all of it (fetched by the `fetch` service below).
+      # Mounted at /var/lib/gr8/cache (pre-created uid 1000 in gr8's image) so new named volumes are writable by uid
+      # 1000 while existing `ds41-release` volumes keep their release at the same relative path. Set RELEASE_DIR to a
+      # host directory owned by uid 1000 on local NVMe to keep it outside docker.
+      - ${RELEASE_DIR:-release}:/var/lib/gr8/cache
+      # Logs and state: out/supervisor.log, g6m4.r0.err, shim.log, front.log, Engram's auto-generated token map
+      # (engram/ds41.engram.cmap + index), and the gen cache (gen-cache/, ~80 GB when enabled in .env).
       - ${GR8_HOME_DIR:-home}:/var/lib/gr8/home
+      # Recipe launcher scripts, bind-mounted read-only so the running container cannot modify them.
+      - ./entrypoint.sh:/opt/ds41-4x/entrypoint.sh:ro
+      - ./knobs.sh:/opt/ds41-4x/knobs.sh:ro
+      - ./fetch-release.sh:/opt/ds41-4x/fetch-release.sh:ro
     healthcheck:
-      test: ["CMD", "/opt/ds41-4x/bin/gr8", "ds41", "health"]
+      test: ["CMD", "/opt/ds41-4x/entrypoint.sh", "health"]
       interval: 30s
       timeout: 5s
       start_period: 60m
     restart: on-failure
+
+  # One-shot release fetcher: `docker compose run --rm fetch` (no GPU or PEERS required).
+  fetch:
+    profiles: [fetch]
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863}
+    entrypoint: ["/opt/ds41-4x/fetch-release.sh"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - MODEL=/var/lib/gr8/cache/deepseek-v4.1-flash-exlr8-native
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    volumes:
+      - ${RELEASE_DIR:-release}:/var/lib/gr8/cache
+      - ./fetch-release.sh:/opt/ds41-4x/fetch-release.sh:ro
 
 # Named as in README.md's docker run commands, so compose and docker run share the 510.6 GB release.
 volumes:

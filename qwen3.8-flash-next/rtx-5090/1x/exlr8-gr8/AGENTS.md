@@ -48,10 +48,8 @@ Run `docker compose exec gr8 /opt/gr8/gr8 qw38 down`, then `docker compose down`
   engine build. Do not copy a number from another build without its date.
 - `README.md`'s Results and `kindling.json` say the same thing. A change to one changes the other, and
   `docs/card.png` is drawn again with `python3 tools/card.py`.
-- Once `gr8 v1.3.0` publishes its `linux/amd64` `sm_120a` image, the engine pin is one exact `gr8` commit and one image
-  digest (`@sha256:...`). Never a moving tag alone, never a patched engine or host build. An engine change goes to
-  [kindlingai/gr8](https://github.com/kindlingai/gr8) as a pull request; this recipe then moves its pin to the merged
-  commit or next release.
-- From the monorepo root, run `python3 tools/check_pin.py qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8` (add `--strict`
-  once `v1.3.0` is pinned) and `python3 tools/lint_recipe.py qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8` before you
-  commit.
+- The engine pin is one exact `gr8` commit and one image digest (`@sha256:...`). Never a moving tag alone, never a
+  patched engine or host build. An engine change goes to [kindlingai/gr8](https://github.com/kindlingai/gr8) as a pull
+  request; this recipe then moves its pin to the merged commit or next release.
+- From the monorepo root, run `python3 tools/check_pin.py --strict qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8` and
+  `python3 tools/lint_recipe.py qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8` before you commit.

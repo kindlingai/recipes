@@ -6,7 +6,7 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-Qwen3.8-Flash-Next K3 (`bit300`, 3.00 bpw) on **one discrete Blackwell GPU** (tested on **1× RTX 5090 32 GB** + **128 GB DDR5** + AVX-512 CPU), served by [kindlingai/gr8](https://github.com/kindlingai/gr8) (`v1.3.0`, containing [PR #610](https://github.com/kindlingai/gr8/pull/610) and [PR #629](https://github.com/kindlingai/gr8/pull/629)) using weights from [kindlingai/Qwen3.8-Flash-Next-exlr8](https://huggingface.co/kindlingai/Qwen3.8-Flash-Next-exlr8). This recipe is the published `linux/amd64` `gr8` image and one `.env` file. Nothing is compiled on the host.
+Qwen3.8-Flash-Next K3 (`bit300`, 3.00 bpw) on **one discrete Blackwell GPU** (tested on **1× RTX 5090 32 GB** + **128 GB DDR5** + AVX-512 CPU), served by [kindlingai/gr8](https://github.com/kindlingai/gr8) (`v1.3.1`, containing [PR #610](https://github.com/kindlingai/gr8/pull/610) and [PR #629](https://github.com/kindlingai/gr8/pull/629)) using weights from [kindlingai/Qwen3.8-Flash-Next-exlr8](https://huggingface.co/kindlingai/Qwen3.8-Flash-Next-exlr8). This recipe is the published `linux/amd64` `gr8` image and one `.env` file. Nothing is compiled on the host.
 
 How it fits a 60+ GB MoE model comfortably on a single 32 GB GPU:
 - **Adaptive VRAM hot-expert cache + pinned host-RAM backing:** Hot routed K3 experts live in GDDR7 VRAM (with zero-stall pointer swaps safe for CUDA Graphs); cold experts stay in pinned DDR5.
@@ -16,7 +16,7 @@ How it fits a 60+ GB MoE model comfortably on a single 32 GB GPU:
 
 ## Results
 
-1× RTX 5090 32 GB + Ryzen 7 9800X3D + 128 GB DDR5, `TP=1`, `CAP=40960`, `PREFILL=13312`, `MTP=4`, `GR8_QW38_STRATA=1`, `GR8_QW38_VRAM_RESERVE_MIB=1920`, measured on `gr8 main` ([PR #610](https://github.com/kindlingai/gr8/pull/610), commit `5cedece3`) apples-to-apples over HTTP streaming (`/v1/chat/completions`, `temperature=0.0`, 3-run medians) under a **22.9 GiB VRAM ceiling** (~7.2 GiB of other GPU services left resident on the card, so a dedicated clean 32 GB GPU caches even more hot experts). Every speed is in tokens per second (tok/s). Re-measurement on the published `gr8 v1.3.0` `linux/amd64` container image is pending RTX 5090 hardware.
+1× RTX 5090 32 GB + Ryzen 7 9800X3D + 128 GB DDR5, `TP=1`, `CAP=40960`, `PREFILL=13312`, `MTP=4`, `GR8_QW38_STRATA=1`, `GR8_QW38_VRAM_RESERVE_MIB=1920`, measured on `gr8 main` ([PR #610](https://github.com/kindlingai/gr8/pull/610), commit `5cedece3`) apples-to-apples over HTTP streaming (`/v1/chat/completions`, `temperature=0.0`, 3-run medians) under a **22.9 GiB VRAM ceiling** (~7.2 GiB of other GPU services left resident on the card, so a dedicated clean 32 GB GPU caches even more hot experts). Every speed is in tokens per second (tok/s). Re-measurement on the published `gr8 v1.3.1` `linux/amd64` container image is pending RTX 5090 hardware.
 
 | Workload | Prompt / Output | TTFT (`gr8`) | Total Time (`gr8`) | Decode Speed (`gr8`) | vs. Strata `IQ3_S` Total |
 |---|---:|---:|---:|---:|---:|
@@ -119,11 +119,11 @@ This recipe has no engine code. It runs one published multi-arch `gr8` image (`l
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.3.0`](https://github.com/kindlingai/gr8/releases/tag/v1.3.0) *(commit pin pending [gr8 PR #629](https://github.com/kindlingai/gr8/pull/629) merge and `v1.3.0` release)* |
-| image | `ghcr.io/kindlingai/gr8:v1.3.0` |
-| digest | *pending `v1.3.0` multi-arch GHCR publish (will be pinned as `@sha256:<digest>` once released)* |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) `v1.3.1` ([`9f4f9c4f700d8a53c753e98f5388a92cc8cfd869`](https://github.com/kindlingai/gr8/commit/9f4f9c4f700d8a53c753e98f5388a92cc8cfd869)) |
+| image | `ghcr.io/kindlingai/gr8:v1.3.1` |
+| digest | `sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863` |
 
-`python3 tools/check_pin.py qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and `kindling.json` agree; once `v1.3.0` is published and pinned, `--strict` also refuses a pending pin.
+`python3 tools/check_pin.py --strict qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8`, run from the monorepo root, verifies that [compose.yaml](compose.yaml) and [kindling.json](kindling.json) agree on the immutable image digest.
 
 ## License
 

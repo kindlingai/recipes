@@ -15,11 +15,11 @@
   ],
   "engine": {
     "repo": "kindlingai/gr8",
-    "ref": "v1.3.0",
-    "commit": "",
+    "ref": "v1.3.1",
+    "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
     "pin": "image",
-    "image": "ghcr.io/kindlingai/gr8:v1.3.0",
-    "image_digest": ""
+    "image": "ghcr.io/kindlingai/gr8:v1.3.1",
+    "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
   },
   "default_config": "1gpu",
   "configs": [
@@ -43,7 +43,7 @@
           "value": "32/32 bit-exact"
         }
       ],
-      "notes": "1x RTX 5090 32 GB, Ryzen 7 9800X3D, 128 GB DDR5. HTTP streaming /v1/chat/completions, temperature 0, 3-run medians, under a 22.9 GiB VRAM ceiling (about 7.2 GiB of other services resident on the card); 6,853 hot experts in VRAM. MTP=4, cap 40960. Measured on gr8 main with PR #610 (5cedece3); re-measurement on published gr8 v1.3.0 linux/amd64 image pending RTX 5090 hardware."
+      "notes": "1x RTX 5090 32 GB, Ryzen 7 9800X3D, 128 GB DDR5. HTTP streaming /v1/chat/completions, temperature 0, 3-run medians, under a 22.9 GiB VRAM ceiling (about 7.2 GiB of other services resident on the card); 6,853 hot experts in VRAM. MTP=4, cap 40960. Measured on gr8 main with PR #610 (5cedece3); re-measurement on published gr8 v1.3.1 linux/amd64 image pending RTX 5090 hardware."
     }
   ]
 }

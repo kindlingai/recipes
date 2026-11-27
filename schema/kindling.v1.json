@@ -10,7 +10,7 @@
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9.-]*$",
-      "description": "Stable slug: the image name, the site's card id, the CLI argument (npx @kindlingai/recipe <id>) and the prefix of this recipe's tags. Recipes adopted from their own repo keep that repo's name."
+      "description": "Stable slug: the site's card id, the CLI argument (npx @kindlingai/recipe <id>) and the prefix of this recipe's history tags. Recipes adopted from their own repo keep that repo's name."
     },
     "status": {
       "enum": ["stable", "experimental", "wip", "external", "retired"],
@@ -22,30 +22,17 @@
     "model": { "type": "string", "description": "Checkpoint or model id" },
     "weights_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Hugging Face commit of the checkpoint the recipe boots" },
     "stack": { "type": "array", "items": { "type": "string" } },
-    "image": {
-      "type": "string",
-      "pattern": "^ghcr\\.io/kindlingai/[a-z0-9][a-z0-9._-]*$",
-      "description": "The recipe's own image, without a tag, for recipes with a Dockerfile. compose.yaml must default to it."
-    },
-    "build": {
-      "type": "object",
-      "description": "Present when CI builds and pushes the recipe's image (.github/workflows/recipe-image.yml). The recipe's smoke.sh tests the built image.",
-      "properties": {
-        "nvcc_cache": { "type": "string", "description": "Id of the gr8 compile cache kept between runs, e.g. flash-int4-w1. Omit when the Dockerfile has no engine cache mount." }
-      },
-      "additionalProperties": false
-    },
     "engine": {
       "type": "object",
-      "description": "The engine the recipe runs. tools/check_pin.py keeps it in agreement with compose.yaml and the Dockerfile.",
+      "description": "The engine the recipe runs. tools/check_pin.py keeps it in agreement with compose.yaml.",
       "required": ["repo", "ref", "pin"],
       "properties": {
         "repo": { "type": "string", "description": "e.g. kindlingai/gr8" },
         "ref": { "type": "string", "description": "Release tag, stable or main" },
         "commit": { "type": "string", "description": "Full commit hash; empty only while a release is pending" },
         "pin": {
-          "enum": ["image", "source"],
-          "description": "image: compose.yaml runs the engine's published image, pinned by digest. source: the recipe's Dockerfile builds from the engine's source at commit (tools/engine.sh checks it out into <recipe>/gr8)."
+          "enum": ["image"],
+          "description": "image: compose.yaml runs the engine's published image, pinned by digest."
         },
         "image": { "type": "string" },
         "image_digest": { "type": "string" }

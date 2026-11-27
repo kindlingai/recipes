@@ -1,0 +1,58 @@
+# Inkling-2-Mini EXLR8 + DFlash on one NVIDIA RTX 5090 (32 GB, sm_120a).
+# Runs gr8's published linux/amd64 image, pinned by tag and digest, with this recipe's .env and read-only
+# entrypoint.sh. No engine is compiled here and there is no Dockerfile. Serves an OpenAI-compatible API on
+# http://127.0.0.1:${PORT:-8100}/v1
+#
+#   cp .env.example .env
+#   hf download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 \
+#     --local-dir ./models/inkling-2-mini-exlr8-k2-k3-k4
+#   docker compose up -d
+#   docker compose logs -f
+
+name: inkling-2-mini-1x-rtx5090
+services:
+  gr8:
+    # The engine pin: kindlingai/gr8 v1.3.1 (9f4f9c4, multi-arch linux/amd64 sm_120a + linux/arm64);
+    # kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863}
+    container_name: inkling-2-mini-1x-rtx5090
+    entrypoint: ["/bin/bash", "/recipe/entrypoint.sh"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - MODEL_DIR=/models/inkling-2-mini-exlr8-k2-k3-k4
+      - WORK_DIR=/tmp/ink2-gr8
+      - ENGINE_ROOT=/opt/gr8
+      - PY=/usr/bin/python3
+    network_mode: host
+    pid: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1
+      core: 0
+    cap_drop: [ALL]
+    cap_add: [IPC_LOCK]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: 30s
+    volumes:
+      - ./entrypoint.sh:/recipe/entrypoint.sh:ro
+      - ${MODEL_DIR:-./models/inkling-2-mini-exlr8-k2-k3-k4}:/models/inkling-2-mini-exlr8-k2-k3-k4:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:${PORT:-8100}/v1/models >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s
+    restart: on-failure

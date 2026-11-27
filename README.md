@@ -120,7 +120,7 @@ Each recipe is a folder `<model>/<hardware>/<count>x/<variant>/`:
 
 A recipe that runs at several sizes lives under its default size; the others are configs in its `kindling.json`, shown
 as tabs on its card. Every recipe also has a stable `id` (its old repo name for recipes that had one), used for the
-CLI, its image `ghcr.io/kindlingai/<id>` and its tags `<id>/<name>`.
+CLI and its tags `<id>/<name>`.
 
 Root files:
 
@@ -129,7 +129,7 @@ Root files:
 | [`index.json`](index.json) | generated: every recipe's `kindling.json` with its path, id, hardware, status and last-change date. The site reads it. |
 | [`hardware.json`](hardware.json) | hardware slugs and their display names |
 | [`schema/`](schema/) | `kindling.v1.json` (a recipe) and `index.v1.json` |
-| [`tools/`](tools/) | the index builder, the pin checker, the engine checkout, the repo adopter |
+| [`tools/`](tools/) | the index builder, the pin checker, the recipe linter, the card drawer, the repo adopter |
 | [`cli/`](cli/) | `@kindlingai/recipe`, the npx tool |
 
 ## Adding a recipe
@@ -137,7 +137,7 @@ Root files:
 Add a folder at its path with a `kindling.json` ([schema](schema/kindling.v1.json)) and open a pull request. CI
 validates it and shows the tables it would produce; after the merge a bot commit updates `index.json` and the tables
 above, and the site shows the card within about ten minutes. Nothing else changes: no site PR, no new repo.
-[CONTRIBUTING.md](CONTRIBUTING.md) has the details (pins, images, tags, adopting an existing repo).
+[CONTRIBUTING.md](CONTRIBUTING.md) has the details (pins, tags, adopting an existing repo).
 
 ## License
 

@@ -16,8 +16,6 @@ Writes [dir] (default ./<id>) with only that recipe from kindlingai/recipes, and
 
 Options:
   --list          list every recipe: id, hardware, status, path
-  --engine        also check out the engine source the recipe builds (kindling.json engine.commit) into <dir>/gr8,
-                  for recipes whose Dockerfile compiles it (docker compose build)
   --history       make <dir> a git repo holding the recipe's own history, the folder as its root
   --ref <ref>     a branch, tag or commit of kindlingai/recipes (default: its default branch)
   --repo <url>    another clone or fork of kindlingai/recipes (a URL or a local path)
@@ -27,7 +25,7 @@ Options:
 class Fail extends Error {}
 
 function parseArgs(argv) {
-  const opts = { positional: [], list: false, engine: false, history: false, ref: null, repo: REPO };
+  const opts = { positional: [], list: false, history: false, ref: null, repo: REPO };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const value = () => {
@@ -38,7 +36,6 @@ function parseArgs(argv) {
     if (a === "-h" || a === "--help") opts.help = true;
     else if (a === "-v" || a === "--version") opts.version = true;
     else if (a === "--list") opts.list = true;
-    else if (a === "--engine") opts.engine = true;
     else if (a === "--history") opts.history = true;
     else if (a === "--ref" || a.startsWith("--ref=")) opts.ref = value();
     else if (a === "--repo" || a.startsWith("--repo=")) opts.repo = value();
@@ -158,22 +155,7 @@ function fetchHistory(repo, ref, recipe, tmp, dest) {
     git(["update-ref", `refs/tags/${ref.slice(prefix.length)}`, sha], { cwd: dest });
     git(["update-ref", "-d", ref], { cwd: dest });
   }
-  fs.appendFileSync(path.join(dest, ".git", "info", "exclude"), ".env\ngr8/\n");
-}
-
-// What tools/engine.sh does in a full clone: the engine at engine.commit, in <dir>/<engine repo name>.
-function fetchEngine(dest) {
-  const k = JSON.parse(fs.readFileSync(path.join(dest, "kindling.json"), "utf8"));
-  const e = k.engine;
-  if (!e || e.pin !== "source" || !e.commit) {
-    say(`--engine: ${k.id} runs a published engine image (engine.pin ${e?.pin ?? "none"}); there is no source to fetch`);
-    return;
-  }
-  const dir = path.join(dest, e.repo.split("/").pop());
-  say(`Fetching ${e.repo} at ${e.commit.slice(0, 7)} into ${path.relative(process.cwd(), dir) || dir}`);
-  git(["init", "--quiet", dir]);
-  git(["fetch", "--quiet", "--depth", "1", `https://github.com/${e.repo}.git`, e.commit], { cwd: dir });
-  git(["checkout", "--quiet", "--detach", "FETCH_HEAD"], { cwd: dir });
+  fs.appendFileSync(path.join(dest, ".git", "info", "exclude"), ".env\n");
 }
 
 function prepare(dest) {
@@ -227,7 +209,6 @@ function main(argv) {
       say(`Fetching ${recipe.path}`);
       fetchFolder(path.join(tmp, "index"), rev, recipe, dest);
     }
-    if (opts.engine) fetchEngine(dest);
     const madeEnv = prepare(dest);
 
     const rel = path.relative(process.cwd(), dest) || ".";

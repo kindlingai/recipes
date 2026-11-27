@@ -1,26 +1,19 @@
-# Checks and images for the recipes a change touches (tools/changed_recipes.py picks them):
+# Checks for the recipes a change touches (tools/changed_recipes.py picks them):
 #   check  every touched recipe's pins agree (tools/check_pin.py), its compose.yaml parses with .env.example, the
-#          engine image it pins exists, and it meets the recipe standard (tools/lint_recipe.py, warn-only until the
-#          conversions of #2 land). A change to tools/, schema/, template/ or hardware.json checks every recipe.
-#   image  recipe-image.yml for each touched recipe whose kindling.json has a build object.
-# A tag <id>/v<version> or <id>/stable-<n> builds and pushes that recipe's image under <version> / stable-<n>.
+#          engine image it pins exists, and it meets the recipe standard (tools/lint_recipe.py; any Dockerfile is a
+#          hard error, other findings are warn-only until the conversions of #2 land). A change to tools/, schema/,
+#          template/, hardware.json or this workflow checks every recipe.
 name: Recipes
 
 on:
   push:
     branches: [main]
-    tags: ['*/v*', '*/stable-*']
   pull_request:
   workflow_dispatch:
     inputs:
       recipe:
         description: A recipe id (kindling.json id), or all
         default: all
-      engine:
-        description: "auto: gr8's published binaries when gr8 has an image of engine.commit, else a build. build: always build"
-        type: choice
-        options: [auto, build]
-        default: auto
 
 permissions:
   contents: read
@@ -30,7 +23,6 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       check: ${{ steps.pick.outputs.check }}
-      image: ${{ steps.pick.outputs.image }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with:
@@ -43,7 +35,6 @@ jobs:
         run: |
           case "$GITHUB_EVENT_NAME:$GITHUB_REF" in
             pull_request:*) args=(--base "origin/$BASE_REF") ;;
-            push:refs/tags/*) args=(--id "${GITHUB_REF_NAME%%/*}") ;;
             push:*)
               # a new branch, or a force push whose old head is gone: everything
               if [ "$BEFORE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BEFORE^{commit}" 2> /dev/null; then
@@ -59,7 +50,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
-      - name: Pins agree in kindling.json, compose.yaml and the Dockerfile
+      - name: Pins agree in kindling.json and compose.yaml
         env:
           DIRS: ${{ needs.select.outputs.check }}
         run: jq -r '.[]' <<< "$DIRS" | xargs python3 tools/check_pin.py
@@ -74,7 +65,7 @@ jobs:
             echo "$d: compose ok"
           done
       - name: Lint against the recipe standard
-        # Warn-only until every conversion of #2 lands; then add --strict here (the last checkbox of #3).
+        # Hard-fails on any Dockerfile; other findings are warn-only until every conversion of #2 lands, then add --strict here (the last checkbox of #3).
         env:
           DIRS: ${{ needs.select.outputs.check }}
         run: jq -r '.[]' <<< "$DIRS" | xargs python3 tools/lint_recipe.py
@@ -88,23 +79,3 @@ jobs:
             docker manifest inspect "$img" > /dev/null || { echo "::error file=$d/kindling.json::$img does not exist"; exit 1; }
             echo "$d: $img exists"
           done
-
-  image:
-    needs: select
-    if: needs.select.outputs.image != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.select.outputs.image) }}
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      attestations: write
-    uses: ./.github/workflows/recipe-image.yml
-    with:
-      dir: ${{ matrix.dir }}
-      image: ${{ matrix.image }}
-      id: ${{ matrix.id }}
-      nvcc_cache: ${{ matrix.nvcc_cache }}
-      engine: ${{ inputs.engine || 'auto' }}

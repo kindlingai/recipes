@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "id": "qwen3-vl-embedding-8b-exlr8-1x-spark",
+  "status": "stable",
+  "title": "Qwen3-VL-Embedding-8B",
+  "variant": "exlr8 K4, multimodal embeddings",
+  "summary": "Qwen3-VL-Embedding-8B on one DGX Spark (GB10, 128 GB) served natively by gr8 (g6embed + g6front-rs): calibrated exlr8-v2 4-bit trellis (4.66 GB on disk, 6.73 GiB GPU peak, 2.07 s warm boot), 31.8 ms query p50 / 3,545 tok/s at 8 concurrent streams, -0.0010 mean 15-task delta vs BF16 (0.9942 text / 0.9832 image held-out cosine), full DeepStack vision + Matryoshka (64..4096) on /v1/embeddings.",
+  "model": "kindlingai/Qwen3-VL-Embedding-8B-exlr8-k4",
+  "weights_commit": "3028d460328defb90f3a53f336258fed714b4f6e",
+  "stack": [
+    "gr8",
+    "g6embed",
+    "exlr8 K4",
+    "DeepStack ViT",
+    "MRL 64..4096",
+    "/v1/embeddings"
+  ],
+  "engine": {
+    "repo": "kindlingai/gr8",
+    "ref": "v1.5.0",
+    "commit": "dd253a4f12a5f6eb46dd6229c5bbba839f5e981c",
+    "pin": "image",
+    "image": "ghcr.io/kindlingai/gr8:v1.5.0",
+    "image_digest": "sha256:6d40ab08ad3de8c51571b6ab55ea20df5865e7e2adee0c3be259b5b814f50c16"
+  },
+  "default_config": "tp1-k4",
+  "configs": [
+    {
+      "id": "tp1-k4",
+      "label": "TP=1 · 8B K4",
+      "nodes": 1,
+      "concurrency": [
+        {
+          "streams": 1,
+          "aggregate_tps": 1563.1,
+          "per_stream_tps": 1563.1,
+          "ttft_p50_s": 0.033
+        },
+        {
+          "streams": 8,
+          "aggregate_tps": 3544.8,
+          "per_stream_tps": 443.1,
+          "ttft_p50_s": 0.79
+        },
+        {
+          "streams": 16,
+          "aggregate_tps": 3498.4,
+          "per_stream_tps": 218.7,
+          "ttft_p50_s": 0.951
+        }
+      ],
+      "max_context": 16384,
+      "max_concurrent": 64,
+      "quality": [
+        {
+          "name": "15-task retrieval/STS/ViDoRe Δ vs BF16",
+          "value": "-0.0010 mean Δ · 91.6% mean Top-10 overlap"
+        },
+        {
+          "name": "660-row held-out cosine (d4096)",
+          "value": "0.9918 all (0.9942 text · 0.9832 image · 0.9828 image+text)"
+        },
+        {
+          "name": "Live serving parity vs BF16",
+          "value": "0.9943 text cos · 6/6 query-doc Top-1 · MRL d1536 1.0000"
+        },
+        {
+          "name": "Footprint & boot (DGX Spark GB10)",
+          "value": "4.66 GB disk · 6.73 GiB GPU peak · 2.07 s warm / 2.28 s cold"
+        }
+      ],
+      "notes": "Measured 2026-11-27 on one NVIDIA DGX Spark (GB10, 128 GB, ARM64 64 KiB page kernel, 2200 MHz SM clock cap) with gr8 g6embed + g6front-rs (full 65-file XXH64 checksum verification, CAP=16384, MAX_MODEL_LEN=16384, native mode: 310 Trellis K4 + 4 int4_g32 + 55 FP8_ROW + 1 BF16 pos_embed). Concurrency rows measure live HTTP /v1/embeddings throughput (tokens/s and median request latency) at 1, 8, and 16 concurrent clients (single-request array batching reaches 3,484 tok/s at batch 8, 3,452 tok/s at batch 16, and 48.4 items/s / 3,102 tok/s at batch 64). 32-item multimodal suite p50: 46.72 ms overall (31.77 ms instructed query, 29.80 ms raw text, 244.48 ms image-only, 235.07 ms image+text)."
+    }
+  ]
+}

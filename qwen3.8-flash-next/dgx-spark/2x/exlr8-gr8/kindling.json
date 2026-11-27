@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "qwen3.8-flash-next-exlr8-2x-spark",
-  "status": "experimental",
+  "status": "stable",
   "title": "Qwen3.8-Flash-Next",
   "variant": "exlr8, MTP=3, 256K",
   "summary": "Qwen3.8-Flash-Next on two DGX Sparks (GB10, 128 GB each) at TP=2 over dual-rail ConnectX-7 RoCE v2 with gr8 v1.2.0: exlr8 pmcgx K3 (bit300, 126.8 tok/s code, 89.2 prose, 254.5 at 8 streams, 3,142 prefill) or K4 (bit400, 122.1 tok/s code, 86.9 prose, 234.1 at 8 streams, 3,069 prefill, 0.0046 mean KL), Layer-48 MTP=3 speculative decoding, async O_DIRECT NVMe PLE rowstore with 4 GiB host LRU cache, opt-in BF16 vision tower, and 8 dedicated 262,144-token KV slots (2,097,664 total KV rows).",
@@ -19,10 +19,10 @@
   "engine": {
     "repo": "kindlingai/gr8",
     "ref": "v1.2.0",
-    "commit": "",
+    "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
     "pin": "image",
     "image": "ghcr.io/kindlingai/gr8:v1.2.0",
-    "image_digest": ""
+    "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
   },
   "default_config": "tp2-k3",
   "configs": [

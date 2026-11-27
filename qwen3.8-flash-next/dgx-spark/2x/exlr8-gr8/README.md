@@ -172,11 +172,12 @@ This recipe has no engine code. It runs one published `gr8` image, named in [com
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.2.0`](https://github.com/kindlingai/gr8/releases/tag/v1.2.0) *(commit pin pending `v1.2.0` tag)* |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.2.0`](https://github.com/kindlingai/gr8/releases/tag/v1.2.0) at [`ab2eb95`](https://github.com/kindlingai/gr8/commit/ab2eb95f426ff908543d5d002218cf5a2a5c5be6) |
 | image | `ghcr.io/kindlingai/gr8:v1.2.0` |
-| digest | *pending `v1.2.0` GHCR publish (will be pinned as `@sha256:<digest>` once released)* |
+| digest | `sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd` |
+| weights | [kindlingai/Qwen3.8-Flash-Next-exlr8](https://huggingface.co/kindlingai/Qwen3.8-Flash-Next-exlr8/commit/4943478fdd54d8a59f2f9824b2389799e79f564b) (`4943478f`, `v0.2`) |
 
-Benchmarks above were measured on 2026-11-23 on the `gr8 v1.2.0` candidate branch ([PR #599](https://github.com/kindlingai/gr8/pull/599)). `python3 tools/check_pin.py qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and `kindling.json` agree; once `v1.2.0` is pinned, `--strict` also refuses a pending pin. The root `.github/workflows/recipes.yml` workflow runs the check on every pull request that touches this folder, and runs `docker manifest inspect` on the pinned image once the `v1.2.0` digest is set.
+Benchmarks above were measured on 2026-11-23 on the `gr8 v1.2.0` candidate branch ([PR #599](https://github.com/kindlingai/gr8/pull/599)). `python3 tools/check_pin.py --strict qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8`, run from the monorepo root, verifies that `compose.yaml` and `kindling.json` agree on the immutable image digest. The root `.github/workflows/recipes.yml` workflow runs the check on every pull request that touches this folder and verifies the pinned digest with `docker manifest inspect`.
 
 ## License
 

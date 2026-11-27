@@ -21,7 +21,7 @@ git clone --filter=blob:none --sparse https://github.com/kindlingai/recipes && c
 git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3x/exlr8-gr8
 ```
 
-## Recipes
+## Scoreboard
 
 <!-- recipes:index:start -->
 <!-- Written by tools/build_index.py from each recipe's kindling.json. Edits here are overwritten. -->
@@ -131,6 +131,7 @@ Root files:
 |---|---|
 | [`index.json`](index.json) | generated: every recipe's `kindling.json` with its path, id, hardware, status and last-change date. The site reads it. |
 | [`hardware.json`](hardware.json) | hardware slugs and their display names |
+| [`models.json`](models.json) | model slugs and their parameter sizes for the scoreboard |
 | [`schema/`](schema/) | `kindling.v1.json` (a recipe) and `index.v1.json` |
 | [`tools/`](tools/) | the index builder, the pin checker, the recipe linter, the card drawer, the repo adopter |
 | [`cli/`](cli/) | `@kindlingai/recipe`, the npx tool |

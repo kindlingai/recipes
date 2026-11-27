@@ -1,48 +1,49 @@
 {
- "version": 1,
- "id": "qwen3.8-flash-next-exlr8-1x-gpu",
- "status": "experimental",
- "title": "Qwen3.8-Flash-Next",
- "variant": "exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4",
- "summary": "Qwen3.8-Flash-Next K3 (bit300, 3.00 bpw) on one Blackwell GPU with gr8: hot routed experts in VRAM, cold experts in pinned host RAM run on AVX-512 CPU threads and the GPU, FP8 dense weights and an INT4 MTP=4 drafter, under a 22.9 GiB VRAM ceiling.",
- "model": "kindlingai/Qwen3.8-Flash-Next-exlr8",
- "hardware": "RTX 5090 32 GB + 128 GB DDR5",
- "stack": [
-  "gr8",
-  "exlr8",
-  "MTP",
-  "FP8",
-  "CPU offload"
- ],
- "engine": {
-  "repo": "kindlingai/gr8",
-  "ref": "main",
-  "commit": "5cedece3c4371e8dbf974078bdd22129c38e71c8",
-  "pin": "source"
- },
- "default_config": "1gpu",
- "configs": [
-  {
-   "id": "1gpu",
-   "label": "1 GPU",
-   "nodes": 1,
-   "decode": {
-    "code": 171.1,
-    "prose": 149.7,
-    "short chat": 130.2,
-    "multi-turn tool": 113.0,
-    "9.7K prompt": 124.7,
-    "38.5K prompt": 108.7
-   },
-   "max_context": 40960,
-   "max_concurrent": 1,
-   "quality": [
+  "version": 1,
+  "id": "qwen3.8-flash-next-exlr8-1x-gpu",
+  "status": "experimental",
+  "title": "Qwen3.8-Flash-Next",
+  "variant": "exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4",
+  "summary": "Qwen3.8-Flash-Next K3 (bit300, 3.00 bpw) on one Blackwell GPU with gr8: hot routed experts in VRAM, cold experts in pinned host RAM run on AVX-512 CPU threads and the GPU, FP8 dense weights and an INT4 MTP=4 drafter, under a 22.9 GiB VRAM ceiling.",
+  "model": "kindlingai/Qwen3.8-Flash-Next-exlr8",
+  "stack": [
+    "gr8",
+    "exlr8",
+    "MTP",
+    "FP8",
+    "CPU offload"
+  ],
+  "engine": {
+    "repo": "kindlingai/gr8",
+    "ref": "v1.3.1",
+    "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
+    "pin": "image",
+    "image": "ghcr.io/kindlingai/gr8:v1.3.1",
+    "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
+  },
+  "default_config": "1gpu",
+  "configs": [
     {
-     "name": "Greedy token parity, GPU UVA vs AVX-512 CPU MoE (MTP=0)",
-     "value": "32/32 bit-exact"
+      "id": "1gpu",
+      "label": "1 GPU",
+      "nodes": 1,
+      "decode": {
+        "code": 171.1,
+        "prose": 149.7,
+        "short chat": 130.2,
+        "multi-turn tool": 113.0,
+        "9.7K prompt": 124.7,
+        "38.5K prompt": 108.7
+      },
+      "max_context": 40960,
+      "max_concurrent": 1,
+      "quality": [
+        {
+          "name": "Greedy token parity, GPU UVA vs AVX-512 CPU MoE (MTP=0)",
+          "value": "32/32 bit-exact"
+        }
+      ],
+      "notes": "1x RTX 5090 32 GB, Ryzen 7 9800X3D, 128 GB DDR5. HTTP streaming /v1/chat/completions, temperature 0, 3-run medians, under a 22.9 GiB VRAM ceiling (about 7.2 GiB of other services resident on the card); 6,853 hot experts in VRAM. MTP=4, cap 40960. Measured on gr8 main with PR #610 (5cedece3); re-measurement on published gr8 v1.3.1 linux/amd64 image pending RTX 5090 hardware."
     }
-   ],
-   "notes": "1x RTX 5090 32 GB, Ryzen 7 9800X3D, 128 GB DDR5. HTTP streaming /v1/chat/completions, temperature 0, 3-run medians, under a 22.9 GiB VRAM ceiling (about 7.2 GiB of other services resident on the card); 6,853 hot experts in VRAM. MTP=4, cap 40960 (serve.sh defaults). gr8 main with PR #610."
-  }
- ]
+  ]
 }

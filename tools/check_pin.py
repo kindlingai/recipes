@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that a recipe's engine and weight pins agree across kindling.json, compose.yaml and the Dockerfile.
+"""Check that a recipe's engine and weight pins agree across kindling.json, compose.yaml and .env.example.
 
   python3 tools/check_pin.py DIR...           exit 0 when every DIR agrees, 1 with the reasons when not
   python3 tools/check_pin.py --strict DIR...  also refuse a pending pin (no engine commit and digest yet)
@@ -7,11 +7,7 @@
 engine.pin image:  every compose file's ${<ENGINE>_IMAGE:-...} default (e.g. GR8_IMAGE, VLLM_IMAGE, ENGINE_IMAGE) is
                    engine.image@engine.image_digest. A pin may be pending (commit and digest both empty) while its
                    release is unpublished; --strict refuses that.
-engine.pin source: the recipe builds the engine from engine.commit (its Dockerfile, with tools/engine.sh checking the
-                   source out, or its own script); with a Dockerfile, compose.yaml's ${IMAGE:-...} default is the
-                   recipe's own image; engine.image, when set, is the engine's image of that commit or ref.
-weights_commit:    when set, agrees with MODEL=https://huggingface.co/<model>@<commit> in the Dockerfile or
-                   MODEL_REVISION=<commit> in .env.example.
+weights_commit:    when set, agrees with MODEL_REVISION=<commit> in .env.example.
 A recipe without an engine pin passes with a note.
 """
 import json
@@ -32,8 +28,6 @@ def check(d, strict):
     e = k.get('engine')
     if not e:
         return [], 'no engine pin'
-    compose = (d / 'compose.yaml').read_text() if (d / 'compose.yaml').exists() else ''
-    dockerfile = (d / 'Dockerfile').read_text() if (d / 'Dockerfile').exists() else ''
     env_example = (d / '.env.example').read_text() if (d / '.env.example').exists() else ''
     bad = []
     for f in ('repo', 'ref', 'pin'):
@@ -75,32 +69,10 @@ def check(d, strict):
                     bad.append(f'{cf.name} image `{img_expr}` is not a ${"{<ENGINE>_IMAGE:-...}"} default image')
                 elif m.group(2) != want:
                     bad.append(f'{cf.name} pins {m.group(2)}, kindling.json says {want}')
-    elif pin == 'source':
-        if not commit:
-            bad.append('engine.commit is missing: a source pin builds that commit')
-        img = e.get('image')
-        if img and commit and not (img.endswith(':sha-' + commit[:7]) or img.endswith(':' + e.get('ref', ''))):
-            bad.append(f'engine.image {img} is not the engine at {commit[:7]} or {e.get("ref")}')
-        # with a Dockerfile, the recipe's own image is what compose.yaml runs; without one, the recipe builds the
-        # engine its own way (a serve script) and only the commit is checked
-        if dockerfile:
-            m = re.search(r'image: \$\{IMAGE:-([^}:\s]+)(:[^}\s]*)?\}', compose)
-            if not k.get('image'):
-                bad.append('image is missing: the Dockerfile builds the recipe\'s own image')
-            elif not m:
-                bad.append('compose.yaml has no ${IMAGE:-...} default image')
-            elif m.group(1) != k['image']:
-                bad.append(f'compose.yaml runs {m.group(1)}, kindling.json image is {k["image"]}')
     elif pin:
-        bad.append(f'engine.pin {pin} is not image or source')
+        bad.append(f'engine.pin {pin} is not image')
 
     if k.get('weights_commit'):
-        m = re.search(r'MODEL=https://huggingface\.co/([^@\s]+)@([0-9a-f]{40})', dockerfile)
-        if m:
-            if m.group(1) != k.get('model'):
-                bad.append(f'the Dockerfile boots {m.group(1)}, kindling.json model is {k.get("model")}')
-            if m.group(2) != k['weights_commit']:
-                bad.append(f'the Dockerfile pins weights {m.group(2)[:8]}, weights_commit is {k["weights_commit"][:8]}')
         me = re.search(r'^MODEL_REVISION=([0-9a-f]{40})\s*$', env_example, re.M)
         if me and me.group(1) != k['weights_commit']:
             bad.append(f'.env.example pins MODEL_REVISION {me.group(1)[:8]}, weights_commit is {k["weights_commit"][:8]}')

@@ -6,7 +6,7 @@
    count of the default config; `variant` is `<quant>[-<tag>]-<engine>`. A new hardware slug goes in
    [`hardware.json`](hardware.json) in the same pull request.
 2. Write its `kindling.json` ([schema](schema/kindling.v1.json)). Required: `version` (1), `id`, `status`, `title`,
-   `configs`. `id` is permanent: it names the image, the site card, the CLI argument and the tags. For a new recipe use
+   `configs`. `id` is permanent: it names the site card, the CLI argument and the recipe's history tags. For a new recipe use
    `<model>-<quant>[-<tag>]-<n>x-<hardware short name>`, like the existing ones. Only numbers you measured go in
    `configs` (see ["Benchmarking"](#benchmarking)); put the conditions (date, engine commit, settings, benchmark) in
    each config's `notes`.
@@ -45,8 +45,9 @@ Every recipe looks and runs the same way. [`template/`](template/) is the skelet
   (presets, manifests, kv-store config) are bind-mounted read-only from the folder.
 - Every `${VAR}` that compose.yaml references is documented in `.env.example`.
 
-The lint runs warn-only while the conversions of #2 land; when they have, `recipes.yml` runs it with `--strict` and
-it fails CI. Run it yourself before you commit:
+Any `Dockerfile` in a non-external, non-retired recipe is always a hard error (`::error`, exit 1). Other lint findings
+run warn-only while the conversions of #2 land; when they have, `recipes.yml` runs it with `--strict` and it fails CI.
+Run it yourself before you commit:
 
 ```bash
 python3 tools/lint_recipe.py glm-5.3/dgx-spark/4x/exlr8-gr8   # one recipe
@@ -148,27 +149,12 @@ keys strictly (`required: ["code", "prose", "structured"]`, `additionalPropertie
 
 ## Engine pins
 
-A gr8 recipe pins its engine in `kindling.json` `engine`, and `tools/check_pin.py` (CI: `recipes.yml`) keeps the
-other files in agreement:
+A recipe pins its engine in `kindling.json` `engine`, and `tools/check_pin.py` (CI: `recipes.yml`) keeps `compose.yaml`
+and `.env.example` in agreement:
 
-- `pin: "image"`: `compose.yaml` runs gr8's published image, `${GR8_IMAGE:-<engine.image>@<engine.image_digest>}`.
-  While a gr8 release is unpublished, `commit` and `image_digest` may both be empty; fill them when it lands.
-- `pin: "source"`: the recipe's `Dockerfile` builds gr8 from `engine.commit`. Before a local build, put the source in
-  place with `tools/engine.sh <path>` (or `npx @kindlingai/recipe <id> --engine`); it lands in `<path>/gr8`, which is
-  gitignored. To move the recipe to another gr8 commit, change `engine.commit` (and `engine.ref`). `compose.yaml` runs
-  the recipe's own image, `${IMAGE:-<image>:latest}`.
-
-## Images
-
-A recipe whose `kindling.json` has a `build` object gets its image built by CI
-([`recipe-image.yml`](.github/workflows/recipe-image.yml), called from `recipes.yml` when the folder changes): pull
-requests build it and run the folder's `smoke.sh IMAGE` (no GPU), `main` pushes `latest`, `main` and `sha-<commit>`
-to `image`. `build.nvcc_cache` names the gr8 compile cache kept between runs. To publish a named version, push a tag
-`<id>/v<version>` (or `<id>/stable-<n>`); the image gets the part after the slash. Run any recipe's build by hand
-with the Recipes workflow's dispatch (`recipe`: an id, or `all`).
-
-Each image keeps the name it had when the recipe was its own repo, so the `ghcr.io/kindlingai/<id>` package must give
-this repo write access (package settings → Manage Actions access).
+- `pin: "image"`: `compose.yaml` runs the engine's published image, `${<ENGINE>_IMAGE:-<engine.image>@<engine.image_digest>}`
+  (e.g. `GR8_IMAGE`, `VLLM_IMAGE`). While a release is unpublished, `commit` and `image_digest` may both be empty; fill
+  them when it lands.
 
 ## History
 
@@ -184,9 +170,9 @@ history as a repo of its own, the folder at its root.
 tools/adopt.sh <repo> <path> [id]     # merges kindlingai/<repo> into <path> with its history; tags become <id>/<name>
 ```
 
-Then, in the same pull request: delete the folder's `.github/` (port anything it did to the root workflows; image
-smoke tests go to `smoke.sh`), `.gitmodules` and its `gr8` submodule (`git rm --cached <path>/gr8`; the pin moves to
-`engine.commit` with `pin: "source"`), `check.py`, and a `LICENSE` identical to the root one; add `id` and `status` to
-its `kindling.json`; point its README at the monorepo (quickstart, issue links). After the merge: merge or close the
-old repo's open pull requests, move its open issues (`gh issue transfer <n> kindlingai/recipes`), push a pointer README
-to it, and archive it. Archive rather than delete, so its URL, stars and links keep working.
+Then, in the same pull request: delete the folder's `.github/` (port anything it did to the root workflows), `.gitmodules`
+and its `gr8` submodule (`git rm --cached <path>/gr8`; pin the engine's published image in `engine` with `pin: "image"`),
+`check.py`, and a `LICENSE` identical to the root one; add `id` and `status` to its `kindling.json`; point its README
+at the monorepo (quickstart, issue links). After the merge: merge or close the old repo's open pull requests, move its
+open issues (`gh issue transfer <n> kindlingai/recipes`), push a pointer README to it, and archive it. Archive rather than
+delete, so its URL, stars and links keep working.

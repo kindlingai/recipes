@@ -74,18 +74,9 @@ def check_recipe(rel, k, hardware, validator):
         bad.append(f'the default config runs on {default_config(k)["nodes"]}, the folder says {count}')
     if len(set(ids)) != len(ids):
         bad.append('config ids repeat')
-    d = ROOT / rel
     if k['status'] != 'external':
         if variant.endswith('-gr8') and 'engine' not in k:
             bad.append('a gr8 recipe needs an engine pin')
-        if (d / 'Dockerfile').exists() and 'image' not in k:
-            bad.append('the recipe has a Dockerfile but no image')
-        if 'build' in k:
-            for f in ('Dockerfile', 'smoke.sh'):
-                if not (d / f).exists():
-                    bad.append(f'build is set but {f} is missing')
-            if 'image' not in k:
-                bad.append('build is set but image is not')
     return bad
 
 
@@ -125,9 +116,8 @@ def collect():
         problems += [f'{rel}/kindling.json: {b}' for b in bad]
         if not bad:
             entries.append(entry(rel, k, hardware))
-    for key in ('id', 'image'):
-        seen = Counter(e['kindling'].get(key) for e in entries if e['kindling'].get(key))
-        problems += [f'{key} {v!r} is used by {n} recipes' for v, n in seen.items() if n > 1]
+    seen = Counter(e['kindling'].get('id') for e in entries if e['kindling'].get('id'))
+    problems += [f'id {v!r} is used by {n} recipes' for v, n in seen.items() if n > 1]
     big = 1 << 31
     entries.sort(key=lambda e: ((e['kindling'].get('site') or {}).get('order', big), place(e)))
     return hardware, entries, problems

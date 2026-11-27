@@ -3,8 +3,9 @@
 
   python3 tools/lint_recipe.py [DIR ...] [--strict]
 
-Without DIRs, every non-external recipe. Without --strict (the mode CI runs until issue #2's conversions land),
-findings print as `::warning` annotations and the exit code is 0; --strict prints `::error` annotations and exits 1.
+Without DIRs, every non-external, non-retired recipe. Any Dockerfile in a non-external, non-retired recipe is always
+a hard error (`::error`, exit 1). Without --strict (the mode CI runs until issue #2's conversions land), other
+findings print as `::warning` annotations and exit 0; --strict prints `::error` annotations and exits 1.
 
 Checks:
   required files   README.md, AGENTS.md, kindling.json, compose.yaml, .env.example, docs/card.png, .gitignore
@@ -152,8 +153,9 @@ def findings_for(rel):
                 if not re.search(r'\b' + re.escape(var) + r'\b', envtext):
                     add('.env.example', f'documents nothing about `{var}`, which compose.yaml references')
 
-    if list(d.glob('Dockerfile*')):
-        add('Dockerfile', 'present; the standard runs the published engine image, no local build')
+    for df in sorted(p for p in d.rglob('Dockerfile*') if p.is_file()):
+        add(df.relative_to(d).as_posix(),
+            'present; recipe images are retired — run a published engine image, no local build')
 
     return out
 
@@ -166,7 +168,7 @@ def recipes():
             k = json.loads(f.read_text())
         except json.JSONDecodeError:
             k = {}
-        if k.get('status') != 'external':
+        if k.get('status') not in ('external', 'retired'):
             out[rel] = k
     return out
 
@@ -182,20 +184,32 @@ def main():
         dirs = sorted(recipes())
 
     total = 0
+    hard_errors = 0
     for rel in dirs:
-        if not (ROOT / rel / 'kindling.json').is_file():
+        kf = ROOT / rel / 'kindling.json'
+        if not kf.is_file():
             raise SystemExit(f'lint_recipe: {rel} has no kindling.json')
+        try:
+            status = json.loads(kf.read_text()).get('status')
+        except (OSError, json.JSONDecodeError):
+            status = None
+        if status in ('external', 'retired'):
+            print(f'lint: {rel}: skipped ({status})')
+            continue
         found = findings_for(rel)
         total += len(found)
-        tag = 'error' if strict else 'warning'
         for f, msg in found:
+            is_hard = Path(f).name.startswith('Dockerfile')
+            tag = 'error' if (strict or is_hard) else 'warning'
             print(f'::{tag} file={rel}/{f}::{msg}')
+            if is_hard:
+                hard_errors += 1
         state = 'ok' if not found else f'{len(found)} finding(s)'
         print(f'lint: {rel}: {state}')
 
     if not total:
         print(f'lint: {len(dirs)} recipe(s), all meet the standard')
-    if strict and total:
+    if hard_errors or (strict and total):
         sys.exit(1)
 
 

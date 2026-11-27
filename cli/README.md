@@ -12,7 +12,6 @@ Then follow the recipe's README: usually edit `.env`, then `docker compose up -d
 | Option | |
 |---|---|
 | `<id\|path> [dir]` | the recipe, by id (`glm-5.3-exlr8-3x-spark`) or path (`glm-5.3/dgx-spark/3x/exlr8-gr8`); `dir` defaults to `./<id>` and must be empty or absent |
-| `--engine` | also check out the engine source the recipe's Dockerfile builds (`kindling.json` `engine.commit`) into `<dir>/gr8`, for `docker compose build`. What `git clone --recurse-submodules` gave when each recipe was its own repo. |
 | `--history` | make `<dir>` a git repo of the recipe's own history, the folder as its root: the old repo's commits (same ids and tags) followed by the recipe's commits in kindlingai/recipes |
 | `--ref <ref>` | a branch, tag or commit of kindlingai/recipes |
 | `--repo <url>` | a fork or local clone of kindlingai/recipes |

@@ -29,9 +29,9 @@ REUSE_PREFIX="${REUSE_PREFIX:-0}"
 WORK_DIR="${WORK_DIR:-/tmp/ink2-gr8}"
 
 export GR8_INK2_DF2_Q8="${GR8_INK2_DF2_Q8:-0}"
-# PF_MX8_MOE=2 caches 23.49 GiB of extra MXFP8 prefill MoE weights (designed for 128 GB Spark);
-# on a 32 GB RTX 5090, PF_MX8_MOE=0 keeps full VRAM headroom for weights + maximized KV cache.
-export GR8_INK2_PF_MX8_MOE="${GR8_INK2_PF_MX8_MOE:-0}"
+# PF_MX8_MOE=3 uses a 1-slot (0.98 GiB) layer-wise streaming MXFP8 MoE prefill scratch overlapped with attention
+# (set =4 for 2-slot 1.96 GiB double-buffering, or =0 to disable). Decode/verify stays W*A16 exlr8 trellis.
+export GR8_INK2_PF_MX8_MOE="${GR8_INK2_PF_MX8_MOE:-3}"
 export GR8_INK2_MX8_DENSE="${GR8_INK2_MX8_DENSE:-2}"
 export GR8_INK2_MX8_LM_HEAD="${GR8_INK2_MX8_LM_HEAD:-0}"
 export GR8_INK2_CUBLAS_PREFILL="${GR8_INK2_CUBLAS_PREFILL:-1}"
@@ -69,13 +69,14 @@ if [ "$FAST_MODE" = "1" ]; then
   export GR8_INK2_S2_COST="${GR8_INK2_S2_COST:-14.0,2.5,2.0,0.4,0.0,0.0}"
 fi
 
-# Dedicated 32 GB RTX 5090 (32,607 MiB) maximized per-variant defaults (~2 GiB free headroom).
+# Dedicated 32 GB RTX 5090 (32,607 MiB) maximized per-variant defaults (~2.5-3.3 GiB free at boot;
+# >=1.65 GiB free after ~0.9 GiB lazy CUDA graph capture growth at 110K+ context).
 # Override CAP / SESSIONS / PREFILL in .env for shared-GPU hosts or custom geometries.
 if [ "$LONG_MODE" = "1" ]; then
   SESSIONS="${USER_SESSIONS:-1}"
-  PREFILL="${USER_PREFILL:-256}"
+  PREFILL="${USER_PREFILL:-4096}"
   case "$VARIANT" in
-    k4)     DEFAULT_CAP=245760 ;;
+    k4)     DEFAULT_CAP=229376 ;;
     bit325) DEFAULT_CAP=303104 ;;
     bit250) DEFAULT_CAP=360448 ;;
     bit225) DEFAULT_CAP=385024 ;;
@@ -85,7 +86,7 @@ if [ "$LONG_MODE" = "1" ]; then
   CAP="${USER_CAP:-${CAP_LONG:-$DEFAULT_CAP}}"
 else
   SESSIONS="${USER_SESSIONS:-4}"
-  PREFILL="${USER_PREFILL:-512}"
+  PREFILL="${USER_PREFILL:-4096}"
   case "$VARIANT" in
     k4)     DEFAULT_CAP=49152 ;;
     bit325) DEFAULT_CAP=65536 ;;

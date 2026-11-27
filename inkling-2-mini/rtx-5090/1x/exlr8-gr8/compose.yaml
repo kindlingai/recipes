@@ -12,9 +12,9 @@
 name: inkling-2-mini-1x-rtx5090
 services:
   gr8:
-    # The engine pin: kindlingai/gr8 v1.3.1 (9f4f9c4, multi-arch linux/amd64 sm_120a + linux/arm64);
+    # The engine pin: kindlingai/gr8 main (2c221e9, multi-arch linux/amd64 sm_120a + linux/arm64);
     # kindling.json "engine" names the same digest.
-    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863}
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:sha-2c221e9@sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1}
     container_name: inkling-2-mini-1x-rtx5090
     entrypoint: ["/bin/bash", "/recipe/entrypoint.sh"]
     env_file:

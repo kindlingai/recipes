@@ -1,0 +1,67 @@
+# GLM-5.3 on two DGX Sparks (GB10): gr8's published image, pinned by tag and digest, with .env.
+# No engine is compiled here and there is no Dockerfile: the image runs exactly as published. Copy .env.example to
+# .env next to this file, set PEERS, and run the SAME compose.yaml + .env on both boxes. The head (the first
+# address in PEERS) serves the OpenAI API on port 8100 (host network).
+#
+#   cp .env.example .env
+#   docker compose up -d                                  # the first boot fetches this box's part of the model
+#   docker compose logs -f                                # this box's supervisor
+#   docker compose exec gr8 /opt/gr8/gr8 glm53 health     # on the head, once it serves
+#   docker compose exec gr8 /opt/gr8/gr8 glm53 down       # on the head: stops both ranks
+#
+# RULE (gr8's): no option default lives here. The launcher in the image owns every default, and .env carries this
+# recipe's settings. The only values set below are the container's own paths.
+name: glm-5.3-exlr8-2x-spark
+services:
+  gr8:
+    # The engine pin: kindlingai/gr8 main (fa5d82d3); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:main@sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59}
+    container_name: glm53-2x
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Container paths so bare-metal paths in .env cannot override the container layout.
+      - GR8_WORK_DIR=/var/lib/gr8/home
+      - MODEL_CACHE=/var/lib/gr8/cache
+      - PY=/usr/bin/python3
+      - FRONT_BIN=/opt/gr8/bin/g6front-rs
+    # Host networking: RoCE v2 fabric, supervisor control (7340), S2 (7341), and OpenAI API on port 8100.
+    network_mode: host
+    # Launcher checks the host process table to avoid colliding with another g6m4 instance.
+    pid: host
+    devices:
+      - /dev/infiniband:/dev/infiniband
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1
+      core: 0
+    cap_drop: [ALL]
+    cap_add: [IPC_LOCK]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: ${GR8_STOP_GRACE:-30s}
+    volumes:
+      - ${GR8_CACHE:-cache}:/var/lib/gr8/cache
+      - ${GR8_HOME:-home}:/var/lib/gr8/home
+    healthcheck:
+      test: ["CMD-SHELL", "exec /opt/gr8/gr8 \"$${GR8_MODEL}\" health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30m
+    restart: on-failure
+
+volumes:
+  cache:
+  home:

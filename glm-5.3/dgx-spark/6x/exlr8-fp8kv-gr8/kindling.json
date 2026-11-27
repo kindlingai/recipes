@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "id": "glm-5.3-exlr8-fp8kv-6x-spark",
+  "status": "stable",
+  "title": "GLM-5.3",
+  "variant": "exlr8 bit325, pure FP8 KV, 1.51M pool (1M ctx), uncapped exact MoE",
+  "summary": "Full GLM-5.3 on six DGX Sparks at TP=6 with gr8 v1.2.0 using pure FP8 KV cache (KV_FORMAT=fp8, KVB=bf16, zero INT4 KV quantization), uncapped exact MoE routing (MOE_UNION_CAP=0, KL=0.00000), DFlash + MTP=2 drafting, and a 1,507,328-token FP8 KV pool (1M max context). Live-verified at 78.0 tok/s code, RealMark 1,236.1 Grade A, 959K needle recall, 4x235K (972K resident) multi-session stress, and a TP=6 K4 (bit390) option.",
+  "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+  "weights_commit": "3e388b45b26ca4558351d22994afcfc85b99af74",
+  "stack": [
+    "gr8",
+    "exlr8",
+    "DFlash",
+    "MTP",
+    "FP8 KV"
+  ],
+  "engine": {
+    "repo": "kindlingai/gr8",
+    "ref": "v1.2.0",
+    "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+    "pin": "image",
+    "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+    "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
+  },
+  "default_config": "tp6",
+  "configs": [
+    {
+      "id": "tp6",
+      "label": "TP=6 · bit325 FP8 KV",
+      "nodes": 6,
+      "decode": {
+        "code": 78.0,
+        "prose": 44.3,
+        "structured": 93.1
+      },
+      "decode_extra": {
+        "counting": 99.7
+      },
+      "decode_ci95": {
+        "code": [74.2, 82.6],
+        "prose": [41.3, 47.5],
+        "structured": [89.0, 97.3],
+        "counting": [99.1, 100.3]
+      },
+      "decode_prompt_tokens": [46, 54],
+      "prefill": [
+        { "context": 8192, "tps": 2016 },
+        { "context": 32768, "tps": 2347 },
+        { "context": 131072, "tps": 1670 },
+        { "context": 262144, "tps": 1281 }
+      ],
+      "concurrency": [
+        { "streams": 1, "aggregate_tps": 57.7, "per_stream_tps": 62.4, "ttft_p50_s": 0.35 },
+        { "streams": 2, "aggregate_tps": 86.1, "per_stream_tps": 53.6, "ttft_p50_s": 0.61 },
+        { "streams": 4, "aggregate_tps": 101.3, "per_stream_tps": 31.9, "ttft_p50_s": 1.19 },
+        { "streams": 8, "aggregate_tps": 123.0, "per_stream_tps": 18.2, "ttft_p50_s": 2.60 }
+      ],
+      "concurrency_prompt_tokens": [48, 55],
+      "max_context": 1048576,
+      "kv_pool_tokens": 1507328,
+      "max_concurrent": 8,
+      "max_tokens_per_chat": [
+        { "chats": 1, "tokens": 1048576, "source": "measured" },
+        { "chats": 2, "tokens": 671730, "source": "computed" },
+        { "chats": 3, "tokens": 393202, "source": "computed" },
+        { "chats": 4, "tokens": 253938, "source": "computed" },
+        { "chats": 8, "tokens": 45042, "source": "computed" }
+      ],
+      "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 4x150K (616K resident, 99.95% cache), 4x235K (972K resident, 99.98% cache)",
+      "lowest_mem_available_gib": 6.41,
+      "quality": [
+        { "name": "RealMark RIPAL (C=1/2/4)", "value": "1,236.1 Grade A (97.1-97.8% match, 16/16)" },
+        { "name": "Needle recall", "value": "found at 128K (131,242 tok); calibrated 32K-959K 5/5" },
+        { "name": "Live multi-session proofs", "value": "4x150K (616K res), 4x235K (972K res): 100%" },
+        { "name": "Smoke test", "value": "14 of 14" }
+      ],
+      "notes": "Measured 2026-11-26 on gr8 v1.2.0 (ab2eb95) across 6 DGX Sparks on a 200G RoCE v2 switch, GPU clocks uncapped in timed stages (0% thermal throttle). bit325 experts (v0.6 @ 3e388b45), pure FP8 KV (bin/g6m4, KV_FORMAT=fp8, KVB=bf16, CAP=1,507,328, 4,352 physical pages/rank, max_model_len=1,048,576, SHARE_LIMIT=32,768, SESS=8, GR8_KV_SHARE_PAGES=1), DFlash + MTP=2, PF_OWN=3 + QO_CACHE, uncapped exact MoE routing (MOE_UNION_CAP=0, KL=0.00000). Harness: gr8 bench/bench.py default level + RealMark (957f600, C=1/2/4 --probe, enable_thinking=false) + calibrated needles & multi-session stress. MemAvailable: 7.29-7.80 GiB post-boot, 6.56 GiB min during RealMark, 6.41 GiB min during 972K stress."
+    },
+    {
+      "id": "tp6-k4",
+      "label": "TP=6 · K4 (bit390) FP8 KV",
+      "nodes": 6,
+      "decode": {
+        "code": 72.2,
+        "prose": 42.4
+      },
+      "decode_ci95": {
+        "code": [67.4, 79.0],
+        "prose": [40.9, 43.8]
+      },
+      "decode_prompt_tokens": [46, 54],
+      "prefill": [
+        { "context": 8192, "tps": 2125 },
+        { "context": 32768, "tps": 2293 },
+        { "context": 131072, "tps": 2019 }
+      ],
+      "concurrency": [
+        { "streams": 1, "aggregate_tps": 54.9, "per_stream_tps": 57.8, "ttft_p50_s": 0.37 },
+        { "streams": 2, "aggregate_tps": 79.5, "per_stream_tps": 44.5, "ttft_p50_s": 0.63 },
+        { "streams": 4, "aggregate_tps": 90.0, "per_stream_tps": 27.0, "ttft_p50_s": 1.25 },
+        { "streams": 8, "aggregate_tps": 106.6, "per_stream_tps": 16.5, "ttft_p50_s": 2.64 }
+      ],
+      "concurrency_prompt_tokens": [48, 55],
+      "max_context": 524274,
+      "kv_pool_tokens": 524288,
+      "max_concurrent": 8,
+      "max_tokens_per_chat": [
+        { "chats": 1, "tokens": 524274, "source": "measured" },
+        { "chats": 2, "tokens": 180210, "source": "computed" },
+        { "chats": 3, "tokens": 65522, "source": "computed" },
+        { "chats": 4, "tokens": 28658, "source": "computed" },
+        { "chats": 8, "tokens": 14322, "source": "computed" }
+      ],
+      "lowest_mem_available_gib": 10.41,
+      "quality": [
+        { "name": "Smoke test", "value": "14 of 14" },
+        { "name": "Suspect characters", "value": "0 replies" }
+      ],
+      "notes": "K4 quality option on 6 DGX Sparks: VARIANT=bit390 (3.90 bpw, ~60.0 GB/rank, v0.6 @ 3e388b45), pure FP8 KV (CAP=524,288, max_model_len=524,274, SHARE_LIMIT=32,768, SESS=8), DFlash + MTP=2, MOE_UNION_CAP=0, gr8 v1.2.0 (ab2eb95). Measured 2026-11-26 via gr8 bench/bench.py --quick. MemAvailable: 10.60-11.08 GiB post-boot, 10.41-10.92 GiB post-bench."
+    }
+  ]
+}

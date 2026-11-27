@@ -6,21 +6,21 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-Inkling-2-Mini on **one NVIDIA RTX 5090 (32 GB)** at `TP=1`, served by [gr8](https://github.com/kindlingai/gr8) (`v1.3.1`, multi-arch `linux/amd64` `sm_120a`) from [kindlingai/inkling-2-mini-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/inkling-2-mini-exlr8-k2-k3-k4):
+Inkling-2-Mini on **one NVIDIA RTX 5090 (32 GB)** at `TP=1`, served by [gr8](https://github.com/kindlingai/gr8) (`main@2c221e9`, multi-arch `linux/amd64` `sm_120a`) from [kindlingai/inkling-2-mini-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/inkling-2-mini-exlr8-k2-k3-k4):
 one single pack gives load-time width selection across:
-- **`bit325` (3.25-bit, default)** — in our 1,362-task evals, 3.25-bit performed nearly the same as 4-bit across coding and math except for graduate-level science (GPQA), while running faster and fitting a **`262,144`-token KV pool** (`65,536 × 4`) or **`303K` single-stream** on 32 GB VRAM with **8/8 exact DFlash greedy parity** (`1.90×–6.61×` speedup).
-- **`k4` (4-bit, higher quality)** — recommended for maximum quality and graduate-level science (GPQA): **`-27.4%` KL** vs Official NVFP4 and ties Official W4A4 on 1,362 tasks (`93.54%`, McNemar `p=0.6655`), fitting a **`196,608`-token KV pool** (`49,152 × 4`) or **`245K` single-stream**.
-- **`bit225` (2.25-bit, fast version)** — `13.37 GB` device image (`0` extra weight bytes), **`0.041282` mean KL** (`-21.3%` lower KL than `k2`), hitting up to **`354.4 tok/s`** code, **`768.3 tok/s`** `C=4` agg, and **`528.1 tok/s`** `C=6` Thinking-ON prose, fitting a **`327K–360K` KV pool** or **`385K` single-stream**.
+- **`bit325` (3.25-bit, default)** — in our 1,362-task evals, 3.25-bit performed nearly the same as 4-bit across coding and math except for graduate-level science (GPQA), while running faster and fitting a **`262,144`-token KV pool** (`65,536 × 4`) or **`303K` single-stream** on 32 GB VRAM with **10,076 tok/s** 4K cold prefill and **8/8 exact DFlash greedy parity** (`1.90×–6.58×` speedup).
+- **`k4` (4-bit, higher quality)** — recommended for maximum quality and graduate-level science (GPQA): **`-27.4%` KL** vs Official NVFP4 and ties Official W4A4 on 1,362 tasks (`93.54%`, McNemar `p=0.6655`), fitting a **`196,608`-token KV pool** (`49,152 × 4`) or **`224K` single-stream**.
+- **`bit225` (2.25-bit, fast version)** — `13.37 GB` device image (`0` extra weight bytes), **`0.041282` mean KL** (`-21.3%` lower KL than `k2`), hitting up to **`354.4 tok/s`** code, **`768.3 tok/s`** `C=4` agg, **`528.1 tok/s`** `C=6` Thinking-ON prose, and **`10,108 tok/s`** 4K cold prefill, fitting a **`327K–360K` KV pool** or **`385K` single-stream**.
 
 A compact **279 MB DFlash speculative drafter** is bundled inside the weight pack and auto-discovered with zero extra flags. This recipe runs the published `linux/amd64` `gr8` image with `compose.yaml`, `entrypoint.sh`, and `.env` — nothing is compiled on the host.
 
 ## Results
 
-**`bit325` (3.25-bit, default):** **328.1 tok/s** code · **424.5 tok/s** math · **341.6 tok/s** JSON · **201.1 tok/s** prose · **590.9 tok/s** counting · **764.6 tok/s** `C=4` agg (`211.9`/user) · **418.3 tok/s** `C=6` thinking-ON · **8/8 exact DFlash greedy parity** · **4.27 s** boot from local NVMe
+**`bit325` (3.25-bit, default):** **328.1 tok/s** code · **424.5 tok/s** math · **341.6 tok/s** JSON · **201.1 tok/s** prose · **592.5 tok/s** counting · **777.0 tok/s** `C=4` agg (`213.8`/user) · **10,076 tok/s** 4K prefill (`0.41 s` TTFT) · **8/8 exact DFlash greedy parity** · **4.01 s** boot from local NVMe
 **`k4` (4-bit, higher quality / GPQA):** **274.4 tok/s** code · **438.5 tok/s** math · **337.1 tok/s** JSON · **183.6 tok/s** prose · **593.8 tok/s** counting · **649.1 tok/s** `C=4` agg · **`0.010460` mean KL** (`-27.4%` vs Official NVFP4) · **93.54%** on 1,362 tasks · **4.76 s** boot
-**`bit225` (2.25-bit, fast version):** **354.4 tok/s** code · **394.0 tok/s** math (`436.3` std) · **376.5 tok/s** JSON (`384.1` std) · **506.2 tok/s** counting (`604.8` std) · **768.3 tok/s** `C=4` agg · **528.1 tok/s** `C=6` thinking-ON · **`0.041282` mean KL** (`-21.3%` vs `k2`) · **3.76 s** boot
+**`bit225` (2.25-bit, fast version):** **354.4 tok/s** code · **394.0 tok/s** math (`436.3` std) · **376.5 tok/s** JSON (`384.1` std) · **506.2 tok/s** counting (`604.8` std) · **768.3 tok/s** `C=4` agg · **528.1 tok/s** `C=6` thinking-ON · **10,108 tok/s** 4K prefill (`10,454` 2-slot) · **`0.041282` mean KL** (`-21.3%` vs `k2`) · **3.56–3.76 s** boot
 
-One NVIDIA GeForce RTX 5090 (32 GB, `sm_120a`) with local NVMe storage, `TP=1`, measured 2026-11-25 on `gr8` commit `6b874803` ([PR #615](https://github.com/kindlingai/gr8/pull/615)) with bundled DFlash (`MTP=7`, auto-discovered, zero extra flags), `GR8_INK2_PF_MX8_MOE=0`, `GR8_INK2_MX8_DENSE=2`, `GR8_INK2_MX8_LM_HEAD=0` (and `MX8_DENSE=1`, `MX8_LM_HEAD=1`, `GR8_S2_ADAPT=1` for `bit225-fast` and `k2-fast`). Every speed is in tokens per second (tok/s). Re-measurement on the published `gr8 v1.3.1` `linux/amd64` container image is pending RTX 5090 hardware.
+One NVIDIA GeForce RTX 5090 (32 GB, `sm_120a`) with local NVMe storage, `TP=1`, measured 2026-11-26 on `gr8` [PR #640](https://github.com/kindlingai/gr8/pull/640) (`main` commit `2c221e98`; single-stream 8-domain decode baselines from 2026-11-25 commit `6b874803`, re-verified 8/8 exact greedy parity + `C=1 328.8` / `C=2 544.6` / `C=4 777.0 tok/s`) with bundled DFlash (`MTP=7`, auto-discovered, zero extra flags), `GR8_INK2_PF_MX8_MOE=3`, `PREFILL=4096`, `GR8_INK2_MX8_DENSE=2`, `GR8_INK2_MX8_LM_HEAD=0` (and `MX8_DENSE=1`, `MX8_LM_HEAD=1`, `GR8_S2_ADAPT=1` for `bit225-fast` and `k2-fast`). Every speed is in tokens per second (tok/s).
 
 ### One request, 8 domains & concurrency (`MTP=7`, 49–97 prompt tokens, 256 max tokens)
 
@@ -33,22 +33,26 @@ One NVIDIA GeForce RTX 5090 (32 GB, `sm_120a`) with local NVMe storage, `TP=1`, 
 | Prose (tok/s) | 201.1 | 183.6 | 187.3 | 190.4 | **218.4** |
 | Narrative (tok/s) | 171.8 | 166.2 | 161.4 | 185.7 | **188.2** |
 | Summary (tok/s) | 224.0 | 200.9 | 202.7 | 218.5 | **231.0** |
-| Counting (tok/s) | 590.9 | 593.8 | **604.8** | 506.2 | 510.8 |
-| `C=2` Agg Decode (tok/s) | **520.1** | 441.2 | 408.6 | 519.1 | 410.2 |
-| `C=4` Agg Decode (tok/s) | 764.6 (`211.9`/u) | 649.1 (`198.9`/u) | 642.2 (`220.1`/u) | **768.3** (`200.1`/u) | 608.4 (`170.7`/u) |
+| Counting (tok/s) | 592.5 | 593.8 | **604.8** | 506.2 | 510.8 |
+| `C=2` Agg Decode (tok/s) | **544.6** (`296.7`/u) | 441.2 | 408.6 | 519.1 | 410.2 |
+| `C=4` Agg Decode (tok/s) | **777.0** (`213.8`/u) | 649.1 (`198.9`/u) | 642.2 (`220.1`/u) | 768.3 (`200.1`/u) | 608.4 (`170.7`/u) |
 | `C=6` Agg Decode (tok/s) | 684.4 (`148.8`/u) | 575.4 (`135.3`/u) | 638.8 (`152.8`/u) | **701.8** (`129.6`/u) | 670.9 (`126.5`/u) |
 | Thinking-ON `C=1 / 2 / 4 / 6` (512 tok, `t=0.6`) | `143.3 / 236.5 / 354.0 / 418.3` | — | `159.4 / 256.9 / 398.7 / 490.9` | **`161.1 / 263.9 / 420.5 / 528.1`** | `171.8 / 258.2 / 436.6 / 516.5` |
-| NVMe Boot Time | **4.27 s** | 4.76 s | 4.02 s | **3.76 s** | 3.76 s |
+| NVMe Boot Time | **4.01 s** | 4.76 s | 4.02 s | **3.56–3.76 s** | **3.56 s** |
 
 ![Inkling-2-Mini bit225 fast preset on one RTX 5090: decode, prefill and concurrency](docs/card-bit225.png)
 
-### Cold prefill sweep (1× RTX 5090, `GR8_INK2_PF_MX8_MOE=0`, `GR8_INK2_MX8_DENSE=2`)
+### Cold prefill sweep (1× RTX 5090, `GR8_INK2_MX8_DENSE=2`, `bit325`)
 
-| Prefill chunk | 4K | 8K | 32K | 64K | 128K |
+| Mode / prefill chunk | 4K | 8K | 32K | 64K | 128K |
 |---|---:|---:|---:|---:|---:|
-| **`PREFILL=512` (default)** | **5,033.5** (`0.81 s`) | **4,990.9** (`1.64 s`) | **4,448.8** (`7.37 s`) | **3,851.5** (`17.02 s`) | **3,031.7** (`43.23 s`) |
-| `PREFILL=256` (`long` mode, `bit325`) | 3,516.3 (`1.16 s`) | 3,426.8 (`2.39 s`) | 2,902.1 (`11.29 s`) | 2,407.5 (`27.22 s`) | 1,798.1 (`72.89 s`) |
-| `PREFILL=256` (`long` mode, `k4`) | 3,480.3 (`1.18 s`) | 3,394.3 (`2.41 s`) | 2,878.9 (`11.38 s`) | 2,392.7 (`27.39 s`) | — |
+| **`PF_MX8_MOE=3`, `PREFILL=4096` (default, 0.98 GiB)** | **10,076.1** (`0.41 s`) | **9,579.9** (`0.86 s`) | **8,728.5** (`3.75 s`) | **7,636.6** (`8.58 s`) | **6,056.6** (`21.64 s`) |
+| `PF_MX8_MOE=4`, `PREFILL=4096` (2-slot, 1.96 GiB) | **10,395.5** (`0.39 s`) | **9,851.5** (`0.83 s`) | **9,010.7** (`3.64 s`) | **7,882.8** (`8.31 s`) | 6,257.5* (`20.95 s`) |
+| `PF_MX8_MOE=3`, `PREFILL=2048` | 7,239.8 (`0.57 s`) | 6,964.6 (`1.18 s`) | 6,536.8 (`5.01 s`) | 5,927.3 (`11.06 s`) | 4,951.1 (`26.47 s`) |
+| `PF_MX8_MOE=0`, `PREFILL=512` *(prior v1.3.1 baseline)* | 5,033.5 (`0.81 s`) | 4,990.9 (`1.64 s`) | 4,448.8 (`7.37 s`) | 3,851.5 (`17.02 s`) | 3,031.7 (`43.23 s`) |
+| `PF_MX8_MOE=0`, `PREFILL=256` *(prior `long` baseline)* | 3,516.3 (`1.16 s`) | 3,426.8 (`2.39 s`) | 2,902.1 (`11.29 s`) | 2,407.5 (`27.22 s`) | 1,798.1 (`72.89 s`) |
+
+*\*`PF_MX8_MOE=4` 128K measured on `k2` (`10,453.6` @ 4K, `6,257.5` @ 128K).*
 
 ### Choosing a preset (`VARIANT`): KL divergence & 1,362-task evaluation
 
@@ -64,32 +68,34 @@ Matched 40×2K (`81,920`-token) full-vocabulary `float64` KL against BF16 (`PPL 
 
 ### Maximized 32 GB VRAM context & concurrency presets
 
-`entrypoint.sh` automatically selects each variant's maximized dedicated 32 GB RTX 5090 (`32,607 MiB`) geometry, leaving ~2 GiB free VRAM headroom (computed from an exact linear VRAM model verified within `+/-8 MiB` across 12 live `nvidia-smi` measurements):
+`entrypoint.sh` automatically selects each variant's maximized dedicated 32 GB RTX 5090 (`32,607 MiB`) geometry with `GR8_INK2_PF_MX8_MOE=3` and `PREFILL=4096`, leaving `~2.5–3.3 GiB` free at boot (`>=1.65 GiB` free even after `~0.9 GiB` lazy CUDA graph capture growth at `110K+` context, computed from an exact linear VRAM model calibrated to live `nvidia-smi` measurements):
 
 | Preset (`.env`) | Active chats | Max tokens per chat | Total KV pool | `PREFILL` | `g6m4_ink2` VRAM | Dedicated 32 GB free |
 |---|---:|---:|---:|---:|---:|---:|
-| **Default (`VARIANT=bit325`)** | **4** | **65,536** | **262,144** | 512 | `29.71 GiB` | `~2.13 GiB` |
-| `VARIANT=k4` (or `PROFILE=k4`) | 4 | **49,152** | **196,608** | 512 | `29.74 GiB` | `~2.10 GiB` |
-| `PROFILE=bit225-fast` | 4 | **81,920** | **327,680** | 512 | `29.40 GiB` | `~2.45 GiB` |
-| `VARIANT=bit225` | 4 | **90,112** | **360,448** | 512 | `30.00 GiB` | `~1.84 GiB` |
-| `PROFILE=long` (`VARIANT=bit325`) | 1 | **303,104** | **303,104** | 256 | `29.87 GiB` | `~1.97 GiB` |
-| `VARIANT=k4`, `PROFILE=long` | 1 | **245,760** | **245,760** | 256 | `29.92 GiB` | `~1.93 GiB` |
-| `VARIANT=bit225`, `PROFILE=long` | 1 | **385,024** | **385,024** | 256 | `29.99 GiB` | `~1.85 GiB` |
-| `VARIANT=k2`, `PROFILE=long` | 1 | **401,408** | **401,408** | 256 | `29.87 GiB` | `~1.97 GiB` |
+| **Default (`VARIANT=bit325`)** | **4** | **65,536** | **262,144** | 4096 | `28.75 GiB` | `~3.10 GiB` |
+| `VARIANT=k4` (or `PROFILE=k4`) | 4 | **49,152** | **196,608** | 4096 | `28.83 GiB` | `~3.01 GiB` |
+| `PROFILE=bit225-fast` | 4 | **81,920** | **327,680** | 4096 | `28.58 GiB` | `~3.26 GiB` |
+| `VARIANT=bit225` | 4 | **90,112** | **360,448** | 4096 | `28.97 GiB` | `~2.87 GiB` |
+| `PROFILE=long` (`VARIANT=bit325`) | 1 | **303,104** | **303,104** | 4096 | `29.34 GiB` | `~2.50 GiB` |
+| `VARIANT=k4`, `PROFILE=long` | 1 | **229,376** | **229,376** | 4096 | `29.18 GiB` | `~2.66 GiB` |
+| `VARIANT=bit225`, `PROFILE=long` | 1 | **385,024** | **385,024** | 4096 | `29.05 GiB` | `~2.79 GiB` |
+| `VARIANT=k2`, `PROFILE=long` | 1 | **401,408** | **401,408** | 4096 | `28.83 GiB` | `~3.02 GiB` |
 
-*Shared-GPU host note:* If other services occupy VRAM on the card (for example ~7 GiB), override `CAP` and `PREFILL` in `.env` (e.g. `CAP=16384`, `SESSIONS=4`, `PREFILL=256`).
+*Shared-GPU host note:* If other services occupy VRAM on the card (for example ~7 GiB), override `CAP` in `.env` (e.g. `CAP=16384`, `SESSIONS=4`, `PREFILL=4096` or `CAP=135168`, `SESSIONS=1`, `PREFILL=4096`).
 
 ### Quality checks
 
-Measured live on 2026-11-25 on 1× NVIDIA RTX 5090 (32 GB, `gr8` commit `6b874803`):
+Measured live on 2026-11-26 on 1× NVIDIA RTX 5090 (32 GB, `gr8` PR #640 / `2c221e98`, `GR8_INK2_PF_MX8_MOE=3`, `PREFILL=4096`):
 
 | Check | Result |
 |---|---|
-| DFlash `K=7` vs `MTP=0` greedy parity (`bit325`) | **8 of 8 exact token-for-token** (`1.90×–6.61×` speedup) |
-| Needle recall at `35.4K` (`bit325`) | **PASS** (`2,906 tok/s`, `12.17 s`) |
-| Needle recall at `70.9K` (`bit325`) | **PASS** (`2,382 tok/s`, `29.78 s`) |
-| Cold prefill at `131,072` tokens | **PASS** (`3,031.7 tok/s` at `PREFILL=512`, `1,798.1 tok/s` at `PREFILL=256`) |
-| Boot to serving from local NVMe | `4.27 s` (`bit325`) / `4.76 s` (`k4`) / `3.76 s` (`bit225-fast`) |
+| DFlash `K=7` vs `MTP=0` greedy parity (`bit325`) | **8 of 8 exact token-for-token** (`1.90×–6.58×` speedup) |
+| Needle recall at `35.4K` (`bit325`) | **PASS** (`8,328 tok/s`, `4.25 s`) |
+| Needle recall at `70.9K` (`bit325`) | **PASS** (`7,287 tok/s`, `9.74 s`) |
+| Needle recall at `127.3K` (`bit325`) | **PASS** (`6,036 tok/s`, `21.09 s`) |
+| Needle recall at `243.7K` (`k2`, `262K` cap, `PF=2048`) | **PASS** (`3,851 tok/s`, `63.28 s`) |
+| Cold prefill at `131,072` tokens (`bit325`) | **PASS** (`6,056.6 tok/s`, `21.64 s` at `PREFILL=4096`) |
+| Boot to serving from local NVMe | `4.01 s` (`bit325`) / `3.56 s` (`k2`) |
 
 [kindling.json](kindling.json) holds the `1gpu-bit325`, `1gpu-k4`, and `1gpu-bit225` results in machine-readable form. Both cards above are drawn from it.
 
@@ -97,7 +103,7 @@ Measured live on 2026-11-25 on 1× NVIDIA RTX 5090 (32 GB, `gr8` commit `6b87480
 
 ```bash
 npx @kindlingai/recipe inkling-2-mini-exlr8-1x-rtx5090 && cd inkling-2-mini-exlr8-1x-rtx5090
-# the CLI already copied .env.example to .env (defaults to bit325, 65536 x 4 = 262K KV pool)
+# the CLI already copied .env.example to .env (defaults to bit325, 65536 x 4 = 262K KV pool, PREFILL=4096)
 
 # Download the weight pack (~31 GB, includes bundled 279 MB DFlash drafter)
 hf download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 \
@@ -146,11 +152,11 @@ docker compose down
 | `MODEL_DIR` | `./models/inkling-2-mini-exlr8-k2-k3-k4` | Host directory holding the weight pack, mounted read-only inside the container |
 | `VARIANT` | `bit325` | Width manifest preset: `bit325` (default), `k4`, `bit225`, `bit250`, or `k2` |
 | `PROFILE` | unset | Optional shortcut (`bit325`, `k4`, `bit225`, `bit225-fast`, `bit250`, `k2`, `k2-fast`, `long`) |
-| `CAP` / `SESSIONS` / `PREFILL` | auto (`65536`) / `4` / `512` | Per-session context cap, concurrent session count, and prefill chunk budget |
+| `CAP` / `SESSIONS` / `PREFILL` | auto (`65536`) / `4` / `4096` | Per-session context cap, concurrent session count, and prefill chunk budget |
 | `MTP` | `7` | Bundled DFlash speculative drafting depth (auto-discovered in `MODEL_DIR`) |
 | `HOST` / `PORT` | `127.0.0.1` / `8100` | OpenAI API bind address and port on the host network |
 | `REASONING_EFFORT` | `none` | Default reasoning effort exposed by the frontend (`none`, `low`, `medium`, `high`) |
-| `GR8_INK2_*` | `PF_MX8_MOE=0`, `MX8_DENSE=2`, `MX8_LM_HEAD=0` | Unified 32 GB RTX 5090 precision and VRAM knobs |
+| `GR8_INK2_*` | `PF_MX8_MOE=3`, `MX8_DENSE=2`, `MX8_LM_HEAD=0` | Unified 32 GB RTX 5090 precision and VRAM knobs (`PF_MX8_MOE=4` enables 2-slot 1.96 GiB double-buffering) |
 | `GR8_IMAGE` | unset | Optional override for the pinned `gr8` container image |
 
 ## Other sizes
@@ -167,9 +173,9 @@ This recipe has no engine code. It runs one published multi-arch `gr8` image (`l
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) `v1.3.1` ([`9f4f9c4f700d8a53c753e98f5388a92cc8cfd869`](https://github.com/kindlingai/gr8/commit/9f4f9c4f700d8a53c753e98f5388a92cc8cfd869)) |
-| image | `ghcr.io/kindlingai/gr8:v1.3.1` |
-| digest | `sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863` |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) `main` ([`2c221e984112e9f1081b4f5a9555600239072f19`](https://github.com/kindlingai/gr8/commit/2c221e984112e9f1081b4f5a9555600239072f19)) |
+| image | `ghcr.io/kindlingai/gr8:sha-2c221e9` |
+| digest | `sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1` |
 | weights | [kindlingai/inkling-2-mini-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/inkling-2-mini-exlr8-k2-k3-k4/commit/3037e66b3f01003ddf2c62b7e1d9469c59104609) (`3037e66b`) |
 
 `python3 tools/check_pin.py --strict inkling-2-mini/rtx-5090/1x/exlr8-gr8`, run from the monorepo root, verifies that [compose.yaml](compose.yaml) and [kindling.json](kindling.json) agree on the immutable image digest.

@@ -10,8 +10,8 @@ inside the folder.
 ## 1. Check the box
 
 - 1× NVIDIA Blackwell GPU with 32 GB VRAM (`sm_120a`, e.g. RTX 5090): check `nvidia-smi` and `docker ps`.
-  - On a dedicated 32 GB GPU (~30 GiB available), the defaults fit with ~2 GiB free (`bit325`: `65536 × 4` = 262K KV pool).
-  - If other GPU services occupy VRAM (e.g. ~7 GiB), lower `CAP` in `.env` (for example `CAP=16384`, `SESSIONS=4`, `PREFILL=256`).
+  - On a dedicated 32 GB GPU (~30 GiB available), the defaults fit with ~3.1 GiB free at boot (`>=2.2 GiB` free after lazy CUDA graph growth at 110K+): `bit325`, `65536 × 4` = 262K KV pool, `PREFILL=4096`, `GR8_INK2_PF_MX8_MOE=3`.
+  - If other GPU services occupy VRAM (e.g. ~7 GiB), lower `CAP` in `.env` (for example `CAP=16384`, `SESSIONS=4`, `PREFILL=4096` or `CAP=135168`, `SESSIONS=1`, `PREFILL=4096`).
 - Docker has the NVIDIA runtime: `docker info | grep -i nvidia`.
 - Local NVMe disk: at least 35 GB free for `kindlingai/inkling-2-mini-exlr8-k2-k3-k4` (`~31 GB` on disk).
 - Hugging Face answers: `curl -sI https://huggingface.co`.
@@ -24,10 +24,10 @@ hf download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 \
 cp .env.example .env
 ```
 
-Default is `VARIANT=bit325` (`65536 × 4` = 262K KV pool, `MTP=7` DFlash auto-discovered). Ask the person before
+Default is `VARIANT=bit325` (`65536 × 4` = 262K KV pool, `PREFILL=4096`, `GR8_INK2_PF_MX8_MOE=3`, `MTP=7` DFlash auto-discovered). Ask the person before
 switching to `VARIANT=k4` (higher quality / graduate-level science, `49152 × 4` = 196K KV pool),
 `PROFILE=bit225-fast` (fast 2.25-bit tier, `81920 × 4` = 327K KV pool), or `PROFILE=long` (single-stream long context
-up to `303K` on `bit325` / `385K` on `bit225`).
+up to `303K` on `bit325` / `224K` on `k4` / `385K` on `bit225`).
 
 ## 3. Boot
 

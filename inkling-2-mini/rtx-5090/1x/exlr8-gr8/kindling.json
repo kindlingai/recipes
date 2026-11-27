@@ -4,7 +4,7 @@
   "status": "stable",
   "title": "Inkling-2-Mini",
   "variant": "exlr8, DFlash, 262K KV",
-  "summary": "Inkling-2-Mini on one RTX 5090 (32 GB) at TP=1 with gr8 and bundled DFlash speculative decoding: bit325 default (328.1 Code / 424.5 Math / 341.6 JSON / 201.1 Prose / 590.9 Counting tok/s, C=4 764.6 tok/s agg, 8/8 exact DFlash greedy parity, 262K KV pool), k4 for higher quality / graduate-level science (274.4 Code / 438.5 Math / C=4 649.1 tok/s), and bit225 fast tier (354.4 Code / 768.3 C=4 / 528.1 C=6 thinking, 0.041282 KL).",
+  "summary": "Inkling-2-Mini on one RTX 5090 (32 GB) at TP=1 with gr8 and bundled DFlash speculative decoding: bit325 default (328.1 Code / 424.5 Math / 341.6 JSON / 201.1 Prose / 592.5 Counting tok/s, C=4 777.0 tok/s agg, 10,076 tok/s 4K prefill / 6,057 @ 128K, 8/8 exact DFlash greedy parity, 262K KV pool), k4 for higher quality / graduate-level science (274.4 Code / 438.5 Math / C=4 649.1 tok/s), and bit225 fast tier (354.4 Code / 768.3 C=4 / 528.1 C=6 thinking, 10,108 tok/s 4K prefill, 0.041282 KL).",
   "model": "kindlingai/inkling-2-mini-exlr8-k2-k3-k4",
   "weights_commit": "3037e66b3f01003ddf2c62b7e1d9469c59104609",
   "hardware": "RTX 5090 (32 GB)",
@@ -16,11 +16,11 @@
   ],
   "engine": {
     "repo": "kindlingai/gr8",
-    "ref": "v1.3.1",
-    "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
+    "ref": "main",
+    "commit": "2c221e984112e9f1081b4f5a9555600239072f19",
     "pin": "image",
-    "image": "ghcr.io/kindlingai/gr8:v1.3.1",
-    "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
+    "image": "ghcr.io/kindlingai/gr8:sha-2c221e9",
+    "image_digest": "sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1"
   },
   "default_config": "1gpu-bit325",
   "configs": [
@@ -31,8 +31,10 @@
       "decode": {
         "code": 328.1,
         "prose": 201.1,
-        "structured": 341.6,
-        "counting": 590.9,
+        "structured": 341.6
+      },
+      "decode_extra": {
+        "counting": 592.5,
         "math": 424.5
       },
       "decode_prompt_tokens": [
@@ -42,37 +44,43 @@
       "prefill": [
         {
           "context": 4096,
-          "tps": 3516
+          "tps": 10076
         },
         {
           "context": 8192,
-          "tps": 3427
+          "tps": 9580
         },
         {
           "context": 32768,
-          "tps": 2902
+          "tps": 8729
         },
         {
           "context": 65536,
-          "tps": 2408
+          "tps": 7637
         },
         {
           "context": 131072,
-          "tps": 1798
+          "tps": 6057
         }
       ],
       "concurrency": [
         {
-          "streams": 4,
-          "aggregate_tps": 764.6,
-          "per_stream_tps": 211.9,
-          "ttft_p50_s": 0.317
+          "streams": 1,
+          "aggregate_tps": 328.8,
+          "per_stream_tps": 328.8,
+          "ttft_p50_s": 0.041
         },
         {
-          "streams": 6,
-          "aggregate_tps": 684.4,
-          "per_stream_tps": 148.8,
-          "ttft_p50_s": 0.477
+          "streams": 2,
+          "aggregate_tps": 544.6,
+          "per_stream_tps": 296.7,
+          "ttft_p50_s": 0.114
+        },
+        {
+          "streams": 4,
+          "aggregate_tps": 777.0,
+          "per_stream_tps": 213.8,
+          "ttft_p50_s": 0.249
         }
       ],
       "max_context": 65536,
@@ -95,11 +103,11 @@
           "source": "computed"
         }
       ],
-      "max_tokens_per_chat_note": "4 x 65,536 slabs (262K pool, 29.71 GiB); PROFILE=long fits 303K x 1",
+      "max_tokens_per_chat_note": "4 x 65,536 slabs (262K pool, 28.75 GiB @ PREFILL=4096); PROFILE=long fits 303K x 1",
       "quality": [
         {
           "name": "DFlash K=7 vs MTP=0 greedy parity",
-          "value": "8/8 exact token-for-token (1.90x-6.61x speedup)"
+          "value": "8/8 exact token-for-token (1.90x-6.58x speedup)"
         },
         {
           "name": "40x2K FP64 KL vs BF16 (bit325)",
@@ -111,10 +119,10 @@
         },
         {
           "name": "Needle recall (live RTX 5090)",
-          "value": "PASS at 35.4K (2,906 tok/s) and 70.9K (2,382 tok/s)"
+          "value": "PASS at 35.4K (8,328 tok/s), 70.9K (7,287 tok/s), 127.3K (6,036 tok/s)"
         }
       ],
-      "notes": "bit325 experts (3.25 bpw, 16.43 GB device image) + bundled 279 MB DFlash drafter (MTP=7, auto-discovered). Measured 2026-11-25 on 1x RTX 5090 32 GB (sm_120a, gr8 commit 6b874803, GR8_INK2_PF_MX8_MOE=0, GR8_INK2_MX8_DENSE=2, GR8_INK2_MX8_LM_HEAD=0; 4.27 s boot from NVMe). Prefill row above measured at PREFILL=256 (PREFILL=512 reaches 5,034 tok/s at 4K / 4,991 at 8K / 4,449 at 32K / 3,852 at 64K / 3,032 at 128K). Thinking-ON prose (512 tok, t=0.6): C=1 143.3 / C=2 236.5 / C=4 354.0 / C=6 418.3 agg tok/s."
+      "notes": "bit325 experts (3.25 bpw, 16.43 GB device image) + bundled 279 MB DFlash drafter (MTP=7, auto-discovered). Measured 2026-11-26 on 1x RTX 5090 32 GB (sm_120a, gr8 PR #640 / main commit 2c221e98, GR8_INK2_PF_MX8_MOE=3, PREFILL=4096, GR8_INK2_MX8_DENSE=2, GR8_INK2_MX8_LM_HEAD=0; 4.01 s boot from NVMe). Layer-wise 1-slot (0.98 GiB) MXFP8 MoE prefill reaches 10,076 tok/s at 4K / 9,580 at 8K / 8,729 at 32K / 7,637 at 64K / 6,057 at 128K (+100.2% vs v1.3.1); 2-slot GR8_INK2_PF_MX8_MOE=4 reaches 10,396 tok/s at 4K. Single-stream 8-domain decode baselines measured 2026-11-25 (commit 6b874803) and re-verified on 2026-11-26 with 8/8 exact greedy parity + C=1/2/4 concurrency."
     },
     {
       "id": "1gpu-k4",
@@ -123,7 +131,9 @@
       "decode": {
         "code": 274.4,
         "prose": 183.6,
-        "structured": 337.1,
+        "structured": 337.1
+      },
+      "decode_extra": {
         "counting": 593.8,
         "math": 438.5
       },
@@ -176,7 +186,7 @@
           "value": "93.54% (1274/1362) · ties Official W4A4 (McNemar p=0.6655)"
         }
       ],
-      "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled DFlash (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Set VARIANT=k4 (or PROFILE=k4) in .env (4 x 49,152 = 196K KV pool at PREFILL=512, 29.74 GiB; or PROFILE=long with VARIANT=k4 for 245,760 x 1 at PREFILL=256). Measured 2026-11-25 on 1x RTX 5090 32 GB (4.76 s boot from NVMe)."
+      "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled DFlash (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Set VARIANT=k4 (or PROFILE=k4) in .env (4 x 49,152 = 196K KV pool at PREFILL=4096, 28.83 GiB; or PROFILE=long with VARIANT=k4 for 229,376 x 1 at PREFILL=4096, 29.18 GiB). Decode and PREFILL=256 prefill baseline measured 2026-11-25 on 1x RTX 5090 32 GB (4.76 s boot from NVMe)."
     },
     {
       "id": "1gpu-bit225",
@@ -185,7 +195,9 @@
       "decode": {
         "code": 354.4,
         "prose": 190.4,
-        "structured": 376.5,
+        "structured": 376.5
+      },
+      "decode_extra": {
         "counting": 506.2,
         "math": 394.0
       },
@@ -196,23 +208,23 @@
       "prefill": [
         {
           "context": 4096,
-          "tps": 5034
+          "tps": 10108
         },
         {
           "context": 8192,
-          "tps": 4991
+          "tps": 9620
         },
         {
           "context": 32768,
-          "tps": 4449
+          "tps": 8761
         },
         {
           "context": 65536,
-          "tps": 3852
+          "tps": 7662
         },
         {
           "context": 131072,
-          "tps": 3032
+          "tps": 6074
         }
       ],
       "concurrency": [
@@ -240,9 +252,13 @@
         {
           "name": "Thinking-ON C=6 prose (512 tok, t=0.6)",
           "value": "528.1 agg tok/s (89.9 tok/s per user)"
+        },
+        {
+          "name": "Needle recall at 243.7K (k2, 262K cap)",
+          "value": "PASS (3,851 tok/s, 63.28 s)"
         }
       ],
-      "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (PROFILE=bit225-fast: GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1). Dedicated 32 GB RTX 5090 fits 4 x 81,920 = 327K KV pool in fast mode (29.40 GiB) or 4 x 90,112 = 360K in standard mode (VARIANT=bit225: 436.3 Math / 384.1 JSON / 604.8 Counting tok/s, 385K x 1 long). Prefill sweep measured at PREFILL=512 (k2, identical dense/attention/loop prefill path). Measured 2026-11-25 on 1x RTX 5090 32 GB (3.76 s boot from NVMe)."
+      "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (PROFILE=bit225-fast: GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1). Dedicated 32 GB RTX 5090 fits 4 x 81,920 = 327K KV pool in fast mode (28.58 GiB @ PREFILL=4096) or 4 x 90,112 = 360K in standard mode (VARIANT=bit225: 436.3 Math / 384.1 JSON / 604.8 Counting tok/s, 385K x 1 long). Prefill sweep measured 2026-11-26 at PREFILL=4096 GR8_INK2_PF_MX8_MOE=3 (k2, identical dense/attention/loop prefill path; 2-slot mode=4 reaches 10,454 tok/s @ 4K and 6,258 @ 128K)."
     }
   ]
 }

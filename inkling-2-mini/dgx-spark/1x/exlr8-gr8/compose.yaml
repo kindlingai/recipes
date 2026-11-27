@@ -11,8 +11,8 @@
 name: inkling-2-mini-1x-spark
 services:
   gr8:
-    # The engine pin: gr8 main commit 6b874803 (PR #615); kindling.json "engine" names the same digest.
-    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:sha-6b87480@sha256:63465222330e8b938da2a5b6543912e2ddcd0fbb280b932eb5e7485df16b991c}
+    # The engine pin: gr8 main commit 2c221e98 (PR #640); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:sha-2c221e9@sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1}
     container_name: inkling-2-mini-1x-spark
     entrypoint: ["/bin/bash", "/recipe/serve.sh"]
     env_file:

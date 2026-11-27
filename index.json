@@ -298,6 +298,176 @@
       }
     },
     {
+      "id": "glm-5.3-exlr8-fp8kv-4x-spark",
+      "path": "glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8",
+      "url": "https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8",
+      "model": "glm-5.3",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 4,
+      "variant": "exlr8-fp8kv-gr8",
+      "status": "stable",
+      "updated_at": "2026-11-27T13:29:43-06:00",
+      "kindling": {
+        "version": 1,
+        "id": "glm-5.3-exlr8-fp8kv-4x-spark",
+        "status": "stable",
+        "title": "GLM-5.3",
+        "variant": "exlr8 bit325, pure FP8 KV, 640K pool, uncapped exact MoE",
+        "summary": "Full GLM-5.3 on four DGX Sparks at TP=4 with gr8 v1.2.0 using pure FP8 KV cache (KV_FORMAT=fp8, KVB=bf16, zero INT4 KV quantization), uncapped exact MoE routing (MOE_UNION_CAP=0, KL=0.00000), DFlash + MTP=2 drafting, and a 655,360-token FP8 KV pool. Live-verified at 67.5 tok/s code, RealMark 1,148.9 Grade A, 4x85K and 3x140K concurrent sessions, and 6.41 GiB min free RAM.",
+        "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+        "weights_commit": "3e388b45b26ca4558351d22994afcfc85b99af74",
+        "stack": [
+          "gr8",
+          "exlr8",
+          "DFlash",
+          "MTP",
+          "FP8 KV"
+        ],
+        "engine": {
+          "repo": "kindlingai/gr8",
+          "ref": "v1.2.0",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
+        },
+        "default_config": "tp4",
+        "configs": [
+          {
+            "id": "tp4",
+            "label": "TP=4 · FP8 KV",
+            "nodes": 4,
+            "decode": {
+              "code": 67.5,
+              "prose": 39.8,
+              "structured": 81.5
+            },
+            "decode_extra": {
+              "counting": 87.3
+            },
+            "decode_ci95": {
+              "code": [
+                63.2,
+                73.4
+              ],
+              "prose": [
+                38.2,
+                41.5
+              ],
+              "structured": [
+                77.6,
+                85.3
+              ],
+              "counting": [
+                87.0,
+                87.6
+              ]
+            },
+            "decode_prompt_tokens": [
+              46,
+              54
+            ],
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 1686
+              },
+              {
+                "context": 32768,
+                "tps": 1679
+              },
+              {
+                "context": 131072,
+                "tps": 1547
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 1,
+                "aggregate_tps": 52.7,
+                "per_stream_tps": 56.7,
+                "ttft_p50_s": 0.34
+              },
+              {
+                "streams": 2,
+                "aggregate_tps": 70.0,
+                "per_stream_tps": 41.3,
+                "ttft_p50_s": 0.59
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 75.3,
+                "per_stream_tps": 23.1,
+                "ttft_p50_s": 1.26
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 91.2,
+                "per_stream_tps": 14.1,
+                "ttft_p50_s": 2.53
+              }
+            ],
+            "concurrency_prompt_tokens": [
+              48,
+              55
+            ],
+            "max_context": 655346,
+            "kv_pool_tokens": 655360,
+            "max_concurrent": 8,
+            "max_tokens_per_chat": [
+              {
+                "chats": 1,
+                "tokens": 655346,
+                "source": "measured"
+              },
+              {
+                "chats": 2,
+                "tokens": 278514,
+                "source": "computed"
+              },
+              {
+                "chats": 3,
+                "tokens": 152882,
+                "source": "computed"
+              },
+              {
+                "chats": 4,
+                "tokens": 90098,
+                "source": "computed"
+              },
+              {
+                "chats": 8,
+                "tokens": 23538,
+                "source": "computed"
+              }
+            ],
+            "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 4x85K (347K resident, 99.2% cache), 3x140K (430K resident, 99.95% cache)",
+            "lowest_mem_available_gib": 6.41,
+            "quality": [
+              {
+                "name": "RealMark RIPAL (C=1/2/4)",
+                "value": "1,148.9 Grade A (97.8-98.4% match, 16/16)"
+              },
+              {
+                "name": "Needle recall",
+                "value": "found at 128K (130,812 tok); calibrated 32K/128K/612K 3/3"
+              },
+              {
+                "name": "Live multi-session proofs",
+                "value": "4x85K (347K res), 3x140K (430K res): 100%"
+              },
+              {
+                "name": "Smoke test",
+                "value": "14 of 14"
+              }
+            ],
+            "notes": "Measured 2026-11-26 on gr8 v1.2.0 (ab2eb95) across 4 DGX Sparks on a 200G RoCE v2 switch, GPU clocks uncapped in timed stages (0% thermal throttle). bit325 experts (v0.6 @ 3e388b45), pure FP8 KV (bin/g6m4, KV_FORMAT=fp8, KVB=bf16, CAP=655,360, 2,944 physical pages/rank, max_model_len=655,346, SHARE_LIMIT=32,768, SESS=8, GR8_KV_SHARE_PAGES=1), DFlash + MTP=2, uncapped exact MoE routing (MOE_UNION_CAP=0, KL=0.00000). Harness: gr8 bench/bench.py default level + RealMark (957f600, C=1/2/4 --probe, enable_thinking=false) + calibrated needles & multi-session stress. Warm boot 66 s. MemAvailable: 8.18-8.77 GiB post-boot, 6.56 GiB min during RealMark, 6.41 GiB min during stress."
+          }
+        ]
+      }
+    },
+    {
       "id": "glm-5.3-exlr8-4x-spark",
       "path": "glm-5.3/dgx-spark/4x/exlr8-gr8",
       "url": "https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/4x/exlr8-gr8",
@@ -974,6 +1144,289 @@
               }
             ],
             "notes": "Prose decode at MTP k=4, as shipped; 33.8 tok/s at k=2. One boot, one bench run."
+          }
+        ]
+      }
+    },
+    {
+      "id": "glm-5.3-exlr8-fp8kv-6x-spark",
+      "path": "glm-5.3/dgx-spark/6x/exlr8-fp8kv-gr8",
+      "url": "https://github.com/kindlingai/recipes/tree/main/glm-5.3/dgx-spark/6x/exlr8-fp8kv-gr8",
+      "model": "glm-5.3",
+      "hardware": "dgx-spark",
+      "hardware_name": "DGX Spark (GB10)",
+      "count": 6,
+      "variant": "exlr8-fp8kv-gr8",
+      "status": "stable",
+      "updated_at": "2026-11-27T13:29:43-06:00",
+      "kindling": {
+        "version": 1,
+        "id": "glm-5.3-exlr8-fp8kv-6x-spark",
+        "status": "stable",
+        "title": "GLM-5.3",
+        "variant": "exlr8 bit325, pure FP8 KV, 1.51M pool (1M ctx), uncapped exact MoE",
+        "summary": "Full GLM-5.3 on six DGX Sparks at TP=6 with gr8 v1.2.0 using pure FP8 KV cache (KV_FORMAT=fp8, KVB=bf16, zero INT4 KV quantization), uncapped exact MoE routing (MOE_UNION_CAP=0, KL=0.00000), DFlash + MTP=2 drafting, and a 1,507,328-token FP8 KV pool (1M max context). Live-verified at 78.0 tok/s code, RealMark 1,236.1 Grade A, 959K needle recall, 4x235K (972K resident) multi-session stress, and a TP=6 K4 (bit390) option.",
+        "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
+        "weights_commit": "3e388b45b26ca4558351d22994afcfc85b99af74",
+        "stack": [
+          "gr8",
+          "exlr8",
+          "DFlash",
+          "MTP",
+          "FP8 KV"
+        ],
+        "engine": {
+          "repo": "kindlingai/gr8",
+          "ref": "v1.2.0",
+          "commit": "ab2eb95f426ff908543d5d002218cf5a2a5c5be6",
+          "pin": "image",
+          "image": "ghcr.io/kindlingai/gr8:v1.2.0",
+          "image_digest": "sha256:3de05aab8cda21fd5d6b4af89ccdba6ff5abdbd704729601fd348fa638ade9fd"
+        },
+        "default_config": "tp6",
+        "configs": [
+          {
+            "id": "tp6",
+            "label": "TP=6 · bit325 FP8 KV",
+            "nodes": 6,
+            "decode": {
+              "code": 78.0,
+              "prose": 44.3,
+              "structured": 93.1
+            },
+            "decode_extra": {
+              "counting": 99.7
+            },
+            "decode_ci95": {
+              "code": [
+                74.2,
+                82.6
+              ],
+              "prose": [
+                41.3,
+                47.5
+              ],
+              "structured": [
+                89.0,
+                97.3
+              ],
+              "counting": [
+                99.1,
+                100.3
+              ]
+            },
+            "decode_prompt_tokens": [
+              46,
+              54
+            ],
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 2016
+              },
+              {
+                "context": 32768,
+                "tps": 2347
+              },
+              {
+                "context": 131072,
+                "tps": 1670
+              },
+              {
+                "context": 262144,
+                "tps": 1281
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 1,
+                "aggregate_tps": 57.7,
+                "per_stream_tps": 62.4,
+                "ttft_p50_s": 0.35
+              },
+              {
+                "streams": 2,
+                "aggregate_tps": 86.1,
+                "per_stream_tps": 53.6,
+                "ttft_p50_s": 0.61
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 101.3,
+                "per_stream_tps": 31.9,
+                "ttft_p50_s": 1.19
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 123.0,
+                "per_stream_tps": 18.2,
+                "ttft_p50_s": 2.6
+              }
+            ],
+            "concurrency_prompt_tokens": [
+              48,
+              55
+            ],
+            "max_context": 1048576,
+            "kv_pool_tokens": 1507328,
+            "max_concurrent": 8,
+            "max_tokens_per_chat": [
+              {
+                "chats": 1,
+                "tokens": 1048576,
+                "source": "measured"
+              },
+              {
+                "chats": 2,
+                "tokens": 671730,
+                "source": "computed"
+              },
+              {
+                "chats": 3,
+                "tokens": 393202,
+                "source": "computed"
+              },
+              {
+                "chats": 4,
+                "tokens": 253938,
+                "source": "computed"
+              },
+              {
+                "chats": 8,
+                "tokens": 45042,
+                "source": "computed"
+              }
+            ],
+            "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 4x150K (616K resident, 99.95% cache), 4x235K (972K resident, 99.98% cache)",
+            "lowest_mem_available_gib": 6.41,
+            "quality": [
+              {
+                "name": "RealMark RIPAL (C=1/2/4)",
+                "value": "1,236.1 Grade A (97.1-97.8% match, 16/16)"
+              },
+              {
+                "name": "Needle recall",
+                "value": "found at 128K (131,242 tok); calibrated 32K-959K 5/5"
+              },
+              {
+                "name": "Live multi-session proofs",
+                "value": "4x150K (616K res), 4x235K (972K res): 100%"
+              },
+              {
+                "name": "Smoke test",
+                "value": "14 of 14"
+              }
+            ],
+            "notes": "Measured 2026-11-26 on gr8 v1.2.0 (ab2eb95) across 6 DGX Sparks on a 200G RoCE v2 switch, GPU clocks uncapped in timed stages (0% thermal throttle). bit325 experts (v0.6 @ 3e388b45), pure FP8 KV (bin/g6m4, KV_FORMAT=fp8, KVB=bf16, CAP=1,507,328, 4,352 physical pages/rank, max_model_len=1,048,576, SHARE_LIMIT=32,768, SESS=8, GR8_KV_SHARE_PAGES=1), DFlash + MTP=2, PF_OWN=3 + QO_CACHE, uncapped exact MoE routing (MOE_UNION_CAP=0, KL=0.00000). Harness: gr8 bench/bench.py default level + RealMark (957f600, C=1/2/4 --probe, enable_thinking=false) + calibrated needles & multi-session stress. MemAvailable: 7.29-7.80 GiB post-boot, 6.56 GiB min during RealMark, 6.41 GiB min during 972K stress."
+          },
+          {
+            "id": "tp6-k4",
+            "label": "TP=6 · K4 (bit390) FP8 KV",
+            "nodes": 6,
+            "decode": {
+              "code": 72.2,
+              "prose": 42.4
+            },
+            "decode_ci95": {
+              "code": [
+                67.4,
+                79.0
+              ],
+              "prose": [
+                40.9,
+                43.8
+              ]
+            },
+            "decode_prompt_tokens": [
+              46,
+              54
+            ],
+            "prefill": [
+              {
+                "context": 8192,
+                "tps": 2125
+              },
+              {
+                "context": 32768,
+                "tps": 2293
+              },
+              {
+                "context": 131072,
+                "tps": 2019
+              }
+            ],
+            "concurrency": [
+              {
+                "streams": 1,
+                "aggregate_tps": 54.9,
+                "per_stream_tps": 57.8,
+                "ttft_p50_s": 0.37
+              },
+              {
+                "streams": 2,
+                "aggregate_tps": 79.5,
+                "per_stream_tps": 44.5,
+                "ttft_p50_s": 0.63
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 90.0,
+                "per_stream_tps": 27.0,
+                "ttft_p50_s": 1.25
+              },
+              {
+                "streams": 8,
+                "aggregate_tps": 106.6,
+                "per_stream_tps": 16.5,
+                "ttft_p50_s": 2.64
+              }
+            ],
+            "concurrency_prompt_tokens": [
+              48,
+              55
+            ],
+            "max_context": 524274,
+            "kv_pool_tokens": 524288,
+            "max_concurrent": 8,
+            "max_tokens_per_chat": [
+              {
+                "chats": 1,
+                "tokens": 524274,
+                "source": "measured"
+              },
+              {
+                "chats": 2,
+                "tokens": 180210,
+                "source": "computed"
+              },
+              {
+                "chats": 3,
+                "tokens": 65522,
+                "source": "computed"
+              },
+              {
+                "chats": 4,
+                "tokens": 28658,
+                "source": "computed"
+              },
+              {
+                "chats": 8,
+                "tokens": 14322,
+                "source": "computed"
+              }
+            ],
+            "lowest_mem_available_gib": 10.41,
+            "quality": [
+              {
+                "name": "Smoke test",
+                "value": "14 of 14"
+              },
+              {
+                "name": "Suspect characters",
+                "value": "0 replies"
+              }
+            ],
+            "notes": "K4 quality option on 6 DGX Sparks: VARIANT=bit390 (3.90 bpw, ~60.0 GB/rank, v0.6 @ 3e388b45), pure FP8 KV (CAP=524,288, max_model_len=524,274, SHARE_LIMIT=32,768, SESS=8), DFlash + MTP=2, MOE_UNION_CAP=0, gr8 v1.2.0 (ab2eb95). Measured 2026-11-26 via gr8 bench/bench.py --quick. MemAvailable: 10.60-11.08 GiB post-boot, 10.41-10.92 GiB post-bench."
           }
         ]
       }
@@ -1901,14 +2354,14 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:53:28Z",
+      "updated_at": "2026-11-27T13:29:46-06:00",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-rtx5090",
         "status": "stable",
         "title": "Inkling-2-Mini",
         "variant": "exlr8, DFlash, 262K KV",
-        "summary": "Inkling-2-Mini on one RTX 5090 (32 GB) at TP=1 with gr8 and bundled DFlash speculative decoding: bit325 default (328.1 Code / 424.5 Math / 341.6 JSON / 201.1 Prose / 590.9 Counting tok/s, C=4 764.6 tok/s agg, 8/8 exact DFlash greedy parity, 262K KV pool), k4 for higher quality / graduate-level science (274.4 Code / 438.5 Math / C=4 649.1 tok/s), and bit225 fast tier (354.4 Code / 768.3 C=4 / 528.1 C=6 thinking, 0.041282 KL).",
+        "summary": "Inkling-2-Mini on one RTX 5090 (32 GB) at TP=1 with gr8 and bundled DFlash speculative decoding: bit325 default (328.1 Code / 424.5 Math / 341.6 JSON / 201.1 Prose / 592.5 Counting tok/s, C=4 777.0 tok/s agg, 10,076 tok/s 4K prefill / 6,057 @ 128K, 8/8 exact DFlash greedy parity, 262K KV pool), k4 for higher quality / graduate-level science (274.4 Code / 438.5 Math / C=4 649.1 tok/s), and bit225 fast tier (354.4 Code / 768.3 C=4 / 528.1 C=6 thinking, 10,108 tok/s 4K prefill, 0.041282 KL).",
         "model": "kindlingai/inkling-2-mini-exlr8-k2-k3-k4",
         "weights_commit": "3037e66b3f01003ddf2c62b7e1d9469c59104609",
         "hardware": "RTX 5090 (32 GB)",
@@ -1920,11 +2373,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "v1.3.1",
-          "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
+          "ref": "main",
+          "commit": "2c221e984112e9f1081b4f5a9555600239072f19",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:v1.3.1",
-          "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
+          "image": "ghcr.io/kindlingai/gr8:sha-2c221e9",
+          "image_digest": "sha256:b50f14c667fb7877e21c05669494807f612d57073adc3efde79024acef1dbfc1"
         },
         "default_config": "1gpu-bit325",
         "configs": [
@@ -1935,8 +2388,10 @@
             "decode": {
               "code": 328.1,
               "prose": 201.1,
-              "structured": 341.6,
-              "counting": 590.9,
+              "structured": 341.6
+            },
+            "decode_extra": {
+              "counting": 592.5,
               "math": 424.5
             },
             "decode_prompt_tokens": [
@@ -1946,37 +2401,43 @@
             "prefill": [
               {
                 "context": 4096,
-                "tps": 3516
+                "tps": 10076
               },
               {
                 "context": 8192,
-                "tps": 3427
+                "tps": 9580
               },
               {
                 "context": 32768,
-                "tps": 2902
+                "tps": 8729
               },
               {
                 "context": 65536,
-                "tps": 2408
+                "tps": 7637
               },
               {
                 "context": 131072,
-                "tps": 1798
+                "tps": 6057
               }
             ],
             "concurrency": [
               {
-                "streams": 4,
-                "aggregate_tps": 764.6,
-                "per_stream_tps": 211.9,
-                "ttft_p50_s": 0.317
+                "streams": 1,
+                "aggregate_tps": 328.8,
+                "per_stream_tps": 328.8,
+                "ttft_p50_s": 0.041
               },
               {
-                "streams": 6,
-                "aggregate_tps": 684.4,
-                "per_stream_tps": 148.8,
-                "ttft_p50_s": 0.477
+                "streams": 2,
+                "aggregate_tps": 544.6,
+                "per_stream_tps": 296.7,
+                "ttft_p50_s": 0.114
+              },
+              {
+                "streams": 4,
+                "aggregate_tps": 777.0,
+                "per_stream_tps": 213.8,
+                "ttft_p50_s": 0.249
               }
             ],
             "max_context": 65536,
@@ -1999,11 +2460,11 @@
                 "source": "computed"
               }
             ],
-            "max_tokens_per_chat_note": "4 x 65,536 slabs (262K pool, 29.71 GiB); PROFILE=long fits 303K x 1",
+            "max_tokens_per_chat_note": "4 x 65,536 slabs (262K pool, 28.75 GiB @ PREFILL=4096); PROFILE=long fits 303K x 1",
             "quality": [
               {
                 "name": "DFlash K=7 vs MTP=0 greedy parity",
-                "value": "8/8 exact token-for-token (1.90x-6.61x speedup)"
+                "value": "8/8 exact token-for-token (1.90x-6.58x speedup)"
               },
               {
                 "name": "40x2K FP64 KL vs BF16 (bit325)",
@@ -2015,10 +2476,10 @@
               },
               {
                 "name": "Needle recall (live RTX 5090)",
-                "value": "PASS at 35.4K (2,906 tok/s) and 70.9K (2,382 tok/s)"
+                "value": "PASS at 35.4K (8,328 tok/s), 70.9K (7,287 tok/s), 127.3K (6,036 tok/s)"
               }
             ],
-            "notes": "bit325 experts (3.25 bpw, 16.43 GB device image) + bundled 279 MB DFlash drafter (MTP=7, auto-discovered). Measured 2026-11-25 on 1x RTX 5090 32 GB (sm_120a, gr8 commit 6b874803, GR8_INK2_PF_MX8_MOE=0, GR8_INK2_MX8_DENSE=2, GR8_INK2_MX8_LM_HEAD=0; 4.27 s boot from NVMe). Prefill row above measured at PREFILL=256 (PREFILL=512 reaches 5,034 tok/s at 4K / 4,991 at 8K / 4,449 at 32K / 3,852 at 64K / 3,032 at 128K). Thinking-ON prose (512 tok, t=0.6): C=1 143.3 / C=2 236.5 / C=4 354.0 / C=6 418.3 agg tok/s."
+            "notes": "bit325 experts (3.25 bpw, 16.43 GB device image) + bundled 279 MB DFlash drafter (MTP=7, auto-discovered). Measured 2026-11-26 on 1x RTX 5090 32 GB (sm_120a, gr8 PR #640 / main commit 2c221e98, GR8_INK2_PF_MX8_MOE=3, PREFILL=4096, GR8_INK2_MX8_DENSE=2, GR8_INK2_MX8_LM_HEAD=0; 4.01 s boot from NVMe). Layer-wise 1-slot (0.98 GiB) MXFP8 MoE prefill reaches 10,076 tok/s at 4K / 9,580 at 8K / 8,729 at 32K / 7,637 at 64K / 6,057 at 128K (+100.2% vs v1.3.1); 2-slot GR8_INK2_PF_MX8_MOE=4 reaches 10,396 tok/s at 4K. Single-stream 8-domain decode baselines measured 2026-11-25 (commit 6b874803) and re-verified on 2026-11-26 with 8/8 exact greedy parity + C=1/2/4 concurrency."
           },
           {
             "id": "1gpu-k4",
@@ -2027,7 +2488,9 @@
             "decode": {
               "code": 274.4,
               "prose": 183.6,
-              "structured": 337.1,
+              "structured": 337.1
+            },
+            "decode_extra": {
               "counting": 593.8,
               "math": 438.5
             },
@@ -2080,7 +2543,7 @@
                 "value": "93.54% (1274/1362) · ties Official W4A4 (McNemar p=0.6655)"
               }
             ],
-            "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled DFlash (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Set VARIANT=k4 (or PROFILE=k4) in .env (4 x 49,152 = 196K KV pool at PREFILL=512, 29.74 GiB; or PROFILE=long with VARIANT=k4 for 245,760 x 1 at PREFILL=256). Measured 2026-11-25 on 1x RTX 5090 32 GB (4.76 s boot from NVMe)."
+            "notes": "k4 experts (4.00 bpw, 18.72 GB device image) + bundled DFlash (MTP=7). Recommended for maximum quality and graduate-level science (GPQA). Set VARIANT=k4 (or PROFILE=k4) in .env (4 x 49,152 = 196K KV pool at PREFILL=4096, 28.83 GiB; or PROFILE=long with VARIANT=k4 for 229,376 x 1 at PREFILL=4096, 29.18 GiB). Decode and PREFILL=256 prefill baseline measured 2026-11-25 on 1x RTX 5090 32 GB (4.76 s boot from NVMe)."
           },
           {
             "id": "1gpu-bit225",
@@ -2089,7 +2552,9 @@
             "decode": {
               "code": 354.4,
               "prose": 190.4,
-              "structured": 376.5,
+              "structured": 376.5
+            },
+            "decode_extra": {
               "counting": 506.2,
               "math": 394.0
             },
@@ -2100,23 +2565,23 @@
             "prefill": [
               {
                 "context": 4096,
-                "tps": 5034
+                "tps": 10108
               },
               {
                 "context": 8192,
-                "tps": 4991
+                "tps": 9620
               },
               {
                 "context": 32768,
-                "tps": 4449
+                "tps": 8761
               },
               {
                 "context": 65536,
-                "tps": 3852
+                "tps": 7662
               },
               {
                 "context": 131072,
-                "tps": 3032
+                "tps": 6074
               }
             ],
             "concurrency": [
@@ -2144,9 +2609,13 @@
               {
                 "name": "Thinking-ON C=6 prose (512 tok, t=0.6)",
                 "value": "528.1 agg tok/s (89.9 tok/s per user)"
+              },
+              {
+                "name": "Needle recall at 243.7K (k2, 262K cap)",
+                "value": "PASS (3,851 tok/s, 63.28 s)"
               }
             ],
-            "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (PROFILE=bit225-fast: GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1). Dedicated 32 GB RTX 5090 fits 4 x 81,920 = 327K KV pool in fast mode (29.40 GiB) or 4 x 90,112 = 360K in standard mode (VARIANT=bit225: 436.3 Math / 384.1 JSON / 604.8 Counting tok/s, 385K x 1 long). Prefill sweep measured at PREFILL=512 (k2, identical dense/attention/loop prefill path). Measured 2026-11-25 on 1x RTX 5090 32 GB (3.76 s boot from NVMe)."
+            "notes": "bit225 fast preset (2.25 bpw, 13.37 GB device image, 0 extra weight bytes: 2,304 K2 + 768 loop-core K3 experts) + bundled DFlash (MTP=7) with speed flags (PROFILE=bit225-fast: GR8_INK2_MX8_DENSE=1, GR8_INK2_MX8_LM_HEAD=1, GR8_S2_ADAPT=1). Dedicated 32 GB RTX 5090 fits 4 x 81,920 = 327K KV pool in fast mode (28.58 GiB @ PREFILL=4096) or 4 x 90,112 = 360K in standard mode (VARIANT=bit225: 436.3 Math / 384.1 JSON / 604.8 Counting tok/s, 385K x 1 long). Prefill sweep measured 2026-11-26 at PREFILL=4096 GR8_INK2_PF_MX8_MOE=3 (k2, identical dense/attention/loop prefill path; 2-slot mode=4 reaches 10,454 tok/s @ 4K and 6,258 @ 128K)."
           }
         ]
       }

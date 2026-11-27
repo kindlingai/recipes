@@ -26,7 +26,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 <!-- recipes:index:start -->
 <!-- Written by tools/build_index.py from each recipe's kindling.json. Edits here are overwritten. -->
 
-22 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
+24 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
 
 ### DeepSeek-V4.1-Flash
 
@@ -39,9 +39,11 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
 | [`glm-5.3-exlr8-3x-spark`](glm-5.3/dgx-spark/3x/exlr8-gr8) | 3× DGX Spark (GB10) | exlr8 bit273, int4 KV, 384K context | gr8 v1.1.1 | 51.6 | 764 | 393,210 | stable |
+| [`glm-5.3-exlr8-fp8kv-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8) | 4× DGX Spark (GB10) | exlr8 bit325, pure FP8 KV, 640K pool, uncapped exact MoE | gr8 v1.2.0 | 67.5 | 1,686 | 655,346 | stable |
 | [`glm-5.3-exlr8-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 bit325, int4 KV, 1M context, DFlash2 drafter | gr8 v1.1.1 | 66.9 | 1,534 | 1,048,576 | stable |
 | [`glm-5.3-exlr8-k4-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-k4-gr8) | 4× DGX Spark (GB10) | exlr8 bit387 (K4), int4 KV, pure quality | gr8 v1.1.1 | 60.8 | 1,530 | 442,354 | stable |
 | [`glm-5.3-exlr8-5x-spark`](glm-5.3/dgx-spark/5x/exlr8-gr8) | 5× DGX Spark (GB10) | exlr8 bit325, int4 KV, 983K context | gr8 v1.1.1 | 68.9 | 1,937 | 983,034 | stable |
+| [`glm-5.3-exlr8-fp8kv-6x-spark`](glm-5.3/dgx-spark/6x/exlr8-fp8kv-gr8) | 6× DGX Spark (GB10) | exlr8 bit325, pure FP8 KV, 1.51M pool (1M ctx), uncapped exact MoE | gr8 v1.2.0 | 78 | 2,016 | 1,048,576 | stable |
 | [`glm-5.3-exlr8-6x-spark`](glm-5.3/dgx-spark/6x/exlr8-gr8) | 6× DGX Spark (GB10) | exlr8 bit325, int4 KV, 1M context (2.18M pool) | gr8 v1.1.1 | 78 | 2,467 | 1,048,576 | stable |
 
 ### GLM-5.3-Flash
@@ -58,7 +60,7 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 | Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
 |---|---|---|---|---|---|---|---|
 | [`inkling-2-mini-exlr8-1x-spark`](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash, 144K x 8 (1.18M KV) | gr8 main@2c221e9 | 90.6 | 3,484 | 147,456 | stable |
-| [`inkling-2-mini-exlr8-1x-rtx5090`](inkling-2-mini/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8, DFlash, 262K KV | gr8 v1.3.1 | 328.1 | 3,427 | 65,536 | stable |
+| [`inkling-2-mini-exlr8-1x-rtx5090`](inkling-2-mini/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8, DFlash, 262K KV | gr8 main@2c221e9 | 328.1 | 9,580 | 65,536 | stable |
 
 ### Nemotron 3.5 Bolt 74B-A9B
 

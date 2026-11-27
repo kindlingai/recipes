@@ -7,8 +7,8 @@ tell the person. If you cannot run a check yourself, ask the person to run it an
 This recipe is the folder `deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` of
 [kindlingai/recipes](https://github.com/kindlingai/recipes); paths below are relative to it. Get it with
 `npx @kindlingai/recipe deepseek-v4.1-flash-exlr8-4x-spark` (or a sparse clone of the monorepo) on all four boxes and
-run the commands from inside the folder. This recipe runs `gr8`'s published image (`ghcr.io/kindlingai/gr8:v1.3.0`,
-pending `kindlingai/gr8#630`) directly with read-only mounts for `entrypoint.sh`, `knobs.sh`, and `fetch-release.sh`,
+run the commands from inside the folder. This recipe runs `gr8`'s published image (`ghcr.io/kindlingai/gr8:v1.3.1`,
+pinned by digest in `compose.yaml`) directly with read-only mounts for `entrypoint.sh`, `knobs.sh`, and `fetch-release.sh`,
 plus the shipped `seccomp-iouring.json` profile; nothing is compiled here.
 
 ## 1. Check the four boxes
@@ -143,7 +143,7 @@ Exit codes: 0 clean stop, 1 rank failed / join timeout, 2 bad options or missing
 
 ## 7. Not measured yet: tell the person
 
-- Confirmation on published `gr8 v1.3.0` (`kindlingai/gr8#630`: `DS41_MX=48` + first-boot `g6front-rs engram-cmap`):
+- Confirmation on published `gr8 v1.3.1` (`kindlingai/gr8#630`: `DS41_MX=48` + first-boot `g6front-rs engram-cmap`):
   `kindling.json` and `docs/card.png` are from 2026-11-11 on `gr8 c2220f2`, and the extended tables in `README.md` are
   from `gr8 43cad38` / `0015fd0`.
 - `TUNE=context` 1M recall and multi-1M concurrency have not been re-measured on the current build.
@@ -158,6 +158,6 @@ Exit codes: 0 clean stop, 1 rank failed / join timeout, 2 bad options or missing
 - The engine pin is one exact commit and one image digest (`@sha256:...`). Never a moving tag alone once published,
   never a local Dockerfile build. Engine changes go to `kindlingai/gr8` first; this recipe then moves its pin to the
   published image.
-- From the monorepo root, run `python3 tools/check_pin.py deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` (with `--strict`
-  once `v1.3.0` is published), `python3 tools/lint_recipe.py deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8`, and
-  `./check-config.sh` inside this folder before you commit.
+- From the monorepo root, run `python3 tools/check_pin.py --strict deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8`,
+  `python3 tools/lint_recipe.py deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8`, and `./check-config.sh` inside this folder
+  before you commit.

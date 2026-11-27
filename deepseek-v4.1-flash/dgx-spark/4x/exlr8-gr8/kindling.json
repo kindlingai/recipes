@@ -105,15 +105,15 @@
           "value": "found at 128K"
         }
       ],
-      "notes": "Measured 2026-11-11 on four GB10 boxes in a ring (one boot, TUNE=speed, gr8 c2220f2, bench/bench.py); pending re-confirmation on published gr8 v1.3.0 (kindlingai/gr8#630: DS41_MX=48 + first-boot engram-cmap)."
+      "notes": "Measured 2026-11-11 on four GB10 boxes in a ring (one boot, TUNE=speed, gr8 c2220f2, bench/bench.py); pending 4-box DGX Spark hardware re-confirmation on published gr8 v1.3.1 (kindlingai/gr8#630: DS41_MX=48 + first-boot engram-cmap)."
     }
   ],
   "engine": {
     "repo": "kindlingai/gr8",
-    "ref": "v1.3.0",
-    "commit": "",
+    "ref": "v1.3.1",
+    "commit": "9f4f9c4f700d8a53c753e98f5388a92cc8cfd869",
     "pin": "image",
-    "image": "ghcr.io/kindlingai/gr8:v1.3.0",
-    "image_digest": ""
+    "image": "ghcr.io/kindlingai/gr8:v1.3.1",
+    "image_digest": "sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863"
   }
 }

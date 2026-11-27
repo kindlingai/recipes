@@ -9,9 +9,8 @@ _**Join our Discord to learn more about KindlingAI and `gr8`: https://discord.gg
 DeepSeek-V4.1-Flash (DeepSeek's release [DeepSeek-V4.1-Flash-1017](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017))
 on four DGX Sparks (GB10, 128 GB each) at TP=4, served by [gr8](https://github.com/kindlingai/gr8) from
 [kindlingai/deepseek-v4.1-flash-exlr8-native](https://huggingface.co/kindlingai/deepseek-v4.1-flash-exlr8-native), with
-fp8 KV, Engram, and up to 32 concurrent chats in fast mode. This recipe runs gr8's published image (`v1.3.0`, pending
-[kindlingai/gr8#630](https://github.com/kindlingai/gr8/pull/630)), with `.env`, a shipped `io_uring` seccomp profile,
-and read-only launcher script mounts. Nothing is compiled here.
+fp8 KV, Engram, and up to 32 concurrent chats in fast mode. This recipe runs gr8's published image (`v1.3.1`), with
+`.env`, a shipped `io_uring` seccomp profile, and read-only launcher script mounts. Nothing is compiled here.
 
 ## Results
 
@@ -23,8 +22,8 @@ The card above ([kindling.json](kindling.json)) was measured on 2026-11-11 on th
 [`c2220f2`](https://github.com/kindlingai/gr8/commit/c2220f2e876409cec3f9660f34589b97e7c899fd) in fast mode
 (`TUNE=speed`, the default, with that commit's 12,288-row v2 prefill stack before `GR8_DS_PF_V2_BF16_TC=7`,
 `GR8_DS_CACHE_MIB=1024` and `GR8_DS_ENGRAM_CACHE_MIB=2048`), on four GB10 boxes cabled in a ring (one boot,
-`bench/bench.py`). Re-confirmation on published `gr8 v1.3.0` (`kindlingai/gr8#630`) is pending release and 4-box DGX
-Spark hardware verification. Every speed is in tokens per second (tok/s).
+`bench/bench.py`). Re-confirmation on published `gr8 v1.3.1` (`kindlingai/gr8#630`) is pending 4-box DGX Spark
+hardware verification. Every speed is in tokens per second (tok/s).
 
 Card summary (`kindling.json`, 2026-11-11, gr8 `c2220f2`, ring, `TUNE=speed`):
 
@@ -144,7 +143,7 @@ docker run --rm --read-only --tmpfs /tmp:size=1g,mode=1777 \
   -v ds41-release:/var/lib/gr8/cache \
   -v "$PWD/fetch-release.sh:/opt/ds41-4x/fetch-release.sh:ro" \
   --entrypoint /opt/ds41-4x/fetch-release.sh \
-  ghcr.io/kindlingai/gr8:v1.3.0
+  ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863
 
 # 2. Boot on all four boxes:
 docker run -d --name ds41-4x-spark --gpus all --network host --pid host --device /dev/infiniband \
@@ -161,7 +160,7 @@ docker run -d --name ds41-4x-spark --gpus all --network host --pid host --device
   -v "$PWD/knobs.sh:/opt/ds41-4x/knobs.sh:ro" \
   -v "$PWD/fetch-release.sh:/opt/ds41-4x/fetch-release.sh:ro" \
   --entrypoint /opt/ds41-4x/entrypoint.sh \
-  ghcr.io/kindlingai/gr8:v1.3.0
+  ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863
 ```
 
 Note: the older recipe-specific image `ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark` is no longer updated
@@ -203,7 +202,7 @@ documented in [.env.example](.env.example):
 | `RELEASE_DIR`, `GR8_HOME_DIR` | named volumes (`ds41-release`, `ds41-home`) | Host directories (owned by uid 1000) in place of compose's named volumes. |
 | `GR8_STOP_GRACE` | `30s` | Shutdown grace period for `docker stop` (set `150s` with a persistent `KV_STORE`). |
 | `SECCOMP_PROFILE` | `./seccomp-iouring.json` | Seccomp profile allowing Engram's `io_uring` syscalls; set `builtin` for Docker's default (pread fallback). |
-| `GR8_IMAGE` | `ghcr.io/kindlingai/gr8:v1.3.0` (pending) | Override the published `gr8` engine image. |
+| `GR8_IMAGE` | `ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709ea...` | Override the published `gr8` engine image. |
 
 [gr8/KNOBS.md](https://github.com/kindlingai/gr8/blob/main/KNOBS.md) lists all other `gr8` options. Key `EXTRA_ENV`
 cache knobs: `GR8_DS_CACHE_MIB` (1,024 MiB for `speed`, 2,048 for `context`, 4,096 for `quality`) and
@@ -355,14 +354,14 @@ This recipe has no engine code and no Dockerfile. It runs one published gr8 imag
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) `v1.3.0` (pending [kindlingai/gr8#630](https://github.com/kindlingai/gr8/pull/630): `DS41_MX=48` default and first-boot `g6front-rs engram-cmap` verified against `kCmapSha256`) |
-| image | `ghcr.io/kindlingai/gr8:v1.3.0` (digest pending release) |
-| digest | pending `v1.3.0` publication |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) `v1.3.1` ([`9f4f9c4f700d8a53c753e98f5388a92cc8cfd869`](https://github.com/kindlingai/gr8/commit/9f4f9c4f700d8a53c753e98f5388a92cc8cfd869)) |
+| image | `ghcr.io/kindlingai/gr8:v1.3.1` |
+| digest | `sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863` |
 | weights | [kindlingai/deepseek-v4.1-flash-exlr8-native](https://huggingface.co/kindlingai/deepseek-v4.1-flash-exlr8-native/commit/98076325aaa2c8dfec6095536d69c47bfcfbb3dc) (`98076325`) |
 
-Once `gr8 v1.3.0` is published, fill `engine.commit` and `engine.image_digest` in [kindling.json](kindling.json) and
-append `@sha256:<digest>` in [compose.yaml](compose.yaml), then verify from the monorepo root with
-`python3 tools/check_pin.py --strict deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8` and `./check-config.sh`.
+`python3 tools/check_pin.py --strict deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8`, run from the monorepo root, verifies
+that [compose.yaml](compose.yaml) and [kindling.json](kindling.json) agree on the immutable image digest;
+`./check-config.sh` checks compose, seccomp, and `knobs.sh` against the published image.
 
 The older recipe-specific image `ghcr.io/kindlingai/deepseek-v4.1-flash-exlr8-4x-spark` stops updating with this change
 (existing tags stay on GHCR).

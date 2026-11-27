@@ -8,7 +8,7 @@
 #             GR8_DS_ATTN_TC_TILE=2, GR8_S2_ADMIT_HOLD=1 and GR8_S2_TAIL_FIRST=1; gr8/scripts/engine_args.sh), plus
 #             FIRST-BOOT.md Q3's two switches and Q4's output head, which change the output, the prefill setting
 #             GR8_DS_ATTN_TC_MF=2, GR8_DS_CACHE_MIB=1024 and GR8_DS_ENGRAM_CACHE_MIB=2048 (gr8/docs/ENV.md), and,
-#             unless set, SESS=32 and CAP=327680. gr8's published image (v1.3.0+) builds g6m4_ds41 with DS41_MX=48, so a
+#             unless set, SESS=32 and CAP=327680. gr8's published image (v1.3.1+) builds g6m4_ds41 with DS41_MX=48, so a
 #             step holds 48 rows.
 #   TUNE=context: FIRST-BOOT.md Q3 and Q4, GR8_DS_ATTN_TC_MF=2, GR8_DS_ATTN_TC_TILE=1, GR8_DS_MHC_ROW_SHARD=1,
 #             GR8_DS_CACHE_MIB=2048 and, unless set, SESS=16 and CAP=1048576 (FIRST-BOOT.md Q2). GR8_DS_MHC_ROW_SHARD=1

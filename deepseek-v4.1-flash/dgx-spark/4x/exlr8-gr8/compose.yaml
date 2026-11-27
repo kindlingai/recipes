@@ -1,8 +1,7 @@
-# DeepSeek-V4.1-Flash on four DGX Sparks (GB10) at TP=4: gr8's published image, pinned by tag and digest (pending
-# gr8 v1.3.0 / kindlingai/gr8#630), with this recipe's .env, shipped io_uring seccomp profile, and read-only script
-# mounts. No engine is compiled here and there is no Dockerfile. Run the SAME file with the SAME .env (.env.example)
-# on all four boxes (PEERS: the four LAN addresses, head first). The head serves the OpenAI API on port 8100 (host
-# network).
+# DeepSeek-V4.1-Flash on four DGX Sparks (GB10) at TP=4: gr8's published image (v1.3.1), pinned by tag and digest,
+# with this recipe's .env, shipped io_uring seccomp profile, and read-only script mounts. No engine is compiled here
+# and there is no Dockerfile. Run the SAME file with the SAME .env (.env.example) on all four boxes (PEERS: the four
+# LAN addresses, head first). The head serves the OpenAI API on port 8100 (host network).
 #
 #   cp .env.example .env                                             # edit PEERS, IPS and IPS2 on all 4 boxes (or MENTAT=1)
 #   docker compose run --rm fetch                                    # once on every box: 510.6 GB into ds41-release
@@ -16,9 +15,8 @@
 name: ds41-4x-spark
 services:
   gr8:
-    # The engine pin: kindlingai/gr8 v1.3.0 (pending kindlingai/gr8#630: DS41_MX=48 + first-boot engram-cmap).
-    # Fill commit and @sha256:<digest> here and in kindling.json once v1.3.0 publishes.
-    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.0}
+    # The engine pin: kindlingai/gr8 v1.3.1 (9f4f9c4, includes kindlingai/gr8#630: DS41_MX=48 + first-boot engram-cmap).
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863}
     container_name: ds41-4x-spark
     entrypoint: ["/opt/ds41-4x/entrypoint.sh"]
     # The recipe's settings (PEERS, IPS, IPS2, TUNE, CAP, SESS, MENTAT, RELEASE, EXTRA_ENV, ...) come from .env.
@@ -96,7 +94,7 @@ services:
   # One-shot release fetcher: `docker compose run --rm fetch` (no GPU or PEERS required).
   fetch:
     profiles: [fetch]
-    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.0}
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.3.1@sha256:e4e709eab32df3868b74b14c08b75fc89d891fde0f9650d0c4a42fcda54b9863}
     entrypoint: ["/opt/ds41-4x/fetch-release.sh"]
     env_file:
       - path: .env

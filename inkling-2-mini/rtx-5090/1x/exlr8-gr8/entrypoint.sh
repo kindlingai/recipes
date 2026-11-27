@@ -1,28 +1,23 @@
 #!/usr/bin/env bash
-# Single RTX 5090 (32 GB, TP=1) launcher for Inkling-2-Mini EXLR8 + DFlash.
-# Usage: ./serve.sh [bit325|k4|bit225|bit225-fast|bit250|k2|k2-fast|long]
+# Single RTX 5090 (32 GB, TP=1) container entrypoint for Inkling-2-Mini EXLR8 + DFlash.
+# Runs inside ghcr.io/kindlingai/gr8 (/opt/gr8) with compose.yaml and .env.
 set -euo pipefail
 
-HERE="$(cd "$(dirname "$0")" && pwd)"
-[ -f "$HERE/.env" ] && { set -a; # shellcheck disable=SC1091
-  source "$HERE/.env"; set +a; }
-
-PROFILE="${1:-}"
+PROFILE="${1:-${PROFILE:-}}"
 USER_CAP="${CAP:-}"
 USER_SESSIONS="${SESSIONS:-}"
 USER_PREFILL="${PREFILL:-}"
 
-ENGINE_DIR="${ENGINE_DIR:-${GR8_DIR:-$HERE/gr8}}"
-BIN_DIR="${BIN_DIR:-$HERE/bin}"
-G6M4="${G6M4:-$BIN_DIR/g6m4_ink2}"
-FRONT="${FRONT:-$BIN_DIR/g6front-rs}"
-SHIM="${SHIM:-$ENGINE_DIR/frontend/g6s2shim.py}"
+ENGINE_ROOT="${ENGINE_ROOT:-${GR8_ROOT:-/opt/gr8}}"
+G6M4="${G6M4:-$ENGINE_ROOT/bin/g6m4_ink2}"
+FRONT="${FRONT:-$ENGINE_ROOT/bin/g6front-rs}"
+SHIM="${SHIM:-$ENGINE_ROOT/frontend/g6s2shim.py}"
 PY="${PY:-python3}"
 
-# gr8 rejects unknown GR8_* environment variables; unset any shell-level helper vars.
-unset GR8_DIR GR8_ROOT GR8_IMAGE GR8_REPO GR8_REF
+# gr8 strictly rejects unknown GR8_* environment variables; unset any wrapper vars.
+unset GR8_ROOT GR8_IMAGE GR8_DIR GR8_REPO GR8_REF
 
-MODEL_DIR="${MODEL_DIR:-$HERE/models/inkling-2-mini-exlr8-k2-k3-k4}"
+MODEL_DIR="${MODEL_DIR:?Set MODEL_DIR to your local kindlingai/inkling-2-mini-exlr8-k2-k3-k4 directory}"
 SERVED_MODEL="${SERVED_MODEL:-inkling-2-mini}"
 VARIANT="${VARIANT:-bit325}"
 MTP="${MTP:-7}"
@@ -31,7 +26,7 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8100}"
 REASONING_EFFORT="${REASONING_EFFORT:-none}"
 REUSE_PREFIX="${REUSE_PREFIX:-0}"
-WORK_DIR="${WORK_DIR:-$HERE/work/s2}"
+WORK_DIR="${WORK_DIR:-/tmp/ink2-gr8}"
 
 export GR8_INK2_DF2_Q8="${GR8_INK2_DF2_Q8:-0}"
 # PF_MX8_MOE=2 caches 23.49 GiB of extra MXFP8 prefill MoE weights (designed for 128 GB Spark);
@@ -62,7 +57,7 @@ case "$PROFILE" in
     LONG_MODE=1
     ;;
   *)
-    echo "Unknown profile '$PROFILE'. Use: bit325 | k4 | bit225 | bit225-fast | bit250 | k2 | k2-fast | long" >&2
+    echo "Unknown PROFILE '$PROFILE'. Use: bit325 | k4 | bit225 | bit225-fast | bit250 | k2 | k2-fast | long" >&2
     exit 2
     ;;
 esac
@@ -108,17 +103,13 @@ else
   CAP="${USER_CAP:-$DEFAULT_CAP}"
 fi
 
-[ -x "$G6M4" ] || { echo "Missing $G6M4 — run ./build.sh first." >&2; exit 1; }
-[ -x "$FRONT" ] || { echo "Missing $FRONT — run ./build.sh first." >&2; exit 1; }
-[ -f "$SHIM" ] || { echo "Missing $SHIM — check ENGINE_DIR=$ENGINE_DIR." >&2; exit 1; }
+[ -x "$G6M4" ] || { echo "Missing $G6M4 in gr8 image ($ENGINE_ROOT)" >&2; exit 1; }
+[ -x "$FRONT" ] || { echo "Missing $FRONT in gr8 image ($ENGINE_ROOT)" >&2; exit 1; }
+[ -f "$SHIM" ] || { echo "Missing $SHIM in gr8 image ($ENGINE_ROOT)" >&2; exit 1; }
 [ -d "$MODEL_DIR" ] || { echo "Missing MODEL_DIR=$MODEL_DIR — download kindlingai/inkling-2-mini-exlr8-k2-k3-k4 first." >&2; exit 1; }
 
-for cuda_lib in /usr/local/cuda/lib64 /usr/local/cuda-13.1/lib64 /usr/local/cuda-13.0/lib64; do
-  if [ -d "$cuda_lib" ]; then
-    export LD_LIBRARY_PATH="$cuda_lib:$BIN_DIR/lib:${LD_LIBRARY_PATH:-}"
-    break
-  fi
-done
+BIN_DIR="$(dirname "$G6M4")"
+export LD_LIBRARY_PATH="${BIN_DIR}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
 
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
@@ -131,7 +122,6 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-t0="$(date +%s.%N)"
 echo "Starting Inkling-2-Mini on RTX 5090 (variant=$VARIANT, mtp=$MTP, cap=$CAP, sessions=$SESSIONS, prefill=$PREFILL, port=$PORT)..."
 
 ENG_ARGS=(
@@ -192,16 +182,5 @@ done
   --allow-thinking-off \
   --reasoning-fields both &
 FRONT_PID=$!
-
-for _ in $(seq 1 100); do
-  if curl -sf "http://127.0.0.1:$PORT/v1/models" >/dev/null 2>&1; then
-    t1="$(date +%s.%N)"
-    boot="$(awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.2f", b-a}')"
-    echo "Ready in ${boot}s — OpenAI API: http://${HOST}:${PORT}/v1 (model: ${SERVED_MODEL})"
-    break
-  fi
-  kill -0 "$FRONT_PID" 2>/dev/null || { echo "Frontend exited early" >&2; exit 1; }
-  sleep 0.2
-done
 
 wait -n "$ENG_PID" "$SHIM_PID" "$FRONT_PID"

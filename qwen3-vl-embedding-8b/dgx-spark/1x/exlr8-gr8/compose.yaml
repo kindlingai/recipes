@@ -1,0 +1,64 @@
+# Qwen3-VL-Embedding-8B (exlr8 K4) on one DGX Spark (GB10): gr8's published image, pinned by tag and digest, with
+# this recipe's .env. Serves the OpenAI-compatible /v1/embeddings API (text + multimodal images + MRL) on port 8100.
+#
+#   cp .env.example .env
+#   docker compose up -d                                  # first boot fetches the model (4.66 GB) and verifies hashes
+#   docker compose logs -f                                # ready in ~2 s once cached
+#   docker compose exec gr8 /opt/gr8/gr8 embed smoke      # 5/5 text, batch, MRL, base64, and multimodal checks
+#   docker compose exec gr8 /opt/gr8/gr8 embed down       # stops the engine cleanly
+#
+# RULE (gr8's): no option default lives here. The launcher in the image owns every default, and .env carries this
+# recipe's settings. The only values set below are the container's own paths.
+name: qwen3-vl-embedding-8b-1x-spark
+services:
+  gr8:
+    # The engine pin: kindlingai/gr8 v1.5.0 (dd253a4f); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.5.0@sha256:6d40ab08ad3de8c51571b6ab55ea20df5865e7e2adee0c3be259b5b814f50c16}
+    container_name: qwen3-vl-embedding-8b-1x-spark
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - GR8_WORK_DIR=/var/lib/gr8/home
+      - MODEL_CACHE=/var/lib/gr8/cache
+      - PY=/usr/bin/python3
+      - FRONT_BIN=/opt/gr8/bin/g6front-rs
+    # The supervisor control port (7340) and OpenAI /v1/embeddings API (8100) are host ports.
+    network_mode: host
+    pid: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ulimits:
+      memlock: -1
+      core: 0
+    cap_drop: [ALL]
+    cap_add: [IPC_LOCK]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    oom_score_adj: 1000
+    init: true
+    stop_grace_period: ${GR8_STOP_GRACE:-30s}
+    volumes:
+      # Model cache (4.66 GB on disk). Unset, a named volume. Set GR8_CACHE to a host directory owned by uid 1000.
+      - ${GR8_CACHE:-cache}:/var/lib/gr8/cache
+      # Logs and state: out/ (supervisor.log, g6m4.r0.err, front.log, gr8.state) and run/engine.sock.
+      - ${GR8_HOME:-home}:/var/lib/gr8/home
+    healthcheck:
+      # Healthy once g6embed is loaded and /health answers 200 on port 8100.
+      test: ["CMD-SHELL", "exec /opt/gr8/gr8 \"$${GR8_MODEL}\" health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10m
+    restart: on-failure
+
+volumes:
+  cache:
+  home:

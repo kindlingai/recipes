@@ -24,89 +24,37 @@ git sparse-checkout set glm-5.3/dgx-spark/3x/exlr8-gr8 && cd glm-5.3/dgx-spark/3
 ## Scoreboard
 
 <!-- recipes:index:start -->
-<!-- Written by tools/build_index.py from each recipe's kindling.json. Edits here are overwritten. -->
+<!-- Written by tools/build_index.py from each recipe's kindling.json and models.json. Edits here are overwritten. -->
 
-25 recipes. Numbers are the default config's: single-request decode on code, cold prefill of an 8K prompt (tok/s), longest request (tokens).
+25 recipes across 11 models and 2 hardware targets. Default config per recipe, all speeds in tok/s: **C1 Decode** is single-session decode (code workload), **C4 Decode** is 4-session aggregate decode (per-stream in parentheses when measured, or closest measured concurrency), **Prefill** is cold prefill at 8K (other prompt length noted), and **Max context** is the longest request (tokens).
 
-### DeepSeek-V4.1-Flash
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`deepseek-v4.1-flash-exlr8-4x-spark`](deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 native, fp8 KV, fast mode | gr8 v1.3.1 | 137.5 | – | 327,670 | stable |
-
-### GLM-5.3
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`glm-5.3-exlr8-2x-spark`](glm-5.3/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 bit225, 4-bit MLA latent KV, INT4 DFlash + 48 GB SSD KV | gr8 main@fa5d82d | – | – | 131,072 | stable |
-| [`glm-5.3-exlr8-3x-spark`](glm-5.3/dgx-spark/3x/exlr8-gr8) | 3× DGX Spark (GB10) | exlr8 bit273, int4 KV, 384K context | gr8 v1.1.1 | 51.6 | 764 | 393,210 | stable |
-| [`glm-5.3-exlr8-fp8kv-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8) | 4× DGX Spark (GB10) | exlr8 bit325, pure FP8 KV, 640K pool, uncapped exact MoE | gr8 v1.2.0 | 67.5 | 1,686 | 655,346 | stable |
-| [`glm-5.3-exlr8-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 bit325, int4 KV, 1M context, DFlash2 drafter | gr8 v1.1.1 | 66.9 | 1,534 | 1,048,576 | stable |
-| [`glm-5.3-exlr8-k4-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-k4-gr8) | 4× DGX Spark (GB10) | exlr8 bit387 (K4), int4 KV, pure quality | gr8 v1.1.1 | 60.8 | 1,530 | 442,354 | stable |
-| [`glm-5.3-exlr8-5x-spark`](glm-5.3/dgx-spark/5x/exlr8-gr8) | 5× DGX Spark (GB10) | exlr8 bit325, int4 KV, 983K context | gr8 v1.1.1 | 68.9 | 1,937 | 983,034 | stable |
-| [`glm-5.3-exlr8-fp8kv-6x-spark`](glm-5.3/dgx-spark/6x/exlr8-fp8kv-gr8) | 6× DGX Spark (GB10) | exlr8 bit325, pure FP8 KV, 1.51M pool (1M ctx), uncapped exact MoE | gr8 v1.2.0 | 78 | 2,016 | 1,048,576 | stable |
-| [`glm-5.3-exlr8-6x-spark`](glm-5.3/dgx-spark/6x/exlr8-gr8) | 6× DGX Spark (GB10) | exlr8 bit325, int4 KV, 1M context (2.18M pool) | gr8 v1.1.1 | 78 | 2,467 | 1,048,576 | stable |
-
-### GLM-5.3-Flash
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`glm-5.3-flash-exlr8-1x-spark`](glm-5.3-flash/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 bit201, int4 KV | gr8 v1.2.0 | 53.8 | 995 | 262,144 | stable |
-| [`glm-5.3-flash-exlr8-2x-spark`](glm-5.3-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 bit349, int4 KV | gr8 v1.2.0 | 76.5 | 1,670 | 262,144 | stable |
-| [`glm-5.3-flash-exlr8-gx10`](glm-5.3-flash/dgx-spark/4x/exlr8-vllm) | 4× DGX Spark (GB10) | NVFP4 | vllm | 117.3 | – | 524,288 | external |
-| [`glm-5.3-flash-gx10`](glm-5.3-flash/dgx-spark/4x/nvfp4-vllm) | 4× DGX Spark (GB10) | NVFP4 | vllm | 117.3 | – | 524,288 | external |
-
-### Inkling-2-Mini
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`inkling-2-mini-exlr8-1x-spark`](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash, 144K x 8 (1.18M KV) | gr8 main@2c221e9 | 90.6 | 3,484 | 147,456 | stable |
-| [`inkling-2-mini-exlr8-1x-rtx5090`](inkling-2-mini/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8, DFlash, 262K KV | gr8 main@2c221e9 | 328.1 | 9,580 | 65,536 | stable |
-
-### Nemotron 3.5 Bolt 74B-A9B
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`nemotron-3.5-bolt-rtx5090`](nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm) | 1× RTX 5090 | NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter | vllm v0.34.0 | 218 (512 tokens) | 6,277 | 262,144 | stable |
-
-### Nemotron 3.5 Super VL 120B-A12B
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`nemotron-3.5-super-vl-dgx-spark`](nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm) | 1× DGX Spark (GB10) | NVFP4, DFlash LiLiCorr drafter | vllm v0.34.0 | 40.9 (tg128) | 3,058 | – | stable |
-
-### Qwen3-VL-Embedding-2B
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`qwen3-vl-embedding-2b-exlr8-1x-spark`](qwen3-vl-embedding-2b/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 K4, multimodal embeddings | gr8 v1.5.0 | – | – | 16,384 | stable |
-
-### Qwen3-VL-Embedding-8B
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`qwen3-vl-embedding-8b-exlr8-1x-spark`](qwen3-vl-embedding-8b/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8 K4, multimodal embeddings | gr8 v1.5.0 | – | – | 16,384 | stable |
-
-### Qwen3.8-Flash-Next
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`qwen3.8-flash-next-exlr8-1x-spark`](qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8) | 1× DGX Spark (GB10) | exlr8, DFlash + MTP=3, 256K | gr8 main@fa5d82d | 114.2 | 2,204 | 262,144 | stable |
-| [`qwen3.8-flash-next-exlr8-2x-spark`](qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8, MTP=3, 256K | gr8 v1.2.0 | 126.8 | 3,027 | 262,144 | stable |
-| [`qwen3.8-flash-next-exlr8-1x-gpu`](qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8) | 1× RTX 5090 | exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4 | gr8 v1.3.1 | 171.1 | – | 40,960 | experimental |
-
-### Sage-S2.1-Flash
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`sage-s2.1-flash-exlr8-2x-spark`](sage-s2.1-flash/dgx-spark/2x/exlr8-gr8) | 2× DGX Spark (GB10) | exlr8 k4, int4 KV | gr8 v1.2.0 | 55.1 | 1,832 | 262,144 | stable |
-| [`sage-s2.1-flash-exlr8-4x-spark`](sage-s2.1-flash/dgx-spark/4x/exlr8-gr8) | 4× DGX Spark (GB10) | exlr8 k4, int4 KV | gr8 v1.2.0 | 88 | 2,999 | 262,144 | stable |
-
-### Step-5 Preview
-
-| Recipe | Hardware | Build | Engine | Decode | Prefill 8K | Max context | Status |
-|---|---|---|---|---|---|---|---|
-| [`step5-tp4-gb10-recipe`](step-5-preview/dgx-spark/4x/nvfp4-vllm) | 4× DGX Spark (GB10) | NVFP4, staged FP8 KV, MTP3, 576K context | vllm | 27.9 | 1,317.1 | 589,824 | experimental |
+| Model | Size | Hardware | C1 Decode | C4 Decode | Prefill | Max context | Engine | Build | Recipe | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| [**DeepSeek-V4.1-Flash**](deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8) | 763B | 4× DGX Spark (GB10) | 137.5 | 202.9 (C8) | 7,720 (32K) | 327,670 | gr8 v1.3.1 | exlr8 native, fp8 KV, fast mode | [`deepseek-v4.1-flash-exlr8-4x-spark`](deepseek-v4.1-flash/dgx-spark/4x/exlr8-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/2x/exlr8-gr8) | 744B | 2× DGX Spark (GB10) | 24.1 | 98.4 (24.6/s) | 323 (32K) | 131,072 | gr8 main@fa5d82d | exlr8 bit225, 4-bit MLA latent KV, INT4 DFlash + 48 GB SSD KV | [`glm-5.3-exlr8-2x-spark`](glm-5.3/dgx-spark/2x/exlr8-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/3x/exlr8-gr8) | 744B | 3× DGX Spark (GB10) | 51.6 | 77.5 (27.4/s) | 764 | 393,210 | gr8 v1.1.1 | exlr8 bit273, int4 KV, 384K context | [`glm-5.3-exlr8-3x-spark`](glm-5.3/dgx-spark/3x/exlr8-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8) | 744B | 4× DGX Spark (GB10) | 67.5 | 75.3 (23.1/s) | 1,686 | 655,346 | gr8 v1.2.0 | exlr8 bit325, pure FP8 KV, 640K pool, uncapped exact MoE | [`glm-5.3-exlr8-fp8kv-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-fp8kv-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/4x/exlr8-gr8) | 744B | 4× DGX Spark (GB10) | 66.9 | 89.4 (27.9/s) | 1,534 | 1,048,576 | gr8 v1.1.1 | exlr8 bit325, int4 KV, 1M context, DFlash2 drafter | [`glm-5.3-exlr8-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/4x/exlr8-k4-gr8) | 744B | 4× DGX Spark (GB10) | 60.8 | 62.3 (20.4/s) | 1,530 | 442,354 | gr8 v1.1.1 | exlr8 bit387 (K4), int4 KV, pure quality | [`glm-5.3-exlr8-k4-4x-spark`](glm-5.3/dgx-spark/4x/exlr8-k4-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/5x/exlr8-gr8) | 744B | 5× DGX Spark (GB10) | 68.9 | 104.2 (36.6/s) | 1,937 | 983,034 | gr8 v1.1.1 | exlr8 bit325, int4 KV, 983K context | [`glm-5.3-exlr8-5x-spark`](glm-5.3/dgx-spark/5x/exlr8-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/6x/exlr8-fp8kv-gr8) | 744B | 6× DGX Spark (GB10) | 78 | 101.3 (31.9/s) | 2,016 | 1,048,576 | gr8 v1.2.0 | exlr8 bit325, pure FP8 KV, 1.51M pool (1M ctx), uncapped exact MoE | [`glm-5.3-exlr8-fp8kv-6x-spark`](glm-5.3/dgx-spark/6x/exlr8-fp8kv-gr8) | stable |
+| [**GLM-5.3**](glm-5.3/dgx-spark/6x/exlr8-gr8) | 744B | 6× DGX Spark (GB10) | 78 | 117.4 (41.6/s) | 2,467 | 1,048,576 | gr8 v1.1.1 | exlr8 bit325, int4 KV, 1M context (2.18M pool) | [`glm-5.3-exlr8-6x-spark`](glm-5.3/dgx-spark/6x/exlr8-gr8) | stable |
+| [**GLM-5.3-Flash**](glm-5.3-flash/dgx-spark/1x/exlr8-gr8) | 320B-A18B | 1× DGX Spark (GB10) | 53.8 | 53.4 | 995 | 262,144 | gr8 v1.2.0 | exlr8 bit201, int4 KV | [`glm-5.3-flash-exlr8-1x-spark`](glm-5.3-flash/dgx-spark/1x/exlr8-gr8) | stable |
+| [**GLM-5.3-Flash**](glm-5.3-flash/dgx-spark/2x/exlr8-gr8) | 320B-A18B | 2× DGX Spark (GB10) | 76.5 | 82.9 | 1,670 | 262,144 | gr8 v1.2.0 | exlr8 bit349, int4 KV | [`glm-5.3-flash-exlr8-2x-spark`](glm-5.3-flash/dgx-spark/2x/exlr8-gr8) | stable |
+| [**GLM-5.3-Flash**](glm-5.3-flash/dgx-spark/4x/exlr8-vllm) | 320B-A18B | 4× DGX Spark (GB10) | 117.3 | 148 | 4,934 (32K) | 524,288 | vllm | NVFP4 | [`glm-5.3-flash-exlr8-gx10`](glm-5.3-flash/dgx-spark/4x/exlr8-vllm) | external |
+| [**GLM-5.3-Flash**](glm-5.3-flash/dgx-spark/4x/nvfp4-vllm) | 320B-A18B | 4× DGX Spark (GB10) | 117.3 | 148 | 4,934 (32K) | 524,288 | vllm | NVFP4 | [`glm-5.3-flash-gx10`](glm-5.3-flash/dgx-spark/4x/nvfp4-vllm) | external |
+| [**Inkling-2-Mini**](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | 26.4B-A3.4B | 1× DGX Spark (GB10) | 90.6 | 160 (C6) | 3,484 | 147,456 | gr8 main@2c221e9 | exlr8, DFlash, 144K x 8 (1.18M KV) | [`inkling-2-mini-exlr8-1x-spark`](inkling-2-mini/dgx-spark/1x/exlr8-gr8) | stable |
+| [**Inkling-2-Mini**](inkling-2-mini/rtx-5090/1x/exlr8-gr8) | 26.4B-A3.4B | 1× RTX 5090 | 328.1 | 777 (213.8/s) | 9,580 | 65,536 | gr8 main@2c221e9 | exlr8, DFlash, 262K KV | [`inkling-2-mini-exlr8-1x-rtx5090`](inkling-2-mini/rtx-5090/1x/exlr8-gr8) | stable |
+| [**Nemotron 3.5 Bolt 74B-A9B**](nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm) | 74B-A9B | 1× RTX 5090 | 218 (512 tokens) | – | 6,277 | 262,144 | vllm v0.34.0 | NVIDIA 24GB checkpoint, fp8 KV, DFlash drafter | [`nemotron-3.5-bolt-rtx5090`](nemotron-3.5-bolt/rtx-5090/1x/nvidia-24gb-vllm) | stable |
+| [**Nemotron 3.5 Super VL 120B-A12B**](nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm) | 120B-A12B | 1× DGX Spark (GB10) | 40.9 (tg128) | – | 3,058 | – | vllm v0.34.0 | NVFP4, DFlash LiLiCorr drafter | [`nemotron-3.5-super-vl-dgx-spark`](nemotron-3.5-super-vl/dgx-spark/1x/nvfp4-vllm) | stable |
+| [**Qwen3-VL-Embedding-2B**](qwen3-vl-embedding-2b/dgx-spark/1x/exlr8-gr8) | 2B | 1× DGX Spark (GB10) | 4,167.4 (embed) | 14,567.8 (C8 embed) | – | 16,384 | gr8 v1.5.0 | exlr8 K4, multimodal embeddings | [`qwen3-vl-embedding-2b-exlr8-1x-spark`](qwen3-vl-embedding-2b/dgx-spark/1x/exlr8-gr8) | stable |
+| [**Qwen3-VL-Embedding-8B**](qwen3-vl-embedding-8b/dgx-spark/1x/exlr8-gr8) | 8B | 1× DGX Spark (GB10) | 1,563.1 (embed) | 3,544.8 (C8 embed) | – | 16,384 | gr8 v1.5.0 | exlr8 K4, multimodal embeddings | [`qwen3-vl-embedding-8b-exlr8-1x-spark`](qwen3-vl-embedding-8b/dgx-spark/1x/exlr8-gr8) | stable |
+| [**Qwen3.8-Flash-Next**](qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8) | 180B-A6B | 1× DGX Spark (GB10) | 114.2 | 120.5 (38.2/s) | 2,204 | 262,144 | gr8 main@fa5d82d | exlr8, DFlash + MTP=3, 256K | [`qwen3.8-flash-next-exlr8-1x-spark`](qwen3.8-flash-next/dgx-spark/1x/exlr8-gr8) | stable |
+| [**Qwen3.8-Flash-Next**](qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8) | 180B-A6B | 2× DGX Spark (GB10) | 126.8 | 183.5 (56.6/s) | 3,027 | 262,144 | gr8 v1.2.0 | exlr8, MTP=3, 256K | [`qwen3.8-flash-next-exlr8-2x-spark`](qwen3.8-flash-next/dgx-spark/2x/exlr8-gr8) | stable |
+| [**Qwen3.8-Flash-Next**](qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8) | 180B-A6B | 1× RTX 5090 | 171.1 | – | – | 40,960 | gr8 v1.3.1 | exlr8 K3 bit300, hybrid GPU + host RAM, MTP=4 | [`qwen3.8-flash-next-exlr8-1x-gpu`](qwen3.8-flash-next/rtx-5090/1x/exlr8-gr8) | experimental |
+| [**Sage-S2.1-Flash**](sage-s2.1-flash/dgx-spark/2x/exlr8-gr8) | 320B-A18B | 2× DGX Spark (GB10) | 55.1 | 79.8 | 1,832 | 262,144 | gr8 v1.2.0 | exlr8 k4, int4 KV | [`sage-s2.1-flash-exlr8-2x-spark`](sage-s2.1-flash/dgx-spark/2x/exlr8-gr8) | stable |
+| [**Sage-S2.1-Flash**](sage-s2.1-flash/dgx-spark/4x/exlr8-gr8) | 320B-A18B | 4× DGX Spark (GB10) | 88 | 127.5 | 2,999 | 262,144 | gr8 v1.2.0 | exlr8 k4, int4 KV | [`sage-s2.1-flash-exlr8-4x-spark`](sage-s2.1-flash/dgx-spark/4x/exlr8-gr8) | stable |
+| [**Step-5 Preview**](step-5-preview/dgx-spark/4x/nvfp4-vllm) | 600B-A27B | 4× DGX Spark (GB10) | 27.9 | 62.9 (16.3/s) | 1,317.1 | 589,824 | vllm | NVFP4, staged FP8 KV, MTP3, 576K context | [`step5-tp4-gb10-recipe`](step-5-preview/dgx-spark/4x/nvfp4-vllm) | experimental |
 
 <!-- recipes:index:end -->
 

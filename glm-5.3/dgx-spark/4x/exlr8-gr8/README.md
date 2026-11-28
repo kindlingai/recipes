@@ -6,51 +6,62 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-Full GLM-5.3 on four DGX Sparks (GB10, 128 GB each) at TP=4, served by [gr8](https://github.com/kindlingai/gr8) `v1.1.1` from
+Full GLM-5.3 on four DGX Sparks (GB10, 128 GB each) at TP=4, served by [gr8](https://github.com/kindlingai/gr8) `v1.6.0` from
 the `bit325` width profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/3e388b45b26ca4558351d22994afcfc85b99af74) (v0.6):
 a full **1,048,576-token** context window (1,130,496-token int4 KV pool), zero-copy shared prefix pages, DFlash2 + MTP=2 drafting,
 and up to 8 concurrent chats. This recipe is the published gr8 image, pinned by digest, and one `.env` file. Nothing is compiled.
 
-66.9 tok/s for one request writing code (74.6 tok/s in fast mode) · 1,577 tok/s prefill on a 32K prompt (1,455 tok/s at 128K) · 8 requests at once, 125.2 tok/s in total (149.1 tok/s in fast mode) · full 1M context (`1,130,496`-token KV pool) · live-proven at 3×300K, 4×153K, and 8×26K shared prefix · 5.4+ GiB free memory per box
+67.1 tok/s for one request writing code (74.6 tok/s in fast mode) · 1,638 tok/s prefill on a 32K prompt (1,579 tok/s at 128K, +8.5% vs v1.1.1) · 8 requests at once, 123.8 tok/s in total (149.1 tok/s in fast mode) · RealMark 1,356.8 Grade A (C=4 1,546.3, 16/16 all lanes, 99.2% cache hit) · full 1M context (`1,130,496`-token KV pool) · 5.46+ GiB free memory per box
 
 ## Results
 
-Four DGX Sparks on a 200G switch, TP=4, `gr8 v1.1.0` (`cdd1e09`), this recipe's `.env` (`bit325` v0.6 experts, int4 KV `CAP=1,130,496`, `MAX_MODEL_LEN=1,048,576`, `GR8_KV_SHARE_PAGES=1`, DFlash2 + MTP=2 drafter, default quality preset `MOE_UNION_CAP=48`), measured 2026-11-20 with gr8's own benchmark (`bench/bench.py`, default level), one fresh boot. GPU clocks were uncapped in the timed stages. Every speed is in tokens per second (tok/s).
+Four DGX Sparks on a 200G switch, TP=4, `gr8 main` (`530312e6`), this recipe's `.env` (`bit325` v0.6 experts, int4 KV `CAP=1,130,496`, `MAX_MODEL_LEN=1,048,576`, `GR8_KV_SHARE_PAGES=1`, DFlash2 + MTP=2 drafter, default quality preset `MOE_UNION_CAP=48`), measured 2026-11-28 with gr8's own benchmark (`bench/bench.py`, default level) and Official RealMark C=1/2/4 on one fresh boot (73 s warm boot). GPU clocks were uncapped in the timed stages (`0%` throttle across all four boxes). Every speed is in tokens per second (tok/s).
 
 One request, short prompts (46-54 tokens, up to 512 tokens out, 6 runs each):
 
 | work | code | prose | structured | counting |
 |---|---|---|---|---|
-| tok/s, mean | 66.9 | 40.3 | 81.9 | 86.8 |
-| lowest - highest run | 57.5 - 77.5 | 36.0 - 44.2 | 73.2 - 89.0 | 85.4 - 88.8 |
+| tok/s, mean | 67.1 | 39.9 | 81.1 | 85.5 |
+| lowest - highest run | 57.7 - 72.9 | 38.6 - 42.4 | 74.4 - 88.0 | 84.2 - 87.1 |
+| 95% interval | 62.4 - 71.7 | 39.2 - 40.9 | 77.8 - 84.1 | 84.8 - 86.2 |
 
 Prefill, cold prompt (one run each):
 
 | prompt | first token | prefill tok/s | decode after it | first token, same prompt again (cached) |
 |---|---|---|---|---|
-| 8K tokens | 5.36 s | 1,534 | 38.2 tok/s | 0.15 s |
-| 32K tokens | 20.82 s | 1,577 | 32.5 tok/s | 0.27 s |
-| 128K tokens | 90.07 s | 1,455 | 31.6 tok/s | 0.45 s |
+| 8K tokens | 5.64 s | 1,448 | 37.3 tok/s | 0.15 s |
+| 32K tokens | 20.02 s | 1,638 | 31.2 tok/s | 0.12 s |
+| 128K tokens | 82.97 s | 1,579 | 31.7 tok/s | 0.30 s |
 
 Requests at once (short mixed prompts, 48-55 tokens, up to 512 tokens out each):
 
 | requests at once | 1 | 2 | 4 | 8 |
 |---|---|---|---|---|
-| total tok/s (quality default, `MOE_UNION_CAP=48`) | 52.7 | 68.9 | 89.4 | 125.2 |
-| tok/s per request (quality default) | 55.3 | 41.6 | 27.9 | 19.0 |
-| first token, median | 0.34 s | 0.61 s | 1.33 s | 2.53 s |
+| total tok/s (quality default, `MOE_UNION_CAP=48`) | 53.5 | 66.7 | 89.1 | 123.8 |
+| tok/s per request (quality default) | 56.9 | 35.9 | 27.7 | 18.9 |
+| first token, median | 0.34 s | 0.60 s | 1.18 s | 2.57 s |
+
+### Official RealMark RIPAL (C=1 / C=2 / C=4)
+
+Measured on the same boot (`--lanes 1 2 4 --probe`, Thinking OFF, server default temperature): **RIPAL Score 1,356.8 Grade A** (`99.23%` prefix cache hit across 11.19M prompt tokens, C=1 prefill floor `1,653 tok/s`, lowest `MemAvailable` `5.46 GiB`):
+
+| lanes | RIPAL score | aggregate decode (per lane) | prefill (per lane) | active context | done | match |
+|---|---:|---:|---:|---:|---:|---:|
+| **C=1** | **1,179.8** | 38.9 (38.9) tok/s | 1,068 (1,068) tok/s | 97K (97K) | 16/16 | 97.7% (A) |
+| **C=2** | **1,369.1** | 49.4 (24.7) tok/s | 755.8 (377.9) tok/s | 166K (83K) | 16/16 | 98.3% (A) |
+| **C=4** | **1,546.3** | 61.5 (15.4) tok/s | 851.2 (212.8) tok/s | 305K (76K) | 16/16 | 97.7% (A) |
 
 ### Speed and quality presets (`MOE_UNION_CAP`)
 
-`gr8 v1.1.0` enables eight bit-exact decode, prefill, and DFlash2 kernels by default (`KL = 0.00000`), `DEC_BK_MAX=2048` (allowing a 1.13M-token int4 KV pool with over 5.3 GiB free RAM per box), and a batch-budgeted MoE expert union cap (`MOE_UNION_CAP`):
+`gr8` enables bit-exact decode, prefill, and DFlash2 kernels by default (`KL = 0.00000`), `DEC_BK_MAX=2048` (allowing a 1.13M-token int4 KV pool with over 5.4 GiB free RAM per box), and a batch-budgeted MoE expert union cap (`MOE_UNION_CAP`):
 
 | preset (`.env`) | code decode | 4 streams total (per req) | 8 streams total (per req) | prefill 8K / 32K / 128K | GSM8K-250 (C=4) | HumanEval-164 (C=4) |
 |---|---:|---:|---:|---:|---:|---:|
-| **Quality (default, `MOE_UNION_CAP=48`)** | 66.9 tok/s | 89.4 (27.9) tok/s | 125.2 (19.0) tok/s | 1,534 / 1,577 / 1,455 tok/s | 246 / 250 (98.4%) | 156 / 164 (95.1%) |
+| **Quality (default, `MOE_UNION_CAP=48`)** | 67.1 tok/s | 89.1 (27.7) tok/s | 123.8 (18.9) tok/s | 1,448 / 1,638 / 1,579 tok/s | 246 / 250 (98.4%) | 156 / 164 (95.1%) |
 | **Fast (`MOE_UNION_CAP=32`)** | 74.6 tok/s | 101.0 (33.9) tok/s | 149.1 (23.4) tok/s | 1,576 / 1,633 / 1,432 tok/s | 242 / 250 (96.8%) | 153 / 164 (93.3%) |
 | **Uncapped exact (`MOE_UNION_CAP=0`)** | exact (`KL=0`) | — | — | — | 244 / 250 (97.6%) | 157 / 164 (95.7%) |
 
-Fast mode (`MOE_UNION_CAP=32`) was measured on the same 1M-context recipe on 2026-11-20 (`bench/bench.py --quick`, 40.6 tok/s prose, 54.9 / 71.8 / 101.0 / 149.1 tok/s at 1 / 2 / 4 / 8 streams, 0 suspect characters, 5.44 GiB lowest `MemAvailable`). GSM8K-250 and HumanEval-164 were measured at C=4 on the same pinned `gr8 v1.1.0` build (`cdd1e09`, 2026-11-20). Note: in both 8K prefill runs, 8–9 shared chat-template tokens hit the prefix cache (0.1% of the 8K prompt); 32K and 128K were 100% cold (0 cached tokens).
+Fast mode (`MOE_UNION_CAP=32`), GSM8K-250, and HumanEval-164 were measured on the same 1M-context recipe on `gr8 v1.1.0` (`cdd1e09`, 2026-11-20). Note: in the 8K prefill run, 8–9 shared chat-template tokens hit the prefix cache (0.1% of the 8K prompt); 32K and 128K were 100% cold (0 cached tokens).
 
 ### How long each chat can be
 
@@ -72,18 +83,20 @@ Measured back-to-back on the same `v1.1.0` quality-default boot on 2026-11-20 (u
 | **4 × 153K** independent chats | 613,806 | 4/4 (T1) & 4/4 (T2) | 99.9% | 35.1 tok/s (T2) |
 | **8 × 26K** shared prefix (`GR8_KV_SHARE_PAGES=1`) | 26K shared | 8/8 | 8/8 (26,080 / 26,101 tok) | 78.3 tok/s |
 
-Checks on the same `v1.1.0` default boot:
+Checks on the 2026-11-28 `gr8 main` (`530312e6`) default boot:
 
 | check | result |
 |---|---|
 | smoke test | 14 of 14 |
-| fact hidden in a 131,269-token prompt | found |
+| fact hidden in a 130,876-token prompt | found |
 | count to 200, three times | 3 of 3 clean |
-| prompt cache | 427 of 428 cached |
+| prompt cache | 423 of 424 cached |
 | suspect characters | 0 replies |
-| GSM8K-250 / HumanEval-164 (C=4, `MOE_UNION_CAP=48`) | 246 of 250 (98.4%) / 156 of 164 (95.1%) |
+| RealMark RIPAL (C=1/2/4) | 1,356.8 Grade A (16/16 all lanes, 99.23% prefix cache hit) |
+| GSM8K-250 / HumanEval-164 (C=4, `MOE_UNION_CAP=48`) | 246 of 250 (98.4%) / 156 of 164 (95.1%) (v1.1.0) |
 | longest context (`max_model_len`) | 1,048,576 tokens |
-| lowest `MemAvailable` recorded on any box | 5.39 GiB after bench (6.12 - 6.45 GiB after boot; 5.00 GiB after 899K-token stress proofs) |
+| warm boot to `/health` 200 | 73 s |
+| lowest `MemAvailable` recorded on any box | 5.61 GiB during bench, 5.46 GiB during RealMark (6.84 - 7.44 GiB after boot) |
 
 ### Why `int4` KV preserves quality while unlocking a 1.13M-token pool
 
@@ -171,14 +184,14 @@ settings and expanded context pools, use the dedicated recipes:
 - **Three boxes (384K context, `bit273`):** [glm-5.3-exlr8-3x-spark](../../3x/exlr8-gr8)
 - **Four boxes K4 (`bit387`, uncapped routing):** [glm-5.3-exlr8-k4-4x-spark](../../4x/exlr8-k4-gr8)
 - **Five boxes (`v1.1.0`, 983K context):** [glm-5.3-exlr8-5x-spark](../../5x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
-- **Six boxes (`v1.1.0`, 1M context / 2.18M KV pool):** [glm-5.3-exlr8-6x-spark](../../6x/exlr8-gr8) — measured 2026-11-20 on `gr8 v1.1.0`.
+- **Six boxes (1M context / 2.18M KV pool):** [glm-5.3-exlr8-6x-spark](../../6x/exlr8-gr8) — measured 2026-11-28 on `gr8 main` (`530312e6`, RealMark 1,431.9 A).
 
-| | TP=3 (2026-10-24) | TP=5 (`v1.1.0`, 2026-11-20) | TP=6 (`v1.1.0`, 2026-11-20) |
+| | TP=3 (2026-10-24) | TP=5 (`v1.1.0`, 2026-11-20) | TP=6 (`main`, 2026-11-28) |
 |---|---|---|---|
 | experts | `bit225`, 2.25 bpw | `bit325`, 3.25 bpw | `bit325`, 3.25 bpw |
-| decode, code / prose | 41.1 / 31.7 tok/s | 68.9 / 50.8 tok/s | 78.0 / 58.0 tok/s |
-| total, 2 / 4 / 8 requests at once | 50.6 / 63.8 / — tok/s | 81.1 / 104.2 / 141.5 tok/s | 96.3 / 117.4 / 165.1 tok/s |
-| prefill, 8K / 32K / 128K prompt | 635 / — / — tok/s | 1,937 / 1,960 / 1,837 tok/s | 2,467 / 2,411 / 1,885 tok/s |
+| decode, code / prose | 41.1 / 31.7 tok/s | 68.9 / 50.8 tok/s | 78.8 / 57.6 tok/s |
+| total, 2 / 4 / 8 requests at once | 50.6 / 63.8 / — tok/s | 81.1 / 104.2 / 141.5 tok/s | 86.7 / 119.5 / 157.8 tok/s |
+| prefill, 8K / 32K / 128K prompt | 635 / — / — tok/s | 1,937 / 1,960 / 1,837 tok/s | 2,296 / 2,428 / 2,257 tok/s |
 | KV pool (longest context) | 307,136 tokens | 983,040 tokens | 2,179,072 tokens (1M max) |
 
 TP=3 row above is from 2026-10-24 ([RigMark](https://github.com/alexellis/rigmark) 1.0.0, fp8 KV, MTP drafting). TP=5 and TP=6 rows are from 2026-11-20 on `gr8 v1.1.0` (`MOE_UNION_CAP=48`; fast preset `MOE_UNION_CAP=32` reaches 119.6 / 160.5 tok/s at C=4 / C=8 on TP=5, and 128.2 / 180.2 tok/s at C=4 / C=8 on TP=6).
@@ -200,11 +213,11 @@ This recipe has no engine code. It runs one published gr8 image, named by tag an
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.1`](https://github.com/kindlingai/gr8/releases/tag/v1.1.1) at [`a3f44a0`](https://github.com/kindlingai/gr8/commit/a3f44a075854fc9af0ed56c6d43f7739705bc871) |
-| image | `ghcr.io/kindlingai/gr8:v1.1.1` |
-| digest | `sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96` |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.6.0`](https://github.com/kindlingai/gr8/releases/tag/v1.6.0) at [`d768079`](https://github.com/kindlingai/gr8/commit/d768079b300f6d69630a68d498727281d67be1a3) |
+| image | `ghcr.io/kindlingai/gr8:v1.6.0` |
+| digest | `sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91` |
 
-The TP=4 benchmark tables above were measured on 2026-11-20 on `gr8 v1.1.0` (`cdd1e09`); `v1.1.1` (`a3f44a0`) is a hotfix on top of `v1.1.0` fixing the 150K+ multi-session TP=4 CP staged index ordering bug (verified 24/24 clean across greedy and sampled multi-turn runs with no prefill regression).
+The TP=4 benchmark and Official RealMark tables above were measured on 2026-11-28 on `gr8` commit `530312e6`; `v1.6.0` (`d768079`) ships the identical `g6m4-int4` GLM-5.3 engine (zero GLM-5.3 code changes between `530312e6` and `d768079`).
 
 After v1.0, the pin moves to a newer gr8 release only after this recipe was booted and measured on it.
 `python3 tools/check_pin.py glm-5.3/dgx-spark/4x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and

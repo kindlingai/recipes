@@ -7,8 +7,8 @@ tell the person.
 ## 1. Check both boxes
 
 - Each box is a DGX Spark (GB10, 128 GB unified memory) and **no other model or heavy workload runs on it**:
-  `docker ps` and `nvidia-smi` show none. (TP=2 runs very close to the 256 GB unified-memory ceiling — ~64–88 MiB
-  live `MemAvailable` floor with `GR8_MEM_MIN=1`.)
+  `docker ps` and `nvidia-smi` show none. (TP=2 runs close to the 256 GB unified-memory ceiling — `0.686 GiB`
+  live `MemAvailable` floor at `CAP=172,032` with `GR8_MEM_MIN=1`.)
 - Docker has the NVIDIA runtime: `docker info | grep -i nvidia`.
 - Disk: at least **175 GB free on fast local NVMe** per box (~115 GB for this rank's weights/drafter plus 48 GB for the
   NVMe SSD `KV_STORE` under `GR8_HOME`): `df -h "$(docker info --format '{{.DockerRootDir}}')"`.

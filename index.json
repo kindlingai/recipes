@@ -27,7 +27,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T07:59:41-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "deepseek-v4.1-flash-exlr8-4x-spark",
@@ -158,14 +158,14 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T14:37:41-06:00",
+      "updated_at": "2026-11-28T05:56:55-08:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-2x-spark",
         "status": "stable",
         "title": "GLM-5.3",
         "variant": "exlr8 bit225, 4-bit MLA latent KV, INT4 DFlash + 48 GB SSD KV",
-        "summary": "Full GLM-5.3 (743B) on just two DGX Sparks (256 GB unified memory total) at TP=2 with upstream gr8: EXLR8 bit225 mixed-precision weights, 4-bit MLA latent KV (416 B/layer/tok excl. indexer), native INT4 DFlash + MTP=1, and built-in 48 GB NVMe SSD KV store. Live-verified at RealMark 800.4 Grade A (98.4 tok/s C=4 aggregate decode, 99.2% cache hit across 293K active C=4 context), 140/200 (70.0%) on 200 coding/math/science tasks (86.25% HumanEval+), and 21/24 (87.5%) on 32K-128K hard long-context (100% needle & doc-QA recall to 128K).",
+        "summary": "Full GLM-5.3 (743B) on just two DGX Sparks (256 GB unified memory total) at TP=2 with upstream gr8: EXLR8 bit225 mixed-precision weights, 4-bit MLA latent KV (172K pool), native INT4 DFlash + MTP=1, and built-in 48 GB NVMe SSD KV store. Live-verified at RealMark 935.5 Grade A (16/16 all lanes, 1,001.8 at C=4, 72.9 tok/s C=4 aggregate decode, 99.2% cache hit across 307K active context), 47.0 tok/s code decode, 443/418/369 tok/s cold prefill (8K/32K/128K), 128K needle PASS, and 0.686 GiB live MemAvailable floor.",
         "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
         "weights_commit": "501d259894bf0de607ee4aa6f8a564a14d0c6b63",
         "hardware": "DGX Spark (GB10)",
@@ -179,11 +179,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "fa5d82d37751d8c71703e3d1e6f4c010427357d2",
+          "ref": "v1.6.0",
+          "commit": "d768079b300f6d69630a68d498727281d67be1a3",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:main",
-          "image_digest": "sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59"
+          "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+          "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
         },
         "default_config": "tp2",
         "configs": [
@@ -191,56 +191,75 @@
             "id": "tp2",
             "label": "TP=2 · SSD KV",
             "nodes": 2,
+            "decode": {
+              "code": 47.0,
+              "prose": 26.0,
+              "structured": 56.4
+            },
+            "decode_extra": {
+              "counting": 60.5
+            },
+            "decode_prompt_tokens": [
+              46,
+              54
+            ],
             "prefill": [
               {
-                "context": 32768,
-                "tps": 323
+                "context": 8192,
+                "tps": 443
               },
               {
-                "context": 65536,
-                "tps": 378
+                "context": 32768,
+                "tps": 418
               },
               {
                 "context": 131072,
-                "tps": 344
+                "tps": 369
               }
             ],
             "concurrency": [
               {
                 "streams": 1,
-                "aggregate_tps": 24.1,
-                "per_stream_tps": 24.1
+                "aggregate_tps": 34.0,
+                "per_stream_tps": 36.9,
+                "ttft_p50_s": 0.49
               },
               {
                 "streams": 2,
-                "aggregate_tps": 50.3,
-                "per_stream_tps": 25.1
+                "aggregate_tps": 43.4,
+                "per_stream_tps": 25.8,
+                "ttft_p50_s": 0.83
               },
               {
                 "streams": 4,
-                "aggregate_tps": 98.4,
-                "per_stream_tps": 24.6
+                "aggregate_tps": 49.5,
+                "per_stream_tps": 14.6,
+                "ttft_p50_s": 1.67
               }
             ],
-            "max_context": 131072,
-            "kv_pool_tokens": 131072,
+            "concurrency_prompt_tokens": [
+              49,
+              55
+            ],
+            "max_context": 172032,
+            "kv_pool_tokens": 172032,
             "max_concurrent": 4,
-            "lowest_mem_available_gib": 0.064,
+            "lowest_mem_available_gib": 0.686,
             "quality": [
               {
                 "name": "RealMark RIPAL (C=1/2/4)",
-                "value": "800.4 Grade A (99.2% cache hit, 0/102 buffered)"
+                "value": "935.5 Grade A (16/16 all lanes, 99.2% cache hit)"
               },
               {
-                "name": "200-Task Thinking-ON (4K cap)",
-                "value": "140/200 (70.0%, 100% stopped; HumanEval+ 86.25%)"
+                "name": "Needle recall",
+                "value": "found at 128K (131,046 tok)"
               },
               {
-                "name": "Needle & Long-Ctx (32K-128K)",
-                "value": "21/24 (87.5%, 100% stopped; 100% needle & QA to 128K)"
+                "name": "Smoke & correctness",
+                "value": "14/14 smoke, 3/3 count, 0 suspect"
               }
             ],
-            "notes": "Measured 2026-11-27 on upstream ghcr.io/kindlingai/gr8:main@sha256:494c44b2 (fa5d82d3) across 2 DGX Sparks (256 GB unified memory total), bit225 EXLR8 weights (501d2598), native INT4 DFlash (incoai/GLM-5.3-DFlash2 @ 425aa615, tp2-int4) + MTP=1, 4-bit MLA latent KV (416 B/layer/tok excl. indexer), and 48 GB NVMe SSD KV_STORE with GR8_MEM_MIN=1. RealMark ran with --stage-prefill-rate 300 (Thinking OFF, C=1 16/16 801.1, C=2 10/16 810.5, C=4 8/16 789.7; 293K active C=4 context; 5/34 word flags). Cold prefill points measured from 24-task deterministic 32K/64K/128K long-context suite at CAP=135168 SESS=2 (Thinking ON; 38.7 tok/s decode at 128K). Warm boot 87-88 s; MemAvailable floor 0.064-0.088 GiB; 0 API errors; 0 OOMs."
+            "notes": "Measured 2026-11-28 on kindlingai/gr8 main (530312e6) across 2 DGX Sparks (256 GB unified memory total, 200G RoCE v2 switch), bit225 EXLR8 weights (501d2598), native INT4 DFlash (incoai/GLM-5.3-DFlash2 @ 425aa615, tp2-int4) + MTP=1, 4-bit MLA latent KV (CAP=172032, SESS=4), and 48 GB NVMe SSD KV_STORE with GR8_MEM_MIN=1. Decode, cold prefill (8K/32K/128K), concurrency (1/2/4), smoke (14/14), and 128K needle recall (131,046 tok) measured with gr8 bench/bench.py default level (GPU clocks uncapped in timed stages, 0% throttle). Official RealMark C=1/2/4 (Thinking OFF, --probe, default unthrottled stage): 935.5 Grade A (C=1 833.2 / C=2 980.9 / C=4 1,001.8; 26.1 / 40.5 / 72.9 tok/s aggregate decode; 16/16 done on all lanes; 99.23% prefix cache hit across 307K active C=4 context). Warm boot 86 s; live MemAvailable floor 0.686 GiB; 0 API errors; 0 OOMs."
           }
         ]
       }
@@ -255,7 +274,7 @@
       "count": 3,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T17:40:46-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-3x-spark",
@@ -404,7 +423,7 @@
       "count": 4,
       "variant": "exlr8-fp8kv-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:29:43-06:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-fp8kv-4x-spark",
@@ -574,14 +593,14 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T17:40:46-05:00",
+      "updated_at": "2026-11-28T05:56:55-08:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-4x-spark",
         "status": "stable",
         "title": "GLM-5.3",
         "variant": "exlr8 bit325, int4 KV, 1M context, DFlash2 drafter",
-        "summary": "Full GLM-5.3 on four DGX Sparks at TP=4 with gr8 v1.1.1: exlr8 bit325 (v0.6), int4 KV with a 1,130,496-token pool and 1,048,576 max context, zero-copy shared prefix pages, DFlash2 + MTP=2 drafting, eight bit-exact kernel paths plus MoE union cap (48 quality default, 32 fast preset), up to 8 concurrent chats, and a persistent SSD KV store. Live-proven at 3x300K, 4x153K, and 8x26K shared prefix.",
+        "summary": "Full GLM-5.3 on four DGX Sparks at TP=4 with upstream gr8: exlr8 bit325 (v0.6), int4 KV with a 1,130,496-token pool and 1,048,576 max context, zero-copy shared prefix pages, DFlash2 + MTP=2 drafting, bit-exact kernel paths plus MoE union cap (48 quality default, 32 fast preset), up to 8 concurrent chats, and a persistent SSD KV store. Live-verified at RealMark 1,356.8 Grade A (16/16 all lanes, 1,546.3 at C=4, 99.2% cache hit), 1,638/1,579 tok/s cold prefill (32K/128K), and 3x300K / 4x153K / 8x26K shared prefix.",
         "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
         "hardware": "DGX Spark (GB10)",
         "stack": [
@@ -593,11 +612,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "v1.1.1",
-          "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+          "ref": "v1.6.0",
+          "commit": "d768079b300f6d69630a68d498727281d67be1a3",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:v1.1.1",
-          "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+          "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+          "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
         },
         "default_config": "tp4",
         "configs": [
@@ -635,10 +654,12 @@
             "label": "TP=4",
             "nodes": 4,
             "decode": {
-              "code": 66.9,
-              "prose": 40.3,
-              "structured": 81.9,
-              "counting": 86.8
+              "code": 67.1,
+              "prose": 39.9,
+              "structured": 81.1
+            },
+            "decode_extra": {
+              "counting": 85.5
             },
             "decode_prompt_tokens": [
               46,
@@ -647,41 +668,41 @@
             "prefill": [
               {
                 "context": 8192,
-                "tps": 1534
+                "tps": 1448
               },
               {
                 "context": 32768,
-                "tps": 1577
+                "tps": 1638
               },
               {
                 "context": 131072,
-                "tps": 1455
+                "tps": 1579
               }
             ],
             "concurrency": [
               {
                 "streams": 1,
-                "aggregate_tps": 52.7,
-                "per_stream_tps": 55.3,
+                "aggregate_tps": 53.5,
+                "per_stream_tps": 56.9,
                 "ttft_p50_s": 0.34
               },
               {
                 "streams": 2,
-                "aggregate_tps": 68.9,
-                "per_stream_tps": 41.6,
-                "ttft_p50_s": 0.61
+                "aggregate_tps": 66.7,
+                "per_stream_tps": 35.9,
+                "ttft_p50_s": 0.6
               },
               {
                 "streams": 4,
-                "aggregate_tps": 89.4,
-                "per_stream_tps": 27.9,
-                "ttft_p50_s": 1.33
+                "aggregate_tps": 89.1,
+                "per_stream_tps": 27.7,
+                "ttft_p50_s": 1.18
               },
               {
                 "streams": 8,
-                "aggregate_tps": 125.2,
-                "per_stream_tps": 19.0,
-                "ttft_p50_s": 2.53
+                "aggregate_tps": 123.8,
+                "per_stream_tps": 18.9,
+                "ttft_p50_s": 2.57
               }
             ],
             "concurrency_prompt_tokens": [
@@ -721,24 +742,24 @@
             "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 3x300K (899K resident), 4x153K (614K resident), 8x26K shared prefix",
             "quality": [
               {
-                "name": "GSM8K-250 (C=4)",
-                "value": "246 of 250 (98.4%)"
-              },
-              {
-                "name": "HumanEval-164 (C=4)",
-                "value": "156 of 164 (95.1%)"
+                "name": "RealMark RIPAL (C=1/2/4)",
+                "value": "1,356.8 Grade A (16/16 all lanes, 99.2% cache hit)"
               },
               {
                 "name": "Needle recall",
-                "value": "found at 128K (131,269 tok)"
+                "value": "found at 128K (130,876 tok)"
+              },
+              {
+                "name": "GSM8K-250 / HumanEval-164 (C=4)",
+                "value": "246/250 (98.4%) · 156/164 (95.1%)"
               },
               {
                 "name": "Live stress proofs",
                 "value": "3x300K, 4x153K, 8x26K: 100%"
               }
             ],
-            "lowest_mem_available_gib": 5.39,
-            "notes": "bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=1,130,496, 4,800 pages/rank, MAX_MODEL_LEN=1,048,576, SHARE_LIMIT=32,768, SESS=8, GR8_KV_SHARE_PAGES=1), DFlash2 + MTP=2 (DFL_REUSE_MIN=0, L2PF=31, MTP_L2PF=3, MTP_LASTROW=1, DRAFT_HEAD2=1, PF_GEMMF32=1), gr8 v1.1.0 (8 bit-exact kernels ON, DEC_BK_MAX=2048, MOE_UNION_CAP=48 quality default; set MOE_UNION_CAP=32 for fast mode: 74.6 tok/s code, 101.0 tok/s at C=4, 149.1 tok/s at C=8). bench/bench.py default level on 2026-11-20, one fresh boot on a 200G switch, GPU clocks uncapped in timed stages. Lowest MemAvailable: 5.39 GiB after bench, 5.00 GiB after 899K-token live concurrency proofs."
+            "lowest_mem_available_gib": 5.46,
+            "notes": "Measured 2026-11-28 on kindlingai/gr8 main (530312e6) across 4 DGX Sparks (200G switch), bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=1,130,496, 4,800 pages/rank, MAX_MODEL_LEN=1,048,576, SHARE_LIMIT=32,768, SESS=8, GR8_KV_SHARE_PAGES=1), DFlash2 + MTP=2 (DFL_REUSE_MIN=0, L2PF=31, MTP_L2PF=3, MTP_LASTROW=1, DRAFT_HEAD2=1, PF_GEMMF32=1), MOE_UNION_CAP=48 quality default. bench/bench.py default level (GPU clocks uncapped in timed stages, 0% throttle): smoke 14/14, count 3/3, cache 423/424, needle 128K (130,876 tok) PASS, 0 suspect; cold prefill 32K 1,638 / 128K 1,579 tok/s (+8.5% at 128K vs v1.1.1). Official RealMark C=1/2/4 (Thinking OFF, --probe): 1,356.8 Grade A (C=1 1,179.8 / C=2 1,369.1 / C=4 1,546.3; 16/16 done on all lanes; 97.7-98.3% match; 99.23% prefix cache hit across 305K active C=4 context; C=1 prefill floor 1,653 tok/s). Warm boot 73 s; lowest MemAvailable 5.61 GiB during bench, 5.46 GiB during RealMark. GSM8K-250 / HumanEval-164 / Fast mode (MOE_UNION_CAP=32) / 899K live stress proofs measured on v1.1.0."
           },
           {
             "id": "tp5",
@@ -809,10 +830,12 @@
             "label": "TP=6",
             "nodes": 6,
             "decode": {
-              "code": 78.0,
-              "prose": 58.0,
-              "structured": 81.0,
-              "counting": 84.7
+              "code": 78.8,
+              "prose": 57.6,
+              "structured": 80.6
+            },
+            "decode_extra": {
+              "counting": 83.9
             },
             "decode_prompt_tokens": [
               46,
@@ -821,41 +844,41 @@
             "prefill": [
               {
                 "context": 8192,
-                "tps": 2467
+                "tps": 2296
               },
               {
                 "context": 32768,
-                "tps": 2411
+                "tps": 2428
               },
               {
                 "context": 131072,
-                "tps": 1885
+                "tps": 2257
               }
             ],
             "concurrency": [
               {
                 "streams": 1,
-                "aggregate_tps": 66.4,
-                "per_stream_tps": 67.2,
-                "ttft_p50_s": 0.32
+                "aggregate_tps": 67.5,
+                "per_stream_tps": 68.0,
+                "ttft_p50_s": 0.33
               },
               {
                 "streams": 2,
-                "aggregate_tps": 96.3,
-                "per_stream_tps": 52.4,
-                "ttft_p50_s": 0.61
+                "aggregate_tps": 86.7,
+                "per_stream_tps": 55.3,
+                "ttft_p50_s": 0.63
               },
               {
                 "streams": 4,
-                "aggregate_tps": 117.4,
-                "per_stream_tps": 41.6,
-                "ttft_p50_s": 1.22
+                "aggregate_tps": 119.5,
+                "per_stream_tps": 41.2,
+                "ttft_p50_s": 1.26
               },
               {
                 "streams": 8,
-                "aggregate_tps": 165.1,
-                "per_stream_tps": 32.0,
-                "ttft_p50_s": 2.56
+                "aggregate_tps": 157.8,
+                "per_stream_tps": 32.5,
+                "ttft_p50_s": 2.54
               }
             ],
             "concurrency_prompt_tokens": [
@@ -865,8 +888,8 @@
             "max_context": 1048576,
             "kv_pool_tokens": 2179072,
             "max_concurrent": 8,
-            "lowest_mem_available_gib": 7.41,
-            "notes": "bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=2,179,072, SHARE_LIMIT=65,536, SESS=8), MTP=3 with confidence stopping, gr8 v1.1.0, MOE_UNION_CAP=48 quality default (32 fast: 128.2 at C=4, 180.2 at C=8). bench/bench.py default level on 2026-11-20; see glm-5.3-exlr8-6x-spark."
+            "lowest_mem_available_gib": 7.25,
+            "notes": "bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=2,179,072, SHARE_LIMIT=65,536, SESS=8), MTP=3 with confidence stopping, MOE_UNION_CAP=48 quality default. Measured 2026-11-28 on kindlingai/gr8 main (530312e6): RealMark 1,431.9 Grade A, 128K prefill 2,257 tok/s (+19.7% vs v1.1.1); see glm-5.3-exlr8-6x-spark."
           }
         ]
       }
@@ -881,7 +904,7 @@
       "count": 4,
       "variant": "exlr8-k4-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T07:58:46-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-k4-4x-spark",
@@ -1014,7 +1037,7 @@
       "count": 5,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T17:40:46-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-5x-spark",
@@ -1158,7 +1181,7 @@
       "count": 6,
       "variant": "exl3-vllm",
       "status": "retired",
-      "updated_at": "2026-11-26T17:41:29-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-full-exl3-tp6",
@@ -1255,7 +1278,7 @@
       "count": 6,
       "variant": "exlr8-fp8kv-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:29:43-06:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-fp8kv-6x-spark",
@@ -1538,14 +1561,14 @@
       "count": 6,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T17:40:46-05:00",
+      "updated_at": "2026-11-28T05:56:55-08:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-6x-spark",
         "status": "stable",
         "title": "GLM-5.3",
         "variant": "exlr8 bit325, int4 KV, 1M context (2.18M pool)",
-        "summary": "Full GLM-5.3 on six DGX Sparks at TP=6 with gr8 v1.1.1: exlr8 bit325 (v0.6), int4 KV with a 2,179,072-token pool (1,048,576 max context, SHARE_LIMIT=65,536), zero-copy shared prefix pages, MTP=3 drafting with confidence stopping, seven bit-exact v1.1.0 kernel paths plus MoE union cap (48 quality default, 32 fast preset), 8 concurrent sessions, 7.4+ GiB free RAM per box, and live-proven 4x250K concurrency (998K resident tokens).",
+        "summary": "Full GLM-5.3 on six DGX Sparks at TP=6 with upstream gr8: exlr8 bit325 (v0.6), int4 KV with a 2,179,072-token pool (1,048,576 max context, SHARE_LIMIT=65,536), zero-copy shared prefix pages, MTP=3 drafting with confidence stopping, bit-exact kernel paths plus MoE union cap (48 quality default, 32 fast preset), 8 concurrent sessions, 7.2+ GiB free RAM per box, RealMark 1,431.9 Grade A (C=4 1,571.3, 99.2% cache hit), 2,257 tok/s 128K cold prefill (+19.7% vs v1.1.1), and live-proven 4x250K concurrency (998K resident tokens).",
         "model": "kindlingai/glm-5.3-exlr8-k2-k3-k4",
         "hardware": "DGX Spark (GB10)",
         "stack": [
@@ -1556,11 +1579,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "v1.1.1",
-          "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+          "ref": "v1.6.0",
+          "commit": "d768079b300f6d69630a68d498727281d67be1a3",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:v1.1.1",
-          "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+          "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+          "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
         },
         "default_config": "tp6",
         "configs": [
@@ -1569,10 +1592,12 @@
             "label": "TP=6",
             "nodes": 6,
             "decode": {
-              "code": 78.0,
-              "prose": 58.0,
-              "structured": 81.0,
-              "counting": 84.7
+              "code": 78.8,
+              "prose": 57.6,
+              "structured": 80.6
+            },
+            "decode_extra": {
+              "counting": 83.9
             },
             "decode_prompt_tokens": [
               46,
@@ -1581,41 +1606,41 @@
             "prefill": [
               {
                 "context": 8192,
-                "tps": 2467
+                "tps": 2296
               },
               {
                 "context": 32768,
-                "tps": 2411
+                "tps": 2428
               },
               {
                 "context": 131072,
-                "tps": 1885
+                "tps": 2257
               }
             ],
             "concurrency": [
               {
                 "streams": 1,
-                "aggregate_tps": 66.4,
-                "per_stream_tps": 67.2,
-                "ttft_p50_s": 0.32
+                "aggregate_tps": 67.5,
+                "per_stream_tps": 68.0,
+                "ttft_p50_s": 0.33
               },
               {
                 "streams": 2,
-                "aggregate_tps": 96.3,
-                "per_stream_tps": 52.4,
-                "ttft_p50_s": 0.61
+                "aggregate_tps": 86.7,
+                "per_stream_tps": 55.3,
+                "ttft_p50_s": 0.63
               },
               {
                 "streams": 4,
-                "aggregate_tps": 117.4,
-                "per_stream_tps": 41.6,
-                "ttft_p50_s": 1.22
+                "aggregate_tps": 119.5,
+                "per_stream_tps": 41.2,
+                "ttft_p50_s": 1.26
               },
               {
                 "streams": 8,
-                "aggregate_tps": 165.1,
-                "per_stream_tps": 32.0,
-                "ttft_p50_s": 2.56
+                "aggregate_tps": 157.8,
+                "per_stream_tps": 32.5,
+                "ttft_p50_s": 2.54
               }
             ],
             "concurrency_prompt_tokens": [
@@ -1655,24 +1680,24 @@
             "max_tokens_per_chat_note": "prompt + max_tokens · live-proven: 4x250K (998,413 resident tok, 4/4 needles, 99.9% cached)",
             "quality": [
               {
-                "name": "Smoke test",
-                "value": "14 of 14"
+                "name": "RealMark RIPAL (C=1/2/4)",
+                "value": "1,431.9 Grade A (16/16 all lanes, 99.2% cache hit)"
               },
               {
                 "name": "Needle recall",
-                "value": "found at 128K (131,113 tok)"
+                "value": "found at 128K (131,000 tok)"
+              },
+              {
+                "name": "Smoke & correctness",
+                "value": "14/14 smoke, 3/3 count, 0 suspect"
               },
               {
                 "name": "Live 4x250K proof",
                 "value": "998K resident, 4/4 needles, 28.1 tok/s"
-              },
-              {
-                "name": "Boot with QO cache",
-                "value": "58 s"
               }
             ],
-            "lowest_mem_available_gib": 7.41,
-            "notes": "bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=2,179,072, 6,528 pages/rank, MAX_MODEL_LEN=1,048,576, SHARE_LIMIT=65,536, SESS=8, GR8_KV_SHARE_PAGES=1), MTP=3 with confidence stopping, 7 bit-exact v1.1.0 kernels ON, DEC_BK_MAX=2048, MOE_UNION_CAP=48 quality default (set MOE_UNION_CAP=32 for fast mode: 128.2 tok/s at C=4, 180.2 tok/s at C=8). bench/bench.py default level on 2026-11-20, one fresh boot on a 200G switch, GPU clocks uncapped in timed stages. Lowest MemAvailable: 7.41 GiB after bench, 7.38 GiB after 998K-token live 4x250K proof."
+            "lowest_mem_available_gib": 7.25,
+            "notes": "Measured 2026-11-28 on kindlingai/gr8 main (530312e6) across 6 DGX Sparks (200G switch), bit325 experts (3.25 bpw, v0.6 @ 3e388b45), int4 KV (CAP=2,179,072, 6,528 pages/rank, MAX_MODEL_LEN=1,048,576, SHARE_LIMIT=65,536, SESS=8, GR8_KV_SHARE_PAGES=1), MTP=3 with confidence stopping, MOE_UNION_CAP=48 quality default. bench/bench.py default level (GPU clocks uncapped in timed stages, 0% throttle): smoke 14/14, count 3/3, cache 419/420, needle 128K (131,000 tok) PASS, 0 suspect; cold prefill 8K 2,296 / 32K 2,428 / 128K 2,257 tok/s (+19.7% at 128K vs v1.1.1; cached 128K TTFT 0.22 s, 7.7x faster). Official RealMark C=1/2/4 (Thinking OFF, --probe): 1,431.9 Grade A (C=1 1,312.1 / C=2 1,424.1 / C=4 1,571.3; 16/16 done on all lanes; 99.23% prefix cache hit across 305K active C=4 context; C=1 prefill floor 2,387 tok/s; idle TTFT 0.33 s). Lowest MemAvailable 7.25 GiB during bench, 7.42 GiB during RealMark. Fast mode (MOE_UNION_CAP=32) and 998K live 4x250K proof measured on v1.1.0."
           }
         ]
       }
@@ -1687,7 +1712,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:00:04Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-1x-spark",
@@ -1782,7 +1807,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:00:04Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-2x-spark",
@@ -1891,7 +1916,7 @@
       "count": 4,
       "variant": "exlr8-vllm",
       "status": "external",
-      "updated_at": "2026-11-25T12:38:04-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-exlr8-gx10",
@@ -2067,7 +2092,7 @@
       "count": 4,
       "variant": "nvfp4-vllm",
       "status": "external",
-      "updated_at": "2026-11-25T12:38:04-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-flash-gx10",
@@ -2243,7 +2268,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:28:18-06:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-spark",
@@ -2451,7 +2476,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:29:46-06:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "inkling-2-mini-exlr8-1x-rtx5090",
@@ -2727,7 +2752,7 @@
       "count": 1,
       "variant": "nvidia-24gb-vllm",
       "status": "stable",
-      "updated_at": "2026-11-27T13:00:04Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "nemotron-3.5-bolt-rtx5090",
@@ -2855,7 +2880,7 @@
       "count": 1,
       "variant": "nvfp4-vllm",
       "status": "stable",
-      "updated_at": "2026-11-27T13:00:04Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "nemotron-3.5-super-vl-dgx-spark",
@@ -3025,7 +3050,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:30:52Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "qwen3-vl-embedding-2b-exlr8-1x-spark",
@@ -3112,7 +3137,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:30:52Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "qwen3-vl-embedding-8b-exlr8-1x-spark",
@@ -3199,7 +3224,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-26T17:40:46-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-1x-spark",
@@ -3473,7 +3498,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T07:58:37-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-2x-spark",
@@ -3751,7 +3776,7 @@
       "count": 1,
       "variant": "exlr8-gr8",
       "status": "experimental",
-      "updated_at": "2026-11-27T13:15:26Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "qwen3.8-flash-next-exlr8-1x-gpu",
@@ -3812,7 +3837,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:00:04Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-2x-spark",
@@ -3922,7 +3947,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T13:00:04Z",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "sage-s2.1-flash-exlr8-4x-spark",
@@ -4041,7 +4066,7 @@
       "count": 4,
       "variant": "nvfp4-vllm",
       "status": "experimental",
-      "updated_at": "2026-11-27T08:14:45-05:00",
+      "updated_at": "2026-11-27T19:30:18+00:00",
       "kindling": {
         "version": 1,
         "id": "step5-tp4-gb10-recipe",

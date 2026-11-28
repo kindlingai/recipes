@@ -6,7 +6,7 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 [KindlingAI Discord](https://discord.gg/8EAvYPV2rE) for help and updates.
 
 Full **GLM-5.3 (743B)** on just **two DGX Sparks** (GB10, 128 GB unified memory each — 256 GB total) at `TP=2`, served
-by upstream [gr8](https://github.com/kindlingai/gr8) (`main@530312e6`) from the `bit225` mixed-precision profile of
+by upstream [gr8](https://github.com/kindlingai/gr8) (`v1.6.0`) from the `bit225` mixed-precision profile of
 [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/501d259894bf0de607ee4aa6f8a564a14d0c6b63)
 with **4-bit MLA latent KV** (`172,032`-token pool, `416 B/layer/tok` excl. indexer vs `656 B` FP8), **native INT4
 DFlash** (`incoai/GLM-5.3-DFlash2`, auto-packed to `tp2-int4` on first boot) + `MTP=1`, and built-in **48 GB NVMe SSD
@@ -134,8 +134,8 @@ Join the [KindlingAI Discord](https://discord.gg/8EAvYPV2rE) or open an issue on
 
 ## Engine pin
 
-- Engine: `kindlingai/gr8` `main` (`fa5d82d37751d8c71703e3d1e6f4c010427357d2` — pending official GHCR release pin for `530312e6`)
-- Image: `ghcr.io/kindlingai/gr8:main@sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59`
+- Engine: [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.6.0`](https://github.com/kindlingai/gr8/releases/tag/v1.6.0) at [`d768079`](https://github.com/kindlingai/gr8/commit/d768079b300f6d69630a68d498727281d67be1a3) (includes `530312e6` with zero GLM-5.3 engine changes since `530312e6`)
+- Image: `ghcr.io/kindlingai/gr8:v1.6.0@sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91`
 - Weights: `kindlingai/glm-5.3-exlr8-k2-k3-k4@501d259894bf0de607ee4aa6f8a564a14d0c6b63` (`bit225`)
 - Drafter: `incoai/GLM-5.3-DFlash2@425aa615ce320caac34400208b30808c8f14f76c` (`tp2-int4`)
 

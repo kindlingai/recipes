@@ -14,8 +14,8 @@
 name: glm-5.3-exlr8-2x-spark
 services:
   gr8:
-    # The engine pin: kindlingai/gr8 main (fa5d82d3); kindling.json "engine" names the same digest.
-    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:main@sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59}
+    # The engine pin: kindlingai/gr8 v1.6.0 (d768079); kindling.json "engine" names the same digest.
+    image: ${GR8_IMAGE:-ghcr.io/kindlingai/gr8:v1.6.0@sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91}
     container_name: glm53-2x
     env_file:
       - path: .env

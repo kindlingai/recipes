@@ -16,11 +16,11 @@
  ],
  "engine": {
   "repo": "kindlingai/gr8",
-  "ref": "v1.1.1",
-  "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+  "ref": "v1.6.0",
+  "commit": "d768079b300f6d69630a68d498727281d67be1a3",
   "pin": "image",
-  "image": "ghcr.io/kindlingai/gr8:v1.1.1",
-  "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+  "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+  "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
  },
  "default_config": "tp4",
  "configs": [
@@ -94,7 +94,7 @@
      "streams": 2,
      "aggregate_tps": 66.7,
      "per_stream_tps": 35.9,
-     "ttft_p50_s": 0.60
+     "ttft_p50_s": 0.6
     },
     {
      "streams": 4,

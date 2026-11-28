@@ -6,7 +6,7 @@ If you are an agent booting this for someone, read [AGENTS.md](AGENTS.md) first,
 
 _**Join our discord to learn more about KindlingAI and `gr8`: https://discord.gg/8EAvYPV2rE**_
 
-Full GLM-5.3 on six DGX Sparks (GB10, 128 GB each) at TP=6, served by [gr8](https://github.com/kindlingai/gr8) `v1.1.1` from
+Full GLM-5.3 on six DGX Sparks (GB10, 128 GB each) at TP=6, served by [gr8](https://github.com/kindlingai/gr8) `v1.6.0` from
 the `bit325` width profile of [kindlingai/glm-5.3-exlr8-k2-k3-k4](https://huggingface.co/kindlingai/glm-5.3-exlr8-k2-k3-k4/tree/3e388b45b26ca4558351d22994afcfc85b99af74) (v0.6):
 a full **1,048,576-token** context window backed by a **2,179,072-token** int4 KV pool (`SHARE_LIMIT=65,536`, keeping 32K–64K prompts 100% unsharded),
 zero-copy shared prefix pages, MTP=3 drafting with confidence stopping, up to 8 concurrent chats, 7.4+ GiB free RAM per box,
@@ -204,11 +204,11 @@ This recipe has no engine code. It runs one published gr8 image, named by tag an
 
 | | |
 |---|---|
-| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.1.1`](https://github.com/kindlingai/gr8/releases/tag/v1.1.1) at [`a3f44a0`](https://github.com/kindlingai/gr8/commit/a3f44a075854fc9af0ed56c6d43f7739705bc871) |
-| image | `ghcr.io/kindlingai/gr8:v1.1.1` |
-| digest | `sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96` |
+| engine | [kindlingai/gr8](https://github.com/kindlingai/gr8) [`v1.6.0`](https://github.com/kindlingai/gr8/releases/tag/v1.6.0) at [`d768079`](https://github.com/kindlingai/gr8/commit/d768079b300f6d69630a68d498727281d67be1a3) |
+| image | `ghcr.io/kindlingai/gr8:v1.6.0` |
+| digest | `sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91` |
 
-The TP=6 benchmark tables above were measured on 2026-11-20 on `gr8 v1.1.0` (`cdd1e09`); `v1.1.1` (`a3f44a0`) adds the `v1.1.1` hotfix and TP=5/6 default launcher parity.
+The TP=6 benchmark and Official RealMark tables above were measured on 2026-11-28 on `gr8` commit `530312e6`; `v1.6.0` (`d768079`) ships the identical `g6m4-int4` GLM-5.3 engine (zero GLM-5.3 code changes between `530312e6` and `d768079`).
 
 After v1.0, the pin moves to a newer gr8 release only after this recipe was booted and measured on it.
 `python3 tools/check_pin.py glm-5.3/dgx-spark/6x/exlr8-gr8`, run from the monorepo root, checks that `compose.yaml` and

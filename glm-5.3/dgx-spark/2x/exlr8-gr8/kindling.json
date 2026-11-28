@@ -18,11 +18,11 @@
   ],
   "engine": {
     "repo": "kindlingai/gr8",
-    "ref": "main",
-    "commit": "fa5d82d37751d8c71703e3d1e6f4c010427357d2",
+    "ref": "v1.6.0",
+    "commit": "d768079b300f6d69630a68d498727281d67be1a3",
     "pin": "image",
-    "image": "ghcr.io/kindlingai/gr8:main",
-    "image_digest": "sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59"
+    "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+    "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
   },
   "default_config": "tp2",
   "configs": [
@@ -43,14 +43,38 @@
         54
       ],
       "prefill": [
-        { "context": 8192, "tps": 443 },
-        { "context": 32768, "tps": 418 },
-        { "context": 131072, "tps": 369 }
+        {
+          "context": 8192,
+          "tps": 443
+        },
+        {
+          "context": 32768,
+          "tps": 418
+        },
+        {
+          "context": 131072,
+          "tps": 369
+        }
       ],
       "concurrency": [
-        { "streams": 1, "aggregate_tps": 34.0, "per_stream_tps": 36.9, "ttft_p50_s": 0.49 },
-        { "streams": 2, "aggregate_tps": 43.4, "per_stream_tps": 25.8, "ttft_p50_s": 0.83 },
-        { "streams": 4, "aggregate_tps": 49.5, "per_stream_tps": 14.6, "ttft_p50_s": 1.67 }
+        {
+          "streams": 1,
+          "aggregate_tps": 34.0,
+          "per_stream_tps": 36.9,
+          "ttft_p50_s": 0.49
+        },
+        {
+          "streams": 2,
+          "aggregate_tps": 43.4,
+          "per_stream_tps": 25.8,
+          "ttft_p50_s": 0.83
+        },
+        {
+          "streams": 4,
+          "aggregate_tps": 49.5,
+          "per_stream_tps": 14.6,
+          "ttft_p50_s": 1.67
+        }
       ],
       "concurrency_prompt_tokens": [
         49,
@@ -61,9 +85,18 @@
       "max_concurrent": 4,
       "lowest_mem_available_gib": 0.686,
       "quality": [
-        { "name": "RealMark RIPAL (C=1/2/4)", "value": "935.5 Grade A (16/16 all lanes, 99.2% cache hit)" },
-        { "name": "Needle recall", "value": "found at 128K (131,046 tok)" },
-        { "name": "Smoke & correctness", "value": "14/14 smoke, 3/3 count, 0 suspect" }
+        {
+          "name": "RealMark RIPAL (C=1/2/4)",
+          "value": "935.5 Grade A (16/16 all lanes, 99.2% cache hit)"
+        },
+        {
+          "name": "Needle recall",
+          "value": "found at 128K (131,046 tok)"
+        },
+        {
+          "name": "Smoke & correctness",
+          "value": "14/14 smoke, 3/3 count, 0 suspect"
+        }
       ],
       "notes": "Measured 2026-11-28 on kindlingai/gr8 main (530312e6) across 2 DGX Sparks (256 GB unified memory total, 200G RoCE v2 switch), bit225 EXLR8 weights (501d2598), native INT4 DFlash (incoai/GLM-5.3-DFlash2 @ 425aa615, tp2-int4) + MTP=1, 4-bit MLA latent KV (CAP=172032, SESS=4), and 48 GB NVMe SSD KV_STORE with GR8_MEM_MIN=1. Decode, cold prefill (8K/32K/128K), concurrency (1/2/4), smoke (14/14), and 128K needle recall (131,046 tok) measured with gr8 bench/bench.py default level (GPU clocks uncapped in timed stages, 0% throttle). Official RealMark C=1/2/4 (Thinking OFF, --probe, default unthrottled stage): 935.5 Grade A (C=1 833.2 / C=2 980.9 / C=4 1,001.8; 26.1 / 40.5 / 72.9 tok/s aggregate decode; 16/16 done on all lanes; 99.23% prefix cache hit across 307K active C=4 context). Warm boot 86 s; live MemAvailable floor 0.686 GiB; 0 API errors; 0 OOMs."
     }

@@ -158,7 +158,7 @@
       "count": 2,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T14:37:41-06:00",
+      "updated_at": "2026-11-28T05:56:55-08:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-2x-spark",
@@ -179,11 +179,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "main",
-          "commit": "fa5d82d37751d8c71703e3d1e6f4c010427357d2",
+          "ref": "v1.6.0",
+          "commit": "d768079b300f6d69630a68d498727281d67be1a3",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:main",
-          "image_digest": "sha256:494c44b2315f607a3fabe1fb38cd1b1ddd7074bddfea81a7227451ad207f3c59"
+          "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+          "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
         },
         "default_config": "tp2",
         "configs": [
@@ -593,7 +593,7 @@
       "count": 4,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T19:30:18+00:00",
+      "updated_at": "2026-11-28T05:56:55-08:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-4x-spark",
@@ -612,11 +612,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "v1.1.1",
-          "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+          "ref": "v1.6.0",
+          "commit": "d768079b300f6d69630a68d498727281d67be1a3",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:v1.1.1",
-          "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+          "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+          "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
         },
         "default_config": "tp4",
         "configs": [
@@ -1561,7 +1561,7 @@
       "count": 6,
       "variant": "exlr8-gr8",
       "status": "stable",
-      "updated_at": "2026-11-27T19:30:18+00:00",
+      "updated_at": "2026-11-28T05:56:55-08:00",
       "kindling": {
         "version": 1,
         "id": "glm-5.3-exlr8-6x-spark",
@@ -1579,11 +1579,11 @@
         ],
         "engine": {
           "repo": "kindlingai/gr8",
-          "ref": "v1.1.1",
-          "commit": "a3f44a075854fc9af0ed56c6d43f7739705bc871",
+          "ref": "v1.6.0",
+          "commit": "d768079b300f6d69630a68d498727281d67be1a3",
           "pin": "image",
-          "image": "ghcr.io/kindlingai/gr8:v1.1.1",
-          "image_digest": "sha256:fa5c9f66fbfa55d162782578b3262893b782e6365a76562bcab951b54acc6d96"
+          "image": "ghcr.io/kindlingai/gr8:v1.6.0",
+          "image_digest": "sha256:ad58680b2f6c7bebc463020b44f770924d350715364726743f4818ec6d195c91"
         },
         "default_config": "tp6",
         "configs": [
